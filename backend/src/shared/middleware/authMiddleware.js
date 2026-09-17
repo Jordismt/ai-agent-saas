@@ -1,4 +1,4 @@
-import { supabase } from "../../infrastructure/database/supabase.js";
+import { createSupabaseClient } from "../../infrastructure/database/supabase.js";
 
 export async function authMiddleware(req, res, next) {
   try {
@@ -12,10 +12,12 @@ export async function authMiddleware(req, res, next) {
 
     const token = authorization.replace("Bearer ", "");
 
+    const supabase = createSupabaseClient(token);
+
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser(token);
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       return res.status(401).json({
@@ -24,6 +26,7 @@ export async function authMiddleware(req, res, next) {
     }
 
     req.user = user;
+    req.supabase = supabase;
 
     next();
   } catch (error) {

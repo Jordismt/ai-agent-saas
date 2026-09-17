@@ -1,10 +1,15 @@
-import { supabase } from "../../../infrastructure/database/supabase.js";
 import { BusinessRepository } from "../domain/BusinessRepository.js";
+
 import { AppError } from "../../../shared/errors/AppError.js";
 
 export class SupabaseBusinessRepository extends BusinessRepository {
+  constructor(supabase) {
+    super();
+    this.supabase = supabase;
+  }
+
   async create(business) {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from("businesses")
       .insert({
         owner_id: business.ownerId,
@@ -24,7 +29,7 @@ export class SupabaseBusinessRepository extends BusinessRepository {
   }
 
   async findById(id) {
-    const { data, error } = await supabase.from("businesses").select("*").eq("id", id).maybeSingle();
+    const { data, error } = await this.supabase.from("businesses").select("*").eq("id", id).maybeSingle();
 
     if (error) {
       throw new AppError(`Failed to find business: ${error.message}`, 500);
@@ -34,7 +39,7 @@ export class SupabaseBusinessRepository extends BusinessRepository {
   }
 
   async findByOwnerId(ownerId) {
-    const { data, error } = await supabase.from("businesses").select("*").eq("owner_id", ownerId);
+    const { data, error } = await this.supabase.from("businesses").select("*").eq("owner_id", ownerId);
 
     if (error) {
       throw new AppError(`Failed to find businesses: ${error.message}`, 500);
@@ -44,7 +49,7 @@ export class SupabaseBusinessRepository extends BusinessRepository {
   }
 
   async update(id, business) {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from("businesses")
       .update({
         name: business.name,

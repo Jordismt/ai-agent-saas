@@ -18,7 +18,7 @@ describe("SupabaseBusinessServiceRepository", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    repository = new SupabaseBusinessServiceRepository();
+    repository = new SupabaseBusinessServiceRepository(mockSupabase);
   });
 
   it("should create a business service", async () => {

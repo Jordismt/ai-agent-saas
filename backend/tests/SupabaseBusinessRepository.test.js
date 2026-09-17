@@ -18,7 +18,7 @@ describe("SupabaseBusinessRepository", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    repository = new SupabaseBusinessRepository();
+    repository = new SupabaseBusinessRepository(mockSupabase);
   });
 
   describe("create", () => {

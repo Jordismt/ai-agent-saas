@@ -1,10 +1,15 @@
-import { supabase } from "../../../infrastructure/database/supabase.js";
 import { BusinessServiceRepository } from "../domain/BusinessServiceRepository.js";
+
 import { AppError } from "../../../shared/errors/AppError.js";
 
 export class SupabaseBusinessServiceRepository extends BusinessServiceRepository {
+  constructor(supabase) {
+    super();
+    this.supabase = supabase;
+  }
+
   async create(businessId, serviceData) {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from("business_services")
       .insert({
         business_id: businessId,
@@ -24,11 +29,13 @@ export class SupabaseBusinessServiceRepository extends BusinessServiceRepository
   }
 
   async findByBusinessId(businessId) {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from("business_services")
       .select("*")
       .eq("business_id", businessId)
-      .order("created_at", { ascending: true });
+      .order("created_at", {
+        ascending: true,
+      });
 
     if (error) {
       throw new AppError(`Failed to find business services: ${error.message}`, 500);
@@ -38,7 +45,7 @@ export class SupabaseBusinessServiceRepository extends BusinessServiceRepository
   }
 
   async delete(businessId, serviceId) {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from("business_services")
       .delete()
       .eq("id", serviceId)
@@ -54,7 +61,7 @@ export class SupabaseBusinessServiceRepository extends BusinessServiceRepository
   }
 
   async update(businessId, serviceId, serviceData) {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from("business_services")
       .update({
         name: serviceData.name,
