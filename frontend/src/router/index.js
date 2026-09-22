@@ -6,6 +6,11 @@ import CreateBusinessView from "../modules/businesses/presentation/CreateBusines
 import BusinessListView from "../modules/businesses/presentation/BusinessListView.vue";
 import DashboardView from "../modules/dashboard/presentation/DashboardView.vue";
 import BusinessDetailView from "../modules/businesses/presentation/BusinessDetailView.vue";
+import ChatView from "../modules/public/presentation/ChatView.vue";
+import BusinessAgentConfigView from "../modules/businesses/presentation/BusinessAgentConfigView.vue";
+import ConversationListView from "../modules/conversations/presentation/ConversationListView.vue";
+import ConversationDetailView from "../modules/conversations/presentation/ConversationDetailView.vue";
+import LeadListView from "../modules/leads/presentation/LeadListView.vue";
 
 import { authGuard } from "./authGuard.js";
 
@@ -42,6 +47,35 @@ const routes = [
     path: "/businesses",
     name: "businesses",
     component: BusinessListView,
+    beforeEnter: authGuard,
+  },
+  {
+    path: "/chat/:businessId",
+    name: "public-chat",
+    component: ChatView,
+  },
+  {
+    path: "/businesses/:id/agent-config",
+    name: "business-agent-config",
+    component: BusinessAgentConfigView,
+    beforeEnter: authGuard,
+  },
+  {
+    path: "/businesses/:id/conversations",
+    name: "business-conversations",
+    component: ConversationListView,
+    beforeEnter: authGuard,
+  },
+  {
+    path: "/businesses/:id/conversations/:conversationId",
+    name: "conversation-detail",
+    component: ConversationDetailView,
+    beforeEnter: authGuard,
+  },
+  {
+    path: "/businesses/:id/leads",
+    name: "business-leads",
+    component: LeadListView,
     beforeEnter: authGuard,
   },
 ];

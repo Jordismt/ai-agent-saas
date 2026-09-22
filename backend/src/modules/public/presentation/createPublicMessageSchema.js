@@ -1,0 +1,11 @@
+import { z } from "zod";
+
+export const createPublicMessageSchema = z.object({
+  publicToken: z.string().uuid("El public token no es válido."),
+
+  content: z
+    .string()
+    .trim()
+    .min(1, "El contenido del mensaje es obligatorio.")
+    .max(10000, "El mensaje no puede superar los 10000 caracteres."),
+});

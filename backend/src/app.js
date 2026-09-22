@@ -4,8 +4,13 @@ import helmet from "helmet";
 
 import { supabase } from "./infrastructure/database/supabase.js";
 import businessRoutes from "./modules/businesses/presentation/businessRoutes.js";
+import conversationRoutes from "./modules/conversations/presentation/conversationRoutes.js";
 import { authMiddleware } from "./shared/middleware/authMiddleware.js";
 import { errorHandler } from "./shared/middleware/errorHandler.js";
+import publicRoutes from "./modules/public/presentation/publicRoutes.js";
+import businessHoursRoutes from "./modules/businesses/presentation/businessHoursRoutes.js";
+import businessAgentConfigRoutes from "./modules/businesses/presentation/businessAgentConfigRoutes.js";
+import leadRoutes from "./modules/leads/presentation/leadRoutes.js";
 
 const app = express();
 
@@ -43,6 +48,16 @@ app.get("/me", authMiddleware, (req, res) => {
 });
 
 app.use("/businesses", businessRoutes);
+
+app.use("/conversations", conversationRoutes);
+
+app.use("/", leadRoutes);
+
+app.use("/public", publicRoutes);
+
+app.use("/business-hours", businessHoursRoutes);
+
+app.use("/", businessAgentConfigRoutes);
 
 app.use(errorHandler);
 
