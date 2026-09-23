@@ -1,4 +1,8 @@
 :root {
+  /* =========================
+     COLORS
+  ========================= */
+
   --bg: #f7f8fa;
   --surface: #ffffff;
   --surface-soft: #f9fafb;
@@ -23,12 +27,35 @@
   --danger: #dc2626;
   --danger-soft: #fef2f2;
 
+  /* =========================
+     TYPOGRAPHY
+  ========================= */
+
+  --font-xs: 12px;
+  --font-sm: 13px;
+  --font-base: 14px;
+  --font-md: 15px;
+  --font-lg: 16px;
+  --font-xl: 18px;
+  --font-2xl: 22px;
+  --font-3xl: 30px;
+  --font-4xl: 38px;
+
+  --line-tight: 1.25;
+  --line-normal: 1.5;
+  --line-relaxed: 1.65;
+
+  /* =========================
+     UI
+  ========================= */
+
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
 
   --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
+
   --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.03);
 
   --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -36,11 +63,17 @@
   font-family: var(--font);
   color: var(--text);
   background: var(--bg);
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* =========================
+   RESET
+========================= */
 
 * {
   box-sizing: border-box;
@@ -54,12 +87,19 @@ body,
 
 html {
   background: var(--bg);
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   min-width: 320px;
+
   background: var(--bg);
+  color: var(--text);
+
+  font-family: var(--font);
+  font-size: var(--font-base);
+  line-height: var(--line-normal);
 }
 
 button,
@@ -123,14 +163,15 @@ p {
   justify-content: center;
   gap: 8px;
 
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 42px;
+  padding: 0 16px;
 
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
 
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
+  line-height: 1;
 
   cursor: pointer;
 
@@ -155,6 +196,7 @@ p {
 .button-primary {
   background: var(--primary);
   color: white;
+
   box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
 }
 
@@ -165,6 +207,7 @@ p {
 .button-secondary {
   background: var(--surface);
   color: var(--text);
+
   border-color: var(--border-strong);
 }
 
@@ -189,10 +232,16 @@ input,
 textarea,
 select {
   width: 100%;
+
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
+
   background: var(--surface);
   color: var(--text);
+
+  font-size: var(--font-base);
+  line-height: var(--line-normal);
+
   outline: none;
 
   transition:
@@ -200,10 +249,20 @@ select {
     box-shadow 0.15s ease;
 }
 
+input {
+  min-height: 42px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+
 input:focus,
 textarea:focus,
 select:focus {
   border-color: var(--primary);
+
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
@@ -213,32 +272,131 @@ select:focus {
 
 .page-shell {
   width: min(1180px, calc(100% - 48px));
+
   margin: 0 auto;
   padding: 36px 0 64px;
 }
 
 .page-eyebrow {
-  margin-bottom: 6px;
+  margin-bottom: 7px;
+
   color: var(--primary);
-  font-size: 12px;
+
+  font-size: var(--font-xs);
   font-weight: 700;
+
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .page-title {
   color: var(--text);
-  font-size: 30px;
-  line-height: 1.2;
-  letter-spacing: -0.03em;
+
+  font-size: var(--font-3xl);
+  line-height: var(--line-tight);
+  letter-spacing: -0.035em;
   font-weight: 700;
 }
 
 .page-description {
-  margin-top: 8px;
+  max-width: 680px;
+
+  margin-top: 9px;
+
   color: var(--text-secondary);
-  font-size: 15px;
-  line-height: 1.5;
+
+  font-size: var(--font-md);
+  line-height: var(--line-relaxed);
+}
+
+/* =========================
+   TYPOGRAPHY HELPERS
+========================= */
+
+.text-xs {
+  font-size: var(--font-xs);
+}
+
+.text-sm {
+  font-size: var(--font-sm);
+}
+
+.text-base {
+  font-size: var(--font-base);
+}
+
+.text-md {
+  font-size: var(--font-md);
+}
+
+.text-lg {
+  font-size: var(--font-lg);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+/* =========================
+   SECTION / CARD TITLES
+========================= */
+
+.section-title {
+  color: var(--text);
+
+  font-size: var(--font-2xl);
+  line-height: var(--line-tight);
+  letter-spacing: -0.025em;
+
+  font-weight: 700;
+}
+
+.section-description {
+  margin-top: 6px;
+
+  color: var(--text-secondary);
+
+  font-size: var(--font-base);
+  line-height: var(--line-relaxed);
+}
+
+.card-title {
+  color: var(--text);
+
+  font-size: var(--font-lg);
+  line-height: 1.35;
+
+  font-weight: 650;
+}
+
+.card-description {
+  color: var(--text-secondary);
+
+  font-size: var(--font-base);
+  line-height: var(--line-relaxed);
+}
+
+/* =========================
+   LABELS
+========================= */
+
+label {
+  color: var(--text);
+
+  font-size: var(--font-sm);
+  font-weight: 600;
+}
+
+.form-help,
+.helper-text {
+  color: var(--text-secondary);
+
+  font-size: var(--font-xs);
+  line-height: var(--line-normal);
 }
 
 /* =========================
@@ -247,8 +405,10 @@ select:focus {
 
 .card {
   background: var(--surface);
+
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+
   box-shadow: var(--shadow-sm);
 }
 
@@ -262,17 +422,22 @@ select:focus {
   gap: 6px;
 
   padding: 5px 9px;
+
   border-radius: 999px;
 
-  font-size: 12px;
+  font-size: var(--font-xs);
   font-weight: 600;
+  line-height: 1.2;
 }
 
 .status::before {
   content: "";
+
   width: 6px;
   height: 6px;
+
   border-radius: 50%;
+
   background: currentColor;
 }
 
@@ -292,6 +457,45 @@ select:focus {
 }
 
 /* =========================
+   BADGES
+========================= */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 26px;
+  padding: 0 9px;
+
+  border-radius: 999px;
+
+  font-size: var(--font-xs);
+  font-weight: 600;
+}
+
+/* =========================
+   TABLES
+========================= */
+
+table {
+  font-size: var(--font-base);
+}
+
+th {
+  color: var(--text-secondary);
+
+  font-size: var(--font-xs);
+  font-weight: 600;
+}
+
+td {
+  color: var(--text);
+
+  font-size: var(--font-base);
+}
+
+/* =========================
    STATES
 ========================= */
 
@@ -304,17 +508,37 @@ select:focus {
   justify-content: center;
 
   gap: 12px;
+
   padding: 32px;
 
   background: var(--surface);
+
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
 
-.state-card p {
-  color: var(--text-secondary);
-  font-size: 14px;
+.state-card h2,
+.state-card h3 {
+  color: var(--text);
+
+  font-size: var(--font-xl);
+  font-weight: 650;
 }
+
+.state-card p {
+  max-width: 500px;
+
+  color: var(--text-secondary);
+
+  font-size: var(--font-base);
+  line-height: var(--line-relaxed);
+
+  text-align: center;
+}
+
+/* =========================
+   SPINNER
+========================= */
 
 .spinner {
   width: 24px;
@@ -322,7 +546,6 @@ select:focus {
 
   border: 3px solid var(--border);
   border-top-color: var(--primary);
-
   border-radius: 50%;
 
   animation: spin 0.7s linear infinite;
@@ -331,6 +554,7 @@ select:focus {
 .spinner.small {
   width: 17px;
   height: 17px;
+
   border-width: 2px;
 }
 
@@ -346,11 +570,20 @@ select:focus {
 
 @media (max-width: 768px) {
   .page-shell {
-    width: min(100% - 32px, 1180px);
+    width: calc(100% - 32px);
+
     padding: 24px 0 48px;
   }
 
   .page-title {
-    font-size: 26px;
+    font-size: 27px;
+  }
+
+  .page-description {
+    font-size: var(--font-base);
+  }
+
+  .section-title {
+    font-size: 20px;
   }
 }

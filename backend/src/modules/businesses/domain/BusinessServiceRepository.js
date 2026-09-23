@@ -3,6 +3,10 @@ export class BusinessServiceRepository {
     throw new Error("Method not implemented");
   }
 
+  async findById() {
+    throw new Error("Method not implemented");
+  }
+
   async findByBusinessId() {
     throw new Error("Method not implemented");
   }

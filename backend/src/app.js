@@ -3,14 +3,18 @@ import cors from "cors";
 import helmet from "helmet";
 
 import { supabase } from "./infrastructure/database/supabase.js";
+
 import businessRoutes from "./modules/businesses/presentation/businessRoutes.js";
 import conversationRoutes from "./modules/conversations/presentation/conversationRoutes.js";
-import { authMiddleware } from "./shared/middleware/authMiddleware.js";
-import { errorHandler } from "./shared/middleware/errorHandler.js";
 import publicRoutes from "./modules/public/presentation/publicRoutes.js";
 import businessHoursRoutes from "./modules/businesses/presentation/businessHoursRoutes.js";
 import businessAgentConfigRoutes from "./modules/businesses/presentation/businessAgentConfigRoutes.js";
 import leadRoutes from "./modules/leads/presentation/leadRoutes.js";
+import bookingRoutes from "./modules/bookings/presentation/bookingRoutes.js";
+import dashboardRoutes from "./modules/dashboard/presentation/dashboardRoutes.js";
+
+import { authMiddleware } from "./shared/middleware/authMiddleware.js";
+import { errorHandler } from "./shared/middleware/errorHandler.js";
 
 const app = express();
 
@@ -52,6 +56,10 @@ app.use("/businesses", businessRoutes);
 app.use("/conversations", conversationRoutes);
 
 app.use("/", leadRoutes);
+
+app.use("/", bookingRoutes);
+
+app.use("/", dashboardRoutes);
 
 app.use("/public", publicRoutes);
 

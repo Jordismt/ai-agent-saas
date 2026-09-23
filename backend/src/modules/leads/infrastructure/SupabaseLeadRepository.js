@@ -4,6 +4,7 @@ import { AppError } from "../../../shared/errors/AppError.js";
 export class SupabaseLeadRepository extends LeadRepository {
   constructor(supabase) {
     super();
+
     this.supabase = supabase;
   }
 
@@ -52,7 +53,7 @@ export class SupabaseLeadRepository extends LeadRepository {
       throw new AppError(`Failed to find business leads: ${error.message}`, 500);
     }
 
-    return data;
+    return data || [];
   }
 
   async findByConversationId(conversationId) {
@@ -68,7 +69,7 @@ export class SupabaseLeadRepository extends LeadRepository {
       throw new AppError(`Failed to find conversation leads: ${error.message}`, 500);
     }
 
-    return data;
+    return data || [];
   }
 
   async update(id, lead) {

@@ -17,6 +17,8 @@ import { SupabaseBusinessServiceRepository } from "../../businesses/infrastructu
 import { SupabaseBusinessHoursRepository } from "../../businesses/infrastructure/SupabaseBusinessHoursRepository.js";
 import { SupabaseBusinessAgentConfigRepository } from "../../businesses/infrastructure/SupabaseBusinessAgentConfigRepository.js";
 
+import { SupabaseBookingRepository } from "../../bookings/infrastructure/SupabaseBookingRepository.js";
+
 import { SupabaseAgentActionExecutor } from "../../conversations/application/SupabaseAgentActionExecutor.js";
 import { SupabaseLeadRepository } from "../../leads/infrastructure/SupabaseLeadRepository.js";
 
@@ -45,9 +47,16 @@ function createController() {
 
   const leadRepository = new SupabaseLeadRepository(supabase);
 
+  const bookingRepository = new SupabaseBookingRepository(supabase);
+
   const agentActionExecutor = new SupabaseAgentActionExecutor({
     leadRepository,
     conversationRepository,
+
+    bookingRepository,
+    businessRepository,
+    businessServiceRepository,
+    businessHoursRepository,
   });
 
   const aiService = new GroqLLMService();
@@ -57,12 +66,16 @@ function createController() {
 
     getPublicConversation: new GetPublicConversation(conversationRepository),
 
-    createPublicMessage: new CreatePublicMessage(messageRepository),
+    createPublicMessage: new CreatePublicMessage({
+      messageRepository,
+      conversationRepository,
+    }),
 
     getPublicMessages: new GetPublicMessages(messageRepository),
 
     generatePublicAIResponse: new GeneratePublicAIResponse({
       messageRepository,
+      conversationRepository,
       aiService,
       agentActionExecutor,
     }),
@@ -83,7 +96,7 @@ function createController() {
   };
 }
 
-/*
+/**
  * =========================
  * CONFIGURACIÓN PÚBLICA
  * =========================
@@ -108,9 +121,9 @@ router.get("/businesses/:businessId/config", async (req, res, next) => {
   }
 });
 
-/*
+/**
  * =========================
- * CREAR CONVERSACIÓN
+ * CREAR / RECUPERAR CONVERSACIÓN
  * =========================
  *
  * POST /public/businesses/:businessId/conversations
@@ -150,6 +163,13 @@ router.post("/businesses/:businessId/conversations", async (req, res, next) => {
   }
 });
 
+/**
+ * =========================
+ * OBTENER MENSAJES
+ * =========================
+ *
+ * GET /public/conversations/:conversationId/messages
+ */
 router.get("/conversations/:conversationId/messages", async (req, res, next) => {
   try {
     const publicToken = z.string().uuid().parse(req.query.publicToken);
@@ -173,14 +193,13 @@ router.get("/conversations/:conversationId/messages", async (req, res, next) => 
   }
 });
 
-/*
+/**
  * =========================
  * ENVIAR MENSAJE
  * =========================
  *
  * POST /public/conversations/:conversationId/messages
  */
-
 router.post("/conversations/:conversationId/messages", async (req, res, next) => {
   try {
     const data = createPublicMessageSchema.parse(req.body);
@@ -193,44 +212,95 @@ router.post("/conversations/:conversationId/messages", async (req, res, next) =>
       getPublicBusinessContext,
     } = createController();
 
+    /*
+     * Primero validamos que la conversación exista
+     * y que el publicToken pertenezca a ella.
+     */
     const conversation = await getPublicConversation.execute(req.params.conversationId, data.publicToken);
 
-    await createPublicMessage.execute({
+    /*
+     * Una conversación cerrada es inmutable
+     * desde el chat público.
+     *
+     * El caso de uso CreatePublicMessage también
+     * realiza esta comprobación como segunda
+     * capa de protección.
+     */
+    if (conversation.status === "closed") {
+      return res.status(409).json({
+        error: "This conversation is closed",
+      });
+    }
+
+    /*
+     * Guardamos siempre el mensaje del cliente
+     * mientras la conversación esté active o human.
+     */
+    const userMessage = await createPublicMessage.execute({
       conversationId: req.params.conversationId,
+
       content: data.content,
     });
 
     /*
-     * Si la conversación está en manos de una persona,
-     * guardamos el mensaje pero no llamamos a la IA.
+     * Si un humano controla la conversación,
+     * el mensaje se guarda pero la IA NO responde.
      */
     if (conversation.status === "human") {
       return res.status(201).json({
         user_message: {
-          content: data.content,
+          id: userMessage.id,
+          content: userMessage.content,
+          created_at: userMessage.created_at,
         },
 
-        assistant_message: {
-          id: null,
-          content: "Tu mensaje ha sido recibido. Una persona del negocio se pondrá en contacto contigo.",
-          created_at: new Date().toISOString(),
-        },
+        assistant_message: null,
+
+        handled_by: "human",
       });
     }
 
+    /*
+     * Si sigue activa, cargamos únicamente
+     * el contexto real del negocio.
+     */
     const businessContext = await getPublicBusinessContext.execute(conversation.business_id);
 
+    if (!businessContext) {
+      return res.status(404).json({
+        error: "Business not found",
+      });
+    }
+
+    /*
+     * Recuperamos el historial después de guardar
+     * el mensaje actual para que la IA también
+     * pueda verlo.
+     */
     const messages = await getPublicMessages.execute(req.params.conversationId);
 
+    /*
+     * Generamos respuesta IA.
+     *
+     * GeneratePublicAIResponse se encarga de:
+     *
+     * 1. comprobar de nuevo el estado
+     * 2. llamar a Groq
+     * 3. guardar la respuesta
+     * 4. ejecutar acciones del agente
+     */
     const assistantMessage = await generatePublicAIResponse.execute({
       conversationId: req.params.conversationId,
+
       messages,
       businessContext,
     });
 
     return res.status(201).json({
       user_message: {
-        content: data.content,
+        id: userMessage.id,
+        content: userMessage.content,
+        created_at: userMessage.created_at,
       },
 
       assistant_message: {
@@ -238,6 +308,8 @@ router.post("/conversations/:conversationId/messages", async (req, res, next) =>
         content: assistantMessage.content,
         created_at: assistantMessage.created_at,
       },
+
+      handled_by: "ai",
     });
   } catch (error) {
     next(error);

@@ -1,4 +1,4 @@
-import { Lead } from "../domain/Lead.js";
+import { Lead, LEAD_STATUSES } from "../domain/Lead.js";
 
 export class CreateLead {
   constructor(leadRepository) {
@@ -20,7 +20,7 @@ export class CreateLead {
       phone,
       email,
       notes,
-      status: "new",
+      status: LEAD_STATUSES.NEW,
     });
 
     return this.leadRepository.create(lead);

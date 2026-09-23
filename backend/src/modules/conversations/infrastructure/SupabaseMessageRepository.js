@@ -4,6 +4,7 @@ import { AppError } from "../../../shared/errors/AppError.js";
 export class SupabaseMessageRepository extends MessageRepository {
   constructor(supabase) {
     super();
+
     this.supabase = supabase;
   }
 
@@ -30,12 +31,14 @@ export class SupabaseMessageRepository extends MessageRepository {
       .from("messages")
       .select("*")
       .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true });
+      .order("created_at", {
+        ascending: true,
+      });
 
     if (error) {
       throw new AppError(`Failed to find messages: ${error.message}`, 500);
     }
 
-    return data;
+    return data || [];
   }
 }

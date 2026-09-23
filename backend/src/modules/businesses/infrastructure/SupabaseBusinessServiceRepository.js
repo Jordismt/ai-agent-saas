@@ -80,4 +80,19 @@ export class SupabaseBusinessServiceRepository extends BusinessServiceRepository
 
     return data;
   }
+
+  async findById(businessId, serviceId) {
+    const { data, error } = await this.supabase
+      .from("business_services")
+      .select("*")
+      .eq("id", serviceId)
+      .eq("business_id", businessId)
+      .maybeSingle();
+
+    if (error) {
+      throw new AppError(`Failed to find business service: ${error.message}`, 500);
+    }
+
+    return data;
+  }
 }
