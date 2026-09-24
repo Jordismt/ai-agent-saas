@@ -1,32 +1,34 @@
 import express from "express";
 
-import { supabase } from "../../../infrastructure/database/supabase.js";
+import { createSupabaseServerClient } from "../../../infrastructure/database/supabase.js";
 
 import { SupabaseBookingRepository } from "../infrastructure/SupabaseBookingRepository.js";
-
 import { SupabaseBusinessRepository } from "../../businesses/infrastructure/SupabaseBusinessRepository.js";
 
 import { ResendEmailService } from "../../notifications/infrastructure/ResendEmailService.js";
-
 import { SendBookingReminder } from "../../notifications/application/SendBookingReminder.js";
 
 import { SendUpcomingBookingReminders } from "../application/SendUpcomingBookingReminders.js";
 
 const router = express.Router();
 
-const bookingRepository = new SupabaseBookingRepository(supabase);
+function createReminderService() {
+  // El cron necesita consultar reservas de todos los negocios,
+  // por lo que utilizamos el cliente server-side para evitar RLS.
+  const supabase = createSupabaseServerClient();
 
-const businessRepository = new SupabaseBusinessRepository(supabase);
+  const bookingRepository = new SupabaseBookingRepository(supabase);
+  const businessRepository = new SupabaseBusinessRepository(supabase);
 
-const emailService = new ResendEmailService();
+  const emailService = new ResendEmailService();
+  const sendBookingReminder = new SendBookingReminder(emailService);
 
-const sendBookingReminder = new SendBookingReminder(emailService);
-
-const sendUpcomingBookingReminders = new SendUpcomingBookingReminders({
-  bookingRepository,
-  businessRepository,
-  sendBookingReminder,
-});
+  return new SendUpcomingBookingReminders({
+    bookingRepository,
+    businessRepository,
+    sendBookingReminder,
+  });
+}
 
 router.post("/internal/booking-reminders", async (req, res, next) => {
   try {
@@ -47,6 +49,8 @@ router.post("/internal/booking-reminders", async (req, res, next) => {
         error: "Unauthorized",
       });
     }
+
+    const sendUpcomingBookingReminders = createReminderService();
 
     const result = await sendUpcomingBookingReminders.execute();
 

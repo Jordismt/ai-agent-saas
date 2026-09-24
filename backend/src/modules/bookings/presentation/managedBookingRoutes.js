@@ -3,72 +3,90 @@ import express from "express";
 import { createSupabaseServerClient } from "../../../infrastructure/database/supabase.js";
 
 import { SupabaseBookingRepository } from "../infrastructure/SupabaseBookingRepository.js";
-
 import { SupabaseBusinessRepository } from "../../businesses/infrastructure/SupabaseBusinessRepository.js";
+import { SupabaseBusinessServiceRepository } from "../../businesses/infrastructure/SupabaseBusinessServiceRepository.js";
+import { SupabaseBusinessHoursRepository } from "../../businesses/infrastructure/SupabaseBusinessHoursRepository.js";
+import { SupabaseEmployeeRepository } from "../../employees/infrastructure/SupabaseEmployeeRepository.js";
 
 import { ResendEmailService } from "../../notifications/infrastructure/ResendEmailService.js";
+import { SendBookingRescheduled } from "../../notifications/application/SendBookingRescheduled.js";
+import { SendBookingCancellation } from "../../notifications/application/SendBookingCancellation.js";
 
-import { SendBookingReminder } from "../../notifications/application/SendBookingReminder.js";
+import { GetAvailableSlots } from "../application/GetAvailableSlots.js";
+import { GetManagedBooking } from "../application/GetManagedBooking.js";
+import { GetManagedBookingAvailability } from "../application/GetManagedBookingAvailability.js";
+import { CancelManagedBooking } from "../application/CancelManagedBooking.js";
+import { RescheduleManagedBooking } from "../application/RescheduleManagedBooking.js";
 
-import { SendUpcomingBookingReminders } from "../application/SendUpcomingBookingReminders.js";
+import { ManagedBookingController } from "./ManagedBookingController.js";
 
 const router = express.Router();
 
-function createReminderService() {
-  /*
-   * IMPORTANTE:
-   * Este proceso necesita consultar reservas de todos los negocios.
-   * Por eso utilizamos el cliente server-side y no el cliente
-   * normal sujeto a las políticas RLS del usuario.
-   */
+function createController() {
   const supabase = createSupabaseServerClient();
 
   const bookingRepository = new SupabaseBookingRepository(supabase);
-
   const businessRepository = new SupabaseBusinessRepository(supabase);
+  const businessServiceRepository = new SupabaseBusinessServiceRepository(supabase);
+  const businessHoursRepository = new SupabaseBusinessHoursRepository(supabase);
+  const employeeRepository = new SupabaseEmployeeRepository(supabase);
 
   const emailService = new ResendEmailService();
 
-  const sendBookingReminder = new SendBookingReminder(emailService);
+  const sendBookingRescheduled = new SendBookingRescheduled(emailService);
+  const sendBookingCancellation = new SendBookingCancellation(emailService);
 
-  return new SendUpcomingBookingReminders({
+  const getAvailableSlots = new GetAvailableSlots({
+    businessRepository,
+    businessServiceRepository,
+    businessHoursRepository,
+    bookingRepository,
+    employeeRepository,
+  });
+
+  // GetManagedBooking recibe directamente el repository.
+  const getManagedBooking = new GetManagedBooking(bookingRepository);
+
+  const getManagedBookingAvailability = new GetManagedBookingAvailability({
+    getManagedBooking,
+    getAvailableSlots,
+  });
+
+  const cancelManagedBooking = new CancelManagedBooking({
+    getManagedBooking,
     bookingRepository,
     businessRepository,
-    sendBookingReminder,
+    sendBookingCancellation,
+  });
+
+  const rescheduleManagedBooking = new RescheduleManagedBooking({
+    getManagedBooking,
+    getAvailableSlots,
+    bookingRepository,
+    businessRepository,
+    sendBookingRescheduled,
+  });
+
+  return new ManagedBookingController({
+    getManagedBooking,
+    getManagedBookingAvailability,
+    cancelManagedBooking,
+    rescheduleManagedBooking,
   });
 }
 
-router.post("/internal/booking-reminders", async (req, res, next) => {
-  try {
-    const cronSecret = process.env.CRON_SECRET;
+router.get("/public/bookings/manage/:token", (req, res, next) => createController().get(req, res, next));
 
-    if (!cronSecret) {
-      console.error("[BookingReminder] CRON_SECRET is not configured");
+router.get("/public/bookings/manage/:token/availability", (req, res, next) =>
+  createController().getAvailability(req, res, next),
+);
 
-      return res.status(500).json({
-        error: "Booking reminder service is not configured",
-      });
-    }
+router.patch("/public/bookings/manage/:token/cancel", (req, res, next) =>
+  createController().cancel(req, res, next),
+);
 
-    const authorization = req.headers.authorization;
-
-    if (authorization !== `Bearer ${cronSecret}`) {
-      return res.status(401).json({
-        error: "Unauthorized",
-      });
-    }
-
-    const sendUpcomingBookingReminders = createReminderService();
-
-    const result = await sendUpcomingBookingReminders.execute();
-
-    return res.json({
-      success: true,
-      ...result,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+router.patch("/public/bookings/manage/:token/reschedule", (req, res, next) =>
+  createController().reschedule(req, res, next),
+);
 
 export default router;
