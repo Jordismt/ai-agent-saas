@@ -22,10 +22,6 @@ export class GeneratePublicAIResponse {
       throw new AppError("This conversation is closed", 409);
     }
 
-    /*
-     * Mientras la conversación esté en modo humano,
-     * la IA NO puede generar ninguna respuesta.
-     */
     if (conversation.status === "human") {
       throw new AppError("AI cannot respond while the conversation is handled by a human", 409);
     }
@@ -35,35 +31,18 @@ export class GeneratePublicAIResponse {
     }
 
     /*
-     * Primera llamada a la IA.
-     *
-     * Su trabajo aquí es interpretar el mensaje
-     * y decidir si hace falta ejecutar una acción.
-     *
-     * Todavía NO guardamos ninguna respuesta.
+     * ÚNICA llamada normal al LLM:
+     * interpretar lenguaje + producir action/data.
      */
     const response = await this.aiService.generateResponse({
       businessContext,
       messages,
     });
-    console.log("\n========== PARSED AI RESPONSE ==========");
 
-    console.dir(response, {
-      depth: null,
-    });
-
-    console.log("========================================\n");
+    console.log("[AI decision]", JSON.stringify(response, null, 2));
 
     const action = response.action?.type || AGENT_ACTIONS.NONE;
 
-    /*
-     * Una respuesta sin acción puede guardarse
-     * directamente.
-     *
-     * IMPORTANTE:
-     * el prompt debe impedir que "none" se utilice
-     * para inventar disponibilidad o confirmar reservas.
-     */
     if (action === AGENT_ACTIONS.NONE) {
       return this.createAssistantMessage({
         conversationId,
@@ -71,67 +50,34 @@ export class GeneratePublicAIResponse {
       });
     }
 
-    /*
-     * Primero ejecutamos la acción REAL.
-     *
-     * La IA nunca puede confirmar una acción
-     * antes de que este paso haya terminado.
-     */
+    const actionData = response.action?.data || {};
+
     const actionResult = await this.executeAgentAction({
       action,
       businessId: businessContext.id,
       conversationId,
-      data: response.action?.data || {},
+      data: actionData,
     });
-
-    /*
-     * Nunca enviamos directamente a la segunda
-     * llamada de IA objetos internos completos.
-     *
-     * Esto evita:
-     *
-     * - exponer IDs internos
-     * - exponer timestamps UTC
-     * - confundir UTC con hora local
-     * - enviar datos innecesarios
-     * - aumentar tokens innecesariamente
-     */
+    console.log("[ACTION result]", JSON.stringify(actionResult, null, 2));
     const safeActionResult = this.buildSafeActionResult({
       action,
       actionResult,
       businessContext,
-      actionData: response.action?.data || {},
-    });
-    console.log("\n========== ACTION RESULT REAL ==========");
-
-    console.dir(actionResult, {
-      depth: null,
+      actionData,
     });
 
-    console.log("\n========== SAFE ACTION RESULT ==========");
-
-    console.dir(safeActionResult, {
-      depth: null,
-    });
-
-    console.log("========================================\n");
     /*
-     * Segunda llamada.
-     *
-     * Groq redacta una respuesta natural utilizando
-     * únicamente el resultado seguro y REAL de la acción.
+     * OPTIMIZACIÓN:
+     * no hacemos una segunda llamada a Groq.
+     * El backend ya conoce el resultado real y puede redactar
+     * de forma determinista las acciones soportadas.
      */
-    const finalContent = await this.aiService.generateFinalResponse({
-      businessContext,
-      messages,
+    const finalContent = this.buildDeterministicFinalResponse({
       action,
       actionResult: safeActionResult,
+      actionData,
     });
 
-    /*
-     * Solo después de ejecutar la acción y generar
-     * la respuesta final guardamos el mensaje.
-     */
     return this.createAssistantMessage({
       conversationId,
       content: finalContent,
@@ -152,23 +98,9 @@ export class GeneratePublicAIResponse {
         result: execution?.result ?? null,
       };
     } catch (error) {
-      /*
-       * Solo convertimos errores CONTROLADOS
-       * del cliente/dominio (4xx).
-       *
-       * Ejemplos:
-       *
-       * - slot no disponible
-       * - servicio inexistente
-       * - datos incompletos
-       * - fecha inválida
-       *
-       * La IA puede explicarlos al cliente.
-       */
       if (error instanceof AppError && error.statusCode >= 400 && error.statusCode < 500) {
         return {
           success: false,
-
           error: {
             message: error.message,
             statusCode: error.statusCode,
@@ -176,75 +108,41 @@ export class GeneratePublicAIResponse {
         };
       }
 
-      /*
-       * Los errores 5xx o inesperados NO deben
-       * convertirse en información para Groq.
-       *
-       * Son errores internos y deben propagarse
-       * hasta nuestro errorHandler/logging.
-       */
       throw error;
     }
   }
 
   buildSafeActionResult({ action, actionResult, businessContext, actionData = {} }) {
-    /*
-     * Si la acción no se pudo ejecutar,
-     * conservamos únicamente la información
-     * controlada del error.
-     */
     if (!actionResult?.success) {
       return {
         success: false,
-
         error: {
           message: actionResult?.error?.message || "The action could not be completed",
-
           statusCode: actionResult?.error?.statusCode || 400,
         },
       };
     }
 
-    /*
-     * DISPONIBILIDAD
-     */
     if (action === AGENT_ACTIONS.CHECK_AVAILABILITY) {
       return this.buildSafeAvailabilityResult(actionResult, actionData);
     }
 
-    /*
-     * RESERVA
-     */
     if (action === AGENT_ACTIONS.CREATE_BOOKING) {
       return this.buildSafeBookingResult(actionResult, businessContext);
     }
 
-    /*
-     * HUMAN HANDOFF
-     *
-     * No necesitamos enviar la conversación
-     * completa a Groq.
-     */
     if (action === AGENT_ACTIONS.HUMAN_HANDOFF) {
       return {
         success: true,
-
         result: {
           transferred: true,
         },
       };
     }
 
-    /*
-     * LEAD
-     *
-     * Tampoco necesitamos enviar datos internos
-     * del lead a la segunda llamada.
-     */
     if (action === AGENT_ACTIONS.CREATE_LEAD) {
       return {
         success: true,
-
         result: {
           saved: true,
         },
@@ -259,70 +157,38 @@ export class GeneratePublicAIResponse {
 
   buildSafeAvailabilityResult(actionResult, actionData = {}) {
     const result = actionResult.result || {};
-
     const slots = Array.isArray(result.slots) ? result.slots : [];
 
     const requestedTime = typeof actionData.time === "string" ? actionData.time.trim() : null;
 
-    /*
-     * Si la IA ha interpretado que el usuario pregunta
-     * por una hora concreta, NO podemos perder esa hora
-     * al crear la selección representativa.
-     *
-     * El backend sigue siendo la fuente de verdad.
-     */
     if (requestedTime) {
       const exactSlot = slots.find((slot) => slot.localTime === requestedTime);
 
       return {
         success: true,
-
         result: {
-          date: result.date || null,
-
+          date: result.date || actionData.date || null,
           requestedTime,
-
           requestedTimeAvailable: Boolean(exactSlot),
-
           totalAvailableSlots: slots.length,
-
-          /*
-           * Damos también algunas alternativas por si
-           * la hora solicitada no está disponible.
-           */
-          slots: this.selectRepresentativeSlots(slots, 8)
-            .map((slot) => ({
-              time: typeof slot.localTime === "string" ? slot.localTime : null,
-            }))
-            .filter((slot) => slot.time),
+          requestedEmployeeId: actionData.employeeId || null,
+          availableEmployees: exactSlot ? this.sanitizeEmployees(exactSlot.employees) : [],
+          slots: this.selectRepresentativeSlots(slots, 6)
+            .map((slot) => this.sanitizeSlot(slot))
+            .filter(Boolean),
         },
       };
     }
 
-    /*
-     * Consulta general:
-     *
-     * "¿Qué huecos tenéis mañana?"
-     *
-     * Aquí sí tiene sentido mandar únicamente una
-     * selección representativa para no llenar el
-     * contexto con decenas de slots.
-     */
-    const visibleSlots = this.selectRepresentativeSlots(slots, 8);
-
     return {
       success: true,
-
       result: {
-        date: result.date || null,
-
+        date: result.date || actionData.date || null,
         totalAvailableSlots: slots.length,
-
-        slots: visibleSlots
-          .map((slot) => ({
-            time: typeof slot.localTime === "string" ? slot.localTime : null,
-          }))
-          .filter((slot) => slot.time),
+        requestedEmployeeId: actionData.employeeId || null,
+        slots: this.selectRepresentativeSlots(slots, 6)
+          .map((slot) => this.sanitizeSlot(slot))
+          .filter(Boolean),
       },
     };
   }
@@ -338,58 +204,50 @@ export class GeneratePublicAIResponse {
     }
 
     const timezone = businessContext.timezone || "Europe/Madrid";
-
-    /*
-     * Booking puede ser una entidad de dominio
-     * camelCase o un registro procedente de BD
-     * snake_case.
-     *
-     * Soportamos ambos formatos.
-     */
     const rawStartsAt = booking.startsAt ?? booking.starts_at ?? null;
-
     const rawEndsAt = booking.endsAt ?? booking.ends_at ?? null;
 
     const startsAt = this.parseDateTimeInBusinessTimezone(rawStartsAt, timezone);
-
     const endsAt = this.parseDateTimeInBusinessTimezone(rawEndsAt, timezone);
 
-    /*
-     * IMPORTANTE:
-     *
-     * A Groq NO le enviamos los timestamps UTC.
-     *
-     * Solo recibe la representación local que
-     * puede mostrar directamente al cliente.
-     *
-     * Ejemplo:
-     *
-     * BD:
-     * 2026-09-24T15:00:00Z
-     *
-     * Europe/Madrid:
-     * 17:00
-     */
     return {
       success: true,
-
       result: {
         serviceName: booking.serviceName ?? booking.service_name ?? null,
-
+        employeeName: booking.employeeName ?? booking.employee_name ?? booking.employee?.name ?? null,
         date: startsAt?.toISODate() ?? null,
-
         startTime: startsAt?.toFormat("HH:mm") ?? null,
-
         endTime: endsAt?.toFormat("HH:mm") ?? null,
-
         price: booking.price ?? null,
-
         status: booking.status ?? null,
       },
     };
   }
 
-  selectRepresentativeSlots(slots, limit = 8) {
+  sanitizeSlot(slot) {
+    if (!slot || typeof slot.localTime !== "string") {
+      return null;
+    }
+
+    return {
+      time: slot.localTime,
+      employees: this.sanitizeEmployees(slot.employees),
+    };
+  }
+
+  sanitizeEmployees(employees) {
+    if (!Array.isArray(employees)) {
+      return [];
+    }
+
+    return employees
+      .filter((employee) => employee && employee.name)
+      .map((employee) => ({
+        name: employee.name,
+      }));
+  }
+
+  selectRepresentativeSlots(slots, limit = 6) {
     if (!Array.isArray(slots)) {
       return [];
     }
@@ -402,39 +260,159 @@ export class GeneratePublicAIResponse {
       return [slots[0]];
     }
 
-    /*
-     * Distribuimos las opciones a lo largo
-     * de todo el día.
-     *
-     * Así evitamos devolver únicamente las
-     * primeras horas de la mañana.
-     *
-     * Ejemplo:
-     *
-     * 09:00
-     * 10:00
-     * 11:00
-     * ...
-     * 17:00
-     */
     const selected = [];
-
     const step = (slots.length - 1) / (limit - 1);
 
     for (let index = 0; index < limit; index += 1) {
       const slotIndex = Math.round(index * step);
-
       const slot = slots[slotIndex];
 
-      /*
-       * Evitamos duplicados por redondeo.
-       */
       if (slot && !selected.includes(slot)) {
         selected.push(slot);
       }
     }
 
     return selected;
+  }
+
+  buildDeterministicFinalResponse({ action, actionResult }) {
+    if (!actionResult?.success) {
+      return this.buildControlledErrorResponse(action, actionResult?.error);
+    }
+
+    if (action === AGENT_ACTIONS.CHECK_AVAILABILITY) {
+      return this.buildAvailabilityResponse(actionResult.result);
+    }
+
+    if (action === AGENT_ACTIONS.CREATE_BOOKING) {
+      return this.buildBookingResponse(actionResult.result);
+    }
+
+    if (action === AGENT_ACTIONS.HUMAN_HANDOFF) {
+      return "Te paso con una persona del equipo para que pueda ayudarte.";
+    }
+
+    if (action === AGENT_ACTIONS.CREATE_LEAD) {
+      return "Perfecto, he guardado tus datos. ¿En qué más puedo ayudarte?";
+    }
+
+    return "De acuerdo.";
+  }
+
+  buildAvailabilityResponse(result = {}) {
+    if (result.requestedTime) {
+      if (result.requestedTimeAvailable) {
+        const employeeText = this.formatEmployeeNames(result.availableEmployees);
+
+        return employeeText
+          ? `Sí, las ${result.requestedTime} están disponibles con ${employeeText}.`
+          : `Sí, las ${result.requestedTime} están disponibles.`;
+      }
+
+      const alternatives = (result.slots || [])
+        .map((slot) => slot.time)
+        .filter(Boolean)
+        .slice(0, 4);
+
+      if (alternatives.length) {
+        return `Las ${result.requestedTime} no están disponibles. Como alternativa, hay hueco a las ${this.joinNatural(alternatives)}.`;
+      }
+
+      return `Las ${result.requestedTime} no están disponibles y no quedan otros huecos para esa fecha.`;
+    }
+
+    const slots = Array.isArray(result.slots) ? result.slots : [];
+
+    if (!slots.length) {
+      return "No hay disponibilidad para esa fecha.";
+    }
+
+    const descriptions = slots.map((slot) => {
+      const employeeText = this.formatEmployeeNames(slot.employees);
+
+      return employeeText ? `${slot.time} (${employeeText})` : slot.time;
+    });
+
+    return `Hay disponibilidad a las ${this.joinNatural(descriptions)}.`;
+  }
+
+  buildBookingResponse(result = {}) {
+    if (!result) {
+      return "La reserva se ha realizado correctamente.";
+    }
+
+    const parts = [];
+
+    if (result.serviceName) {
+      parts.push(`para ${result.serviceName}`);
+    }
+
+    if (result.date && result.startTime) {
+      parts.push(`el ${result.date} a las ${result.startTime}`);
+    } else if (result.startTime) {
+      parts.push(`a las ${result.startTime}`);
+    }
+
+    if (result.employeeName) {
+      parts.push(`con ${result.employeeName}`);
+    }
+
+    const detail = parts.length ? ` ${parts.join(" ")}` : "";
+
+    return `Perfecto, tu reserva${detail} está confirmada.`;
+  }
+
+  buildControlledErrorResponse(action, error = {}) {
+    const message = String(error.message || "").toLowerCase();
+
+    if (action === AGENT_ACTIONS.CREATE_BOOKING) {
+      if (
+        message.includes("available") ||
+        message.includes("availability") ||
+        message.includes("conflict") ||
+        message.includes("slot")
+      ) {
+        return "Ese horario ya no está disponible. Podemos probar con otra hora.";
+      }
+
+      if (message.includes("employee")) {
+        return "No se ha podido hacer la reserva con ese empleado. Podemos elegir otro profesional u horario.";
+      }
+
+      return "No he podido completar la reserva con esos datos. Podemos revisar el horario e intentarlo de nuevo.";
+    }
+
+    if (action === AGENT_ACTIONS.CHECK_AVAILABILITY) {
+      return "No he podido consultar esa disponibilidad. Revisa el servicio, el empleado o la fecha e inténtalo de nuevo.";
+    }
+
+    if (action === AGENT_ACTIONS.HUMAN_HANDOFF) {
+      return "No he podido transferir la conversación en este momento.";
+    }
+
+    return "No he podido completar esa acción en este momento.";
+  }
+
+  formatEmployeeNames(employees) {
+    const names = (employees || []).map((employee) => employee?.name).filter(Boolean);
+
+    return this.joinNatural(names);
+  }
+
+  joinNatural(values) {
+    if (!values.length) {
+      return "";
+    }
+
+    if (values.length === 1) {
+      return values[0];
+    }
+
+    if (values.length === 2) {
+      return `${values[0]} y ${values[1]}`;
+    }
+
+    return `${values.slice(0, -1).join(", ")} y ${values.at(-1)}`;
   }
 
   parseDateTimeInBusinessTimezone(value, timezone) {
@@ -446,11 +424,7 @@ export class GeneratePublicAIResponse {
       setZone: true,
     }).setZone(timezone);
 
-    if (!dateTime.isValid) {
-      return null;
-    }
-
-    return dateTime;
+    return dateTime.isValid ? dateTime : null;
   }
 
   async createAssistantMessage({ conversationId, content }) {

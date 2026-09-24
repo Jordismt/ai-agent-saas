@@ -54,10 +54,10 @@ const closeMobileMenu = () => {
       <div class="sidebar-top">
         <div class="sidebar-mobile-header">
           <RouterLink to="/dashboard" class="brand" @click="closeMobileMenu">
-            <div class="brand-mark">AI</div>
+            <div class="brand-mark">R</div>
 
             <div class="brand-text">
-              <strong>AgentFlow</strong>
+              <strong>Resbix</strong>
               <span>Business AI</span>
             </div>
           </RouterLink>
@@ -156,6 +156,67 @@ const closeMobileMenu = () => {
           <div v-else class="nav-item nav-item-disabled" title="Selecciona un negocio para ver sus reservas">
             <span class="nav-icon">◷</span>
             <span>Reservas</span>
+            <small>Selecciona negocio</small>
+          </div>
+
+          <RouterLink
+            v-if="hasActiveBusiness"
+            :to="businessRoute('employees')"
+            class="nav-item"
+            active-class="nav-item-active"
+            @click="closeMobileMenu">
+            <span class="nav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8" />
+                <path
+                  d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </span>
+            <span>Equipo</span>
+          </RouterLink>
+
+          <div v-else class="nav-item nav-item-disabled" title="Selecciona un negocio para ver su equipo">
+            <span class="nav-icon">♙</span>
+            <span>Equipo</span>
+            <small>Selecciona negocio</small>
+          </div>
+          <RouterLink
+            v-if="hasActiveBusiness"
+            :to="businessRoute('public-page')"
+            class="nav-item"
+            active-class="nav-item-active"
+            @click="closeMobileMenu">
+            <span class="nav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" />
+
+                <path
+                  d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round" />
+              </svg>
+            </span>
+
+            <span>Web pública</span>
+          </RouterLink>
+
+          <div
+            v-else
+            class="nav-item nav-item-disabled"
+            title="Selecciona un negocio para configurar su web pública">
+            <span class="nav-icon">◎</span>
+            <span>Web pública</span>
             <small>Selecciona negocio</small>
           </div>
         </nav>

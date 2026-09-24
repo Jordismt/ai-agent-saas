@@ -10,6 +10,9 @@ import { createBookingSchema } from "../application/createBookingSchema.js";
 import { getAvailableSlotsSchema } from "../application/getAvailableSlotsSchema.js";
 import { updateBookingStatusSchema } from "../application/updateBookingStatusSchema.js";
 
+import { ResendEmailService } from "../../notifications/infrastructure/ResendEmailService.js";
+import { SendBookingConfirmation } from "../../notifications/application/SendBookingConfirmation.js";
+
 import { AppError } from "../../../shared/errors/AppError.js";
 
 export class BookingController {
@@ -20,8 +23,12 @@ export class BookingController {
     businessHoursRepository,
     conversationRepository,
     leadRepository,
+    employeeRepository,
   }) {
     this.bookingRepository = bookingRepository;
+    const emailService = new ResendEmailService();
+
+    const sendBookingConfirmation = new SendBookingConfirmation(emailService);
 
     const getOwnedBusiness = new GetOwnedBusiness(businessRepository);
 
@@ -32,6 +39,7 @@ export class BookingController {
       businessServiceRepository,
       businessHoursRepository,
       businessRepository,
+      employeeRepository,
     });
 
     this.createBooking = new CreateBooking({
@@ -40,7 +48,9 @@ export class BookingController {
       businessServiceRepository,
       conversationRepository,
       leadRepository,
+      employeeRepository,
       getAvailableSlots: this.getAvailableSlots,
+      sendBookingConfirmation,
     });
 
     this.getBusinessBookings = new GetBusinessBookings(bookingRepository);
@@ -85,6 +95,7 @@ export class BookingController {
         businessId: req.params.businessId,
         serviceId: req.query.serviceId,
         date: req.query.date,
+        employeeId: req.query.employeeId || undefined,
       });
 
       const slots = await this.getAvailableSlots.execute(data);

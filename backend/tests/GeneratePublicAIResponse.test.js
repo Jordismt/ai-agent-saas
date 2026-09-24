@@ -9,6 +9,7 @@ describe("GeneratePublicAIResponse", () => {
     name: "Peluquería Test",
     timezone: "Europe/Madrid",
     services: [],
+    employees: [],
     opening_hours: [],
     agent_config: {},
   };
@@ -35,8 +36,6 @@ describe("GeneratePublicAIResponse", () => {
       },
     },
 
-    finalResponse = "Respuesta final",
-
     actionExecution = {
       action: "none",
       result: null,
@@ -46,10 +45,16 @@ describe("GeneratePublicAIResponse", () => {
       findById: vi.fn().mockResolvedValue(conversation),
     };
 
+    /*
+     * generateFinalResponse se mantiene mockeado
+     * deliberadamente.
+     *
+     * La arquitectura optimizada NO debe utilizarlo
+     * después de ejecutar una acción.
+     */
     const aiService = {
       generateResponse: vi.fn().mockResolvedValue(aiResponse),
-
-      generateFinalResponse: vi.fn().mockResolvedValue(finalResponse),
+      generateFinalResponse: vi.fn(),
     };
 
     const messageRepository = {
@@ -96,11 +101,13 @@ describe("GeneratePublicAIResponse", () => {
     });
 
     /*
-     * NONE no necesita ejecutar ninguna
-     * acción ni una segunda llamada a Groq.
+     * NONE no ejecuta ninguna acción.
      */
     expect(agentActionExecutor.execute).not.toHaveBeenCalled();
 
+    /*
+     * Tampoco existe segunda llamada a Groq.
+     */
     expect(aiService.generateFinalResponse).not.toHaveBeenCalled();
 
     expect(messageRepository.create).toHaveBeenCalledOnce();
@@ -114,7 +121,7 @@ describe("GeneratePublicAIResponse", () => {
     expect(result.content).toBe("¡Hola! ¿En qué puedo ayudarte?");
   });
 
-  it("should execute create_lead before generating and saving the final response", async () => {
+  it("should execute create_lead and save a deterministic response without a second AI call", async () => {
     const lead = {
       id: "lead-123",
       business_id: "business-123",
@@ -130,7 +137,9 @@ describe("GeneratePublicAIResponse", () => {
       aiResponse: {
         /*
          * Este contenido es provisional.
-         * NO debe guardarse.
+         *
+         * No debe guardarse porque todavía no
+         * sabemos si create_lead ha funcionado.
          */
         content: "Perfecto, he guardado tus datos.",
 
@@ -150,8 +159,6 @@ describe("GeneratePublicAIResponse", () => {
         action: "create_lead",
         result: lead,
       },
-
-      finalResponse: "Perfecto, Jordi. ¿En qué más puedo ayudarte?",
     });
 
     await useCase.execute({
@@ -174,33 +181,24 @@ describe("GeneratePublicAIResponse", () => {
     });
 
     /*
-     * La segunda llamada NO recibe el lead
-     * completo ni IDs/datos internos.
+     * OPTIMIZACIÓN:
+     *
+     * Después de guardar el lead NO hacemos
+     * otra llamada a Groq.
      */
-    expect(aiService.generateFinalResponse).toHaveBeenCalledWith({
-      businessContext,
-      messages,
-      action: "create_lead",
+    expect(aiService.generateFinalResponse).not.toHaveBeenCalled();
 
-      actionResult: {
-        success: true,
-
-        result: {
-          saved: true,
-        },
-      },
-    });
+    expect(messageRepository.create).toHaveBeenCalledTimes(1);
 
     expect(messageRepository.create).toHaveBeenCalledWith({
       conversationId: "conversation-123",
       role: "assistant",
-
-      content: "Perfecto, Jordi. ¿En qué más puedo ayudarte?",
+      content: "Perfecto, he guardado tus datos. ¿En qué más puedo ayudarte?",
     });
 
     /*
-     * La respuesta provisional de la
-     * primera llamada NO se guarda.
+     * La respuesta provisional del LLM
+     * nunca se guarda.
      */
     expect(messageRepository.create).not.toHaveBeenCalledWith(
       expect.objectContaining({
@@ -209,12 +207,7 @@ describe("GeneratePublicAIResponse", () => {
     );
   });
 
-  it("should execute human_handoff before saving the final response", async () => {
-    const transferredConversation = {
-      id: "conversation-123",
-      status: "human",
-    };
-
+  it("should execute human_handoff and save a deterministic response without a second AI call", async () => {
     const { useCase, aiService, messageRepository, agentActionExecutor } = createDependencies({
       aiResponse: {
         content: "Voy a pasarte con una persona.",
@@ -227,10 +220,12 @@ describe("GeneratePublicAIResponse", () => {
 
       actionExecution: {
         action: "human_handoff",
-        result: transferredConversation,
-      },
 
-      finalResponse: "De acuerdo. Voy a pasar la conversación a una persona del equipo.",
+        result: {
+          id: "conversation-123",
+          status: "human",
+        },
+      },
     });
 
     await useCase.execute({
@@ -246,43 +241,29 @@ describe("GeneratePublicAIResponse", () => {
       data: {},
     });
 
-    /*
-     * Groq no necesita recibir el objeto
-     * completo de la conversación.
-     */
-    expect(aiService.generateFinalResponse).toHaveBeenCalledWith({
-      businessContext,
-      messages,
-      action: "human_handoff",
-
-      actionResult: {
-        success: true,
-
-        result: {
-          transferred: true,
-        },
-      },
-    });
+    expect(aiService.generateFinalResponse).not.toHaveBeenCalled();
 
     expect(messageRepository.create).toHaveBeenCalledWith({
       conversationId: "conversation-123",
       role: "assistant",
-
-      content: "De acuerdo. Voy a pasar la conversación a una persona del equipo.",
+      content: "Te paso con una persona del equipo para que pueda ayudarte.",
     });
   });
 
-  it("should use real availability results before saving the response", async () => {
+  it("should use real availability results and save a deterministic response", async () => {
     const slots = [
       {
         startsAt: "2026-09-24T07:00:00.000Z",
         endsAt: "2026-09-24T08:00:00.000Z",
         localTime: "09:00",
+        employees: [],
       },
+
       {
         startsAt: "2026-09-24T07:15:00.000Z",
         endsAt: "2026-09-24T08:15:00.000Z",
         localTime: "09:15",
+        employees: [],
       },
     ];
 
@@ -309,8 +290,6 @@ describe("GeneratePublicAIResponse", () => {
           slots,
         },
       },
-
-      finalResponse: "Sí, tengo disponibilidad a las 09:00 y 09:15.",
     });
 
     await useCase.execute({
@@ -331,64 +310,42 @@ describe("GeneratePublicAIResponse", () => {
     });
 
     /*
-     * Groq recibe solamente fecha, cantidad
-     * y horas locales.
-     *
-     * No recibe serviceId ni timestamps UTC.
+     * El backend ya conoce la disponibilidad.
+     * No necesitamos volver a llamar a Groq.
      */
-    expect(aiService.generateFinalResponse).toHaveBeenCalledWith({
-      businessContext,
-      messages,
-      action: "check_availability",
-
-      actionResult: {
-        success: true,
-
-        result: {
-          date: "2026-09-24",
-
-          totalAvailableSlots: 2,
-
-          slots: [
-            {
-              time: "09:00",
-            },
-            {
-              time: "09:15",
-            },
-          ],
-        },
-      },
-    });
+    expect(aiService.generateFinalResponse).not.toHaveBeenCalled();
 
     expect(messageRepository.create).toHaveBeenCalledWith({
       conversationId: "conversation-123",
       role: "assistant",
-
-      content: "Sí, tengo disponibilidad a las 09:00 y 09:15.",
+      content: "Hay disponibilidad a las 09:00 y 09:15.",
     });
   });
 
-  it("should limit the availability data sent to the final AI response", async () => {
-    const slots = Array.from({ length: 20 }, (_, index) => {
-      const totalMinutes = 9 * 60 + index * 15;
+  it("should limit representative availability to six slots without a second AI call", async () => {
+    const slots = Array.from(
+      {
+        length: 20,
+      },
+      (_, index) => {
+        const totalMinutes = 9 * 60 + index * 15;
 
-      const hours = Math.floor(totalMinutes / 60);
+        const hours = Math.floor(totalMinutes / 60);
 
-      const minutes = totalMinutes % 60;
+        const minutes = totalMinutes % 60;
 
-      const localTime = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+        const localTime = `${String(hours).padStart(2, "0")}:` + `${String(minutes).padStart(2, "0")}`;
 
-      return {
-        startsAt: `2026-09-24T${localTime}:00.000Z`,
+        return {
+          startsAt: `2026-09-24T${localTime}:00.000Z`,
+          endsAt: `2026-09-24T${localTime}:00.000Z`,
+          localTime,
+          employees: [],
+        };
+      },
+    );
 
-        endsAt: `2026-09-24T${localTime}:00.000Z`,
-
-        localTime,
-      };
-    });
-
-    const { useCase, aiService } = createDependencies({
+    const { useCase, aiService, messageRepository } = createDependencies({
       aiResponse: {
         content: "Voy a comprobar la disponibilidad.",
 
@@ -411,8 +368,6 @@ describe("GeneratePublicAIResponse", () => {
           slots,
         },
       },
-
-      finalResponse: "Tengo varios horarios disponibles.",
     });
 
     await useCase.execute({
@@ -421,44 +376,123 @@ describe("GeneratePublicAIResponse", () => {
       businessContext,
     });
 
-    expect(aiService.generateFinalResponse).toHaveBeenCalledOnce();
+    expect(aiService.generateFinalResponse).not.toHaveBeenCalled();
 
-    const call = aiService.generateFinalResponse.mock.calls[0][0];
-
-    expect(call.actionResult.success).toBe(true);
-
-    expect(call.actionResult.result.totalAvailableSlots).toBe(20);
-
-    expect(call.actionResult.result.slots).toHaveLength(8);
-
-    expect(call.actionResult.result.slots[0]).toEqual({
-      time: "09:00",
-    });
-
-    expect(call.actionResult.result.slots[call.actionResult.result.slots.length - 1]).toEqual({
-      time: "13:45",
-    });
+    const savedContent = messageRepository.create.mock.calls[0][0].content;
 
     /*
-     * Ningún timestamp interno debe llegar
-     * a la segunda llamada.
+     * Los slots representativos se distribuyen
+     * durante todo el rango.
      */
-    for (const slot of call.actionResult.result.slots) {
-      expect(slot).toEqual({
-        time: expect.any(String),
-      });
-    }
+    expect(savedContent).toContain("09:00");
+
+    expect(savedContent).toContain("13:45");
+
+    /*
+     * Debemos mostrar únicamente seis horas.
+     */
+    const timeMatches = savedContent.match(/\b\d{2}:\d{2}\b/g) || [];
+
+    expect(timeMatches).toHaveLength(6);
+
+    /*
+     * Ningún timestamp interno puede aparecer
+     * en la respuesta pública.
+     */
+    expect(savedContent).not.toContain("2026-09-24T");
+
+    expect(savedContent).not.toContain(".000Z");
+  });
+
+  it("should preserve employeeId when checking availability for a specific employee", async () => {
+    const employeeId = "11111111-1111-4111-8111-111111111111";
+
+    const { useCase, aiService, messageRepository, agentActionExecutor } = createDependencies({
+      aiResponse: {
+        content: "Voy a comprobar si Laura está disponible.",
+
+        action: {
+          type: "check_availability",
+
+          data: {
+            serviceId: "service-123",
+            employeeId,
+            date: "2026-09-24",
+            time: "17:00",
+          },
+        },
+      },
+
+      actionExecution: {
+        action: "check_availability",
+
+        result: {
+          serviceId: "service-123",
+          date: "2026-09-24",
+
+          slots: [
+            {
+              startsAt: "2026-09-24T15:00:00.000Z",
+
+              endsAt: "2026-09-24T16:00:00.000Z",
+
+              localTime: "17:00",
+
+              employees: [
+                {
+                  id: employeeId,
+                  name: "Laura",
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    await useCase.execute({
+      conversationId: "conversation-123",
+      messages,
+      businessContext,
+    });
+
+    expect(agentActionExecutor.execute).toHaveBeenCalledWith({
+      action: "check_availability",
+      businessId: "business-123",
+      conversationId: "conversation-123",
+
+      data: {
+        serviceId: "service-123",
+        employeeId,
+        date: "2026-09-24",
+        time: "17:00",
+      },
+    });
+
+    expect(aiService.generateFinalResponse).not.toHaveBeenCalled();
+
+    expect(messageRepository.create).toHaveBeenCalledWith({
+      conversationId: "conversation-123",
+      role: "assistant",
+      content: "Sí, las 17:00 están disponibles con Laura.",
+    });
   });
 
   it("should confirm a booking only after the booking action succeeds", async () => {
+    const employeeId = "11111111-1111-4111-8111-111111111111";
+
     const booking = {
       id: "booking-123",
       business_id: "business-123",
       service_id: "service-123",
+      employee_id: employeeId,
       conversation_id: "conversation-123",
+
       customer_name: "Jordi",
       customer_phone: "600123123",
+
       service_name: "Corte",
+      employee_name: "Laura",
 
       /*
        * 15:00 UTC = 17:00 Europe/Madrid
@@ -474,23 +508,18 @@ describe("GeneratePublicAIResponse", () => {
     const { useCase, aiService, messageRepository, agentActionExecutor } = createDependencies({
       aiResponse: {
         /*
-         * Aunque el primer modelo devuelva
-         * una confirmación, NO se guarda
-         * hasta ejecutar la acción real.
+         * Aunque Groq intente confirmar la reserva
+         * antes de ejecutarla, esta respuesta
+         * provisional nunca se guarda.
          */
         content: "Tu reserva está confirmada.",
 
         action: {
           type: "create_booking",
 
-          /*
-           * Contrato actual:
-           * fecha + hora LOCAL.
-           *
-           * La IA NO genera UTC.
-           */
           data: {
             serviceId: "service-123",
+            employeeId,
 
             date: "2026-09-24",
             time: "17:00",
@@ -507,8 +536,6 @@ describe("GeneratePublicAIResponse", () => {
         action: "create_booking",
         result: booking,
       },
-
-      finalResponse: "Perfecto, Jordi. Tu reserva para el corte a las 17:00 está confirmada.",
     });
 
     await useCase.execute({
@@ -524,6 +551,7 @@ describe("GeneratePublicAIResponse", () => {
 
       data: {
         serviceId: "service-123",
+        employeeId,
 
         date: "2026-09-24",
         time: "17:00",
@@ -535,28 +563,12 @@ describe("GeneratePublicAIResponse", () => {
       },
     });
 
-    expect(aiService.generateFinalResponse).toHaveBeenCalledWith({
-      businessContext,
-      messages,
-      action: "create_booking",
-
-      /*
-       * El booking interno está en UTC,
-       * pero Groq recibe hora LOCAL.
-       */
-      actionResult: {
-        success: true,
-
-        result: {
-          serviceName: "Corte",
-          date: "2026-09-24",
-          startTime: "17:00",
-          endTime: "18:00",
-          price: null,
-          status: "confirmed",
-        },
-      },
-    });
+    /*
+     * La reserva ya está confirmada por backend.
+     *
+     * No gastamos otra llamada a Groq.
+     */
+    expect(aiService.generateFinalResponse).not.toHaveBeenCalled();
 
     expect(messageRepository.create).toHaveBeenCalledTimes(1);
 
@@ -564,9 +576,13 @@ describe("GeneratePublicAIResponse", () => {
       conversationId: "conversation-123",
       role: "assistant",
 
-      content: "Perfecto, Jordi. Tu reserva para el corte a las 17:00 está confirmada.",
+      content: "Perfecto, tu reserva para Corte el 2026-09-24 a las 17:00 con Laura está confirmada.",
     });
 
+    /*
+     * La confirmación provisional del LLM
+     * nunca llega a BD.
+     */
     expect(messageRepository.create).not.toHaveBeenCalledWith(
       expect.objectContaining({
         content: "Tu reserva está confirmada.",
@@ -578,8 +594,9 @@ describe("GeneratePublicAIResponse", () => {
     const { useCase, aiService, messageRepository, agentActionExecutor } = createDependencies({
       aiResponse: {
         /*
-         * Esta confirmación provisional
-         * jamás debe llegar a BD.
+         * Confirmación provisional incorrecta.
+         *
+         * El backend todavía no ha reservado.
          */
         content: "Perfecto, tu reserva está confirmada.",
 
@@ -599,8 +616,6 @@ describe("GeneratePublicAIResponse", () => {
           },
         },
       },
-
-      finalResponse: "Lo siento, ese horario ya no está disponible. Podemos elegir otro.",
     });
 
     agentActionExecutor.execute.mockRejectedValue(new AppError("The selected time is not available", 409));
@@ -611,36 +626,24 @@ describe("GeneratePublicAIResponse", () => {
       businessContext,
     });
 
-    expect(aiService.generateFinalResponse).toHaveBeenCalledWith({
-      businessContext,
-      messages,
-      action: "create_booking",
-
-      actionResult: {
-        success: false,
-
-        error: {
-          message: "The selected time is not available",
-
-          statusCode: 409,
-        },
-      },
-    });
-
     /*
-     * Solo debe existir UN mensaje del
-     * asistente: el generado después
-     * del fallo real.
+     * Tampoco utilizamos Groq para explicar
+     * un error controlado de disponibilidad.
      */
+    expect(aiService.generateFinalResponse).not.toHaveBeenCalled();
+
     expect(messageRepository.create).toHaveBeenCalledTimes(1);
 
     expect(messageRepository.create).toHaveBeenCalledWith({
       conversationId: "conversation-123",
       role: "assistant",
 
-      content: "Lo siento, ese horario ya no está disponible. Podemos elegir otro.",
+      content: "Ese horario ya no está disponible. Podemos probar con otra hora.",
     });
 
+    /*
+     * Nunca guardamos la falsa confirmación.
+     */
     expect(messageRepository.create).not.toHaveBeenCalledWith(
       expect.objectContaining({
         content: "Perfecto, tu reserva está confirmada.",
@@ -648,7 +651,7 @@ describe("GeneratePublicAIResponse", () => {
     );
   });
 
-  it("should propagate AppError 500 and not expose it to the final AI response", async () => {
+  it("should propagate AppError 500 and not expose or save it", async () => {
     const { useCase, aiService, messageRepository, agentActionExecutor } = createDependencies({
       aiResponse: {
         content: "Voy a crear la reserva.",
@@ -658,6 +661,7 @@ describe("GeneratePublicAIResponse", () => {
 
           data: {
             serviceId: "service-123",
+
             date: "2026-09-24",
             time: "17:00",
 
@@ -675,22 +679,23 @@ describe("GeneratePublicAIResponse", () => {
     await expect(
       useCase.execute({
         conversationId: "conversation-123",
-
         messages,
         businessContext,
       }),
     ).rejects.toMatchObject({
       message: "Internal booking failure",
-
       statusCode: 500,
     });
 
     /*
-     * Un error interno NO se pasa a Groq
-     * para que intente explicarlo.
+     * Los errores internos no llegan a una
+     * segunda llamada de IA.
      */
     expect(aiService.generateFinalResponse).not.toHaveBeenCalled();
 
+    /*
+     * Tampoco guardamos ningún mensaje falso.
+     */
     expect(messageRepository.create).not.toHaveBeenCalled();
   });
 
@@ -722,7 +727,6 @@ describe("GeneratePublicAIResponse", () => {
     await expect(
       useCase.execute({
         conversationId: "conversation-123",
-
         messages,
         businessContext,
       }),
@@ -744,7 +748,6 @@ describe("GeneratePublicAIResponse", () => {
     await expect(
       useCase.execute({
         conversationId: "conversation-123",
-
         messages,
         businessContext,
       }),
@@ -772,7 +775,6 @@ describe("GeneratePublicAIResponse", () => {
     await expect(
       useCase.execute({
         conversationId: "conversation-123",
-
         messages,
         businessContext,
       }),
@@ -797,13 +799,11 @@ describe("GeneratePublicAIResponse", () => {
     await expect(
       useCase.execute({
         conversationId: "conversation-123",
-
         messages,
         businessContext,
       }),
     ).rejects.toMatchObject({
       message: "Conversation not found",
-
       statusCode: 404,
     });
 
@@ -816,38 +816,51 @@ describe("GeneratePublicAIResponse", () => {
     expect(agentActionExecutor.execute).not.toHaveBeenCalled();
   });
 
-  it("detects a requested time as available even when it is not included in the representative slots", async () => {
+  it("detects a requested time as available using all real slots, not only representative slots", async () => {
     /*
-     * Creamos disponibilidad cada 15 minutos
-     * desde las 09:00 hasta las 17:00.
+     * Disponibilidad cada 15 minutos
+     * desde 09:00 hasta 17:00.
      *
-     * Son 33 slots en total.
+     * 33 slots reales.
      */
-    const slots = Array.from({ length: 33 }, (_, index) => {
-      const totalMinutes = 9 * 60 + index * 15;
+    const slots = Array.from(
+      {
+        length: 33,
+      },
+      (_, index) => {
+        const totalMinutes = 9 * 60 + index * 15;
 
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
+        const hours = Math.floor(totalMinutes / 60);
 
-      const localTime = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+        const minutes = totalMinutes % 60;
 
-      return {
-        startsAt: "2026-09-24T00:00:00.000Z",
-        endsAt: "2026-09-24T00:00:00.000Z",
-        localTime,
-      };
-    });
+        const localTime = `${String(hours).padStart(2, "0")}:` + `${String(minutes).padStart(2, "0")}`;
 
-    /*
-     * IMPORTANTE:
-     *
-     * El usuario pregunta específicamente por las 17:00.
-     *
-     * Aunque selectRepresentativeSlots() no incluyese
-     * las 17:00 entre los 8 slots enviados como muestra,
-     * debemos comprobar la hora contra TODOS los slots
-     * reales antes de reducir la información.
-     */
+        return {
+          startsAt: "2026-09-24T00:00:00.000Z",
+
+          endsAt: "2026-09-24T00:00:00.000Z",
+
+          localTime,
+
+          /*
+           * Simulamos que Laura está disponible
+           * específicamente a las 17:00.
+           */
+          employees:
+            localTime === "17:00"
+              ? [
+                  {
+                    id: "11111111-1111-4111-8111-111111111111",
+
+                    name: "Laura",
+                  },
+                ]
+              : [],
+        };
+      },
+    );
+
     const { useCase, aiService, agentActionExecutor, messageRepository } = createDependencies({
       aiResponse: {
         content: "Voy a comprobar esa hora.",
@@ -872,8 +885,6 @@ describe("GeneratePublicAIResponse", () => {
           slots,
         },
       },
-
-      finalResponse: "Sí, hay disponibilidad a las 17:00.",
     });
 
     const specificMessages = [
@@ -885,75 +896,60 @@ describe("GeneratePublicAIResponse", () => {
 
     await useCase.execute({
       conversationId: "conversation-123",
+
       messages: specificMessages,
+
       businessContext,
     });
 
     /*
-     * Primero comprobamos que la hora concreta
-     * sí se envía al executor.
+     * La hora concreta debe llegar
+     * correctamente al executor.
      */
     expect(agentActionExecutor.execute).toHaveBeenCalledWith({
       action: "check_availability",
+
       businessId: "business-123",
+
       conversationId: "conversation-123",
 
       data: {
         serviceId: "service-123",
+
         date: "2026-09-24",
+
         time: "17:00",
       },
     });
 
     /*
-     * La segunda llamada debe saber inequívocamente
-     * que las 17:00 existen entre TODOS los slots reales.
+     * No existe segunda llamada al LLM.
      */
-    expect(aiService.generateFinalResponse).toHaveBeenCalledWith({
-      businessContext,
-      messages: specificMessages,
-      action: "check_availability",
-
-      actionResult: {
-        success: true,
-
-        result: expect.objectContaining({
-          date: "2026-09-24",
-
-          requestedTime: "17:00",
-
-          requestedTimeAvailable: true,
-
-          totalAvailableSlots: 33,
-        }),
-      },
-    });
+    expect(aiService.generateFinalResponse).not.toHaveBeenCalled();
 
     /*
-     * Seguimos limitando las alternativas a 8.
-     */
-    const finalCall = aiService.generateFinalResponse.mock.calls[0][0];
-
-    expect(finalCall.actionResult.result.slots).toHaveLength(8);
-
-    /*
-     * Y comprobamos que no filtramos timestamps
-     * internos hacia Groq.
-     */
-    for (const slot of finalCall.actionResult.result.slots) {
-      expect(slot).toEqual({
-        time: expect.any(String),
-      });
-    }
-
-    /*
-     * Finalmente se guarda la respuesta final,
-     * no la provisional.
+     * IMPORTANTE:
+     *
+     * Las 17:00 se buscan contra TODOS
+     * los slots reales ANTES de reducirlos
+     * a slots representativos.
+     *
+     * Por eso debe detectarse correctamente.
      */
     expect(messageRepository.create).toHaveBeenCalledWith({
       conversationId: "conversation-123",
+
       role: "assistant",
-      content: "Sí, hay disponibilidad a las 17:00.",
+
+      content: "Sí, las 17:00 están disponibles con Laura.",
     });
+
+    /*
+     * Tampoco exponemos timestamps UTC
+     * en el mensaje al cliente.
+     */
+    const savedContent = messageRepository.create.mock.calls[0][0].content;
+
+    expect(savedContent).not.toContain("2026-09-24T00:00:00.000Z");
   });
 });

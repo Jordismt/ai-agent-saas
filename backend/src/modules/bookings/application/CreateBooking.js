@@ -4,6 +4,8 @@ import { Booking, BOOKING_STATUSES } from "../domain/Booking.js";
 
 import { AppError } from "../../../shared/errors/AppError.js";
 
+import crypto from "node:crypto";
+
 export class CreateBooking {
   constructor({
     bookingRepository,
@@ -11,19 +13,25 @@ export class CreateBooking {
     businessServiceRepository,
     conversationRepository,
     leadRepository,
+    employeeRepository,
     getAvailableSlots,
+    sendBookingConfirmation = null,
   }) {
     this.bookingRepository = bookingRepository;
     this.businessRepository = businessRepository;
     this.businessServiceRepository = businessServiceRepository;
     this.conversationRepository = conversationRepository;
     this.leadRepository = leadRepository;
+    this.employeeRepository = employeeRepository;
     this.getAvailableSlots = getAvailableSlots;
+
+    this.sendBookingConfirmation = sendBookingConfirmation;
   }
 
   async execute({
     businessId,
     serviceId,
+    employeeId = null,
     conversationId = null,
     leadId = null,
     customerName,
@@ -53,8 +61,8 @@ export class CreateBooking {
       throw new AppError("Booking customerName is required", 400);
     }
 
-    if (!customerPhone && !customerEmail) {
-      throw new AppError("Booking requires a phone or email", 400);
+    if (!customerEmail?.trim()) {
+      throw new AppError("Booking customerEmail is required", 400);
     }
 
     const business = await this.businessRepository.findById(businessId);
@@ -82,9 +90,34 @@ export class CreateBooking {
     }
 
     /*
-     * Si la reserva pertenece a una conversación,
-     * comprobamos que realmente pertenece al negocio.
+     * Si se ha solicitado un empleado concreto,
+     * validamos que:
+     *
+     * - existe
+     * - pertenece al negocio
+     * - está activo
+     * - realiza el servicio
      */
+    if (employeeId) {
+      const employee = await this.employeeRepository.findById(employeeId);
+
+      if (!employee || employee.business_id !== businessId) {
+        throw new AppError("Employee not found", 404);
+      }
+
+      if (!employee.active) {
+        throw new AppError("Employee is not active", 409);
+      }
+
+      const employeeServices = await this.employeeRepository.getServices(employeeId);
+
+      const canPerformService = employeeServices.some((item) => item.id === serviceId);
+
+      if (!canPerformService) {
+        throw new AppError("Employee does not perform this service", 409);
+      }
+    }
+
     if (conversationId) {
       const conversation = await this.conversationRepository.findById(conversationId);
 
@@ -97,9 +130,6 @@ export class CreateBooking {
       }
     }
 
-    /*
-     * Igual para el lead.
-     */
     if (leadId) {
       const lead = await this.leadRepository.findById(leadId);
 
@@ -112,17 +142,6 @@ export class CreateBooking {
       }
     }
 
-    /*
-     * Construimos nosotros la fecha/hora local.
-     *
-     * La IA solamente proporciona:
-     *
-     * date = 2026-09-24
-     * time = 17:00
-     *
-     * Luxon se encarga de Europe/Madrid y del offset
-     * correcto para esa fecha.
-     */
     const requestedLocalStart = DateTime.fromFormat(`${date} ${time}`, "yyyy-MM-dd HH:mm", {
       zone: timezone,
       setZone: true,
@@ -132,10 +151,6 @@ export class CreateBooking {
       throw new AppError("Invalid booking date or time", 400);
     }
 
-    /*
-     * Protección adicional:
-     * no permitimos crear reservas en el pasado.
-     */
     const now = DateTime.now().setZone(timezone);
 
     if (requestedLocalStart <= now) {
@@ -143,22 +158,19 @@ export class CreateBooking {
     }
 
     /*
-     * Pedimos al motor de disponibilidad los slots
-     * REALES para ese servicio y esa fecha.
+     * Si employeeId existe, disponibilidad solamente
+     * para ese empleado.
+     *
+     * Si no existe, disponibilidad de cualquiera que
+     * pueda realizar el servicio.
      */
     const availableSlots = await this.getAvailableSlots.execute({
       businessId,
       serviceId,
       date,
+      employeeId,
     });
 
-    /*
-     * No comparamos strings ni dejamos que la IA
-     * decida el timestamp.
-     *
-     * Convertimos cada slot real a la timezone del
-     * negocio y comprobamos fecha + hora local.
-     */
     const selectedSlot = availableSlots.find((slot) => {
       const slotStart = DateTime.fromISO(slot.startsAt, {
         setZone: true,
@@ -176,16 +188,31 @@ export class CreateBooking {
     }
 
     /*
-     * Segunda comprobación inmediatamente antes
-     * de insertar.
+     * Si el cliente eligió empleado, ese será
+     * necesariamente el empleado del slot.
      *
-     * La exclusion constraint de PostgreSQL sigue
-     * siendo la última protección contra carreras.
+     * Si dijo "me da igual", escogemos uno de
+     * los disponibles.
+     */
+    const selectedEmployee = employeeId
+      ? selectedSlot.employees.find((employee) => employee.id === employeeId)
+      : selectedSlot.employees[0];
+
+    if (!selectedEmployee) {
+      throw new AppError("No employee is available for the selected time", 409);
+    }
+
+    /*
+     * Segunda comprobación de conflicto.
+     *
+     * IMPORTANTE:
+     * ahora tiene que comprobar por EMPLEADO.
      */
     const conflicts = await this.bookingRepository.findConflictingBookings(
       businessId,
       selectedSlot.startsAt,
       selectedSlot.endsAt,
+      selectedEmployee.id,
     );
 
     if (conflicts.length > 0) {
@@ -195,32 +222,63 @@ export class CreateBooking {
     const booking = new Booking({
       businessId,
       serviceId,
+      employeeId: selectedEmployee.id,
       conversationId,
       leadId,
-
       customerName: customerName.trim(),
-      customerPhone,
-      customerEmail,
-
-      /*
-       * Snapshot real del servicio.
-       */
+      customerPhone: customerPhone?.trim() || null,
+      customerEmail: customerEmail.trim().toLowerCase(),
       serviceName: service.name,
       durationMinutes: service.duration_minutes,
       price: service.price,
-
-      /*
-       * Guardamos exactamente los timestamps del
-       * slot generado por nuestro backend.
-       */
       startsAt: selectedSlot.startsAt,
       endsAt: selectedSlot.endsAt,
-
       status: BOOKING_STATUSES.CONFIRMED,
-
       notes,
     });
 
-    return this.bookingRepository.create(booking);
+    /*
+     * Generamos un token secreto para que el cliente pueda gestionar
+     * únicamente esta reserva desde el enlace recibido por email.
+     */
+    const managementToken = crypto.randomBytes(32).toString("hex");
+
+    /*
+     * Nunca guardamos el token real en la base de datos.
+     * Solo almacenamos su SHA-256.
+     */
+    const managementTokenHash = crypto.createHash("sha256").update(managementToken).digest("hex");
+
+    /*
+     * Primero creamos la reserva.
+     *
+     * Si esto falla, no se envía ningún email porque realmente
+     * no existe ninguna reserva.
+     */
+    const createdBooking = await this.bookingRepository.create(booking, managementTokenHash);
+
+    /*
+     * La reserva ya está creada.
+     *
+     * El email es un efecto secundario: si Resend falla,
+     * NO hacemos fallar toda la operación porque provocaríamos
+     * que el cliente creyera que la reserva no existe.
+     */
+    if (this.sendBookingConfirmation) {
+      try {
+        await this.sendBookingConfirmation.execute({
+          booking: createdBooking,
+          business,
+          managementToken,
+        });
+      } catch (error) {
+        console.error("Failed to send booking confirmation email:", {
+          bookingId: createdBooking.id,
+          error,
+        });
+      }
+    }
+
+    return createdBooking;
   }
 }

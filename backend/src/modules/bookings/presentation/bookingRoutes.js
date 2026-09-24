@@ -14,6 +14,8 @@ import { SupabaseConversationRepository } from "../../conversations/infrastructu
 
 import { SupabaseLeadRepository } from "../../leads/infrastructure/SupabaseLeadRepository.js";
 
+import { SupabaseEmployeeRepository } from "../../employees/infrastructure/SupabaseEmployeeRepository.js";
+
 import { authMiddleware } from "../../../shared/middleware/authMiddleware.js";
 
 const router = Router();
@@ -31,6 +33,8 @@ function createController(req) {
 
   const leadRepository = new SupabaseLeadRepository(req.supabase);
 
+  const employeeRepository = new SupabaseEmployeeRepository(req.supabase);
+
   return new BookingController({
     bookingRepository,
     businessRepository,
@@ -38,6 +42,7 @@ function createController(req) {
     businessHoursRepository,
     conversationRepository,
     leadRepository,
+    employeeRepository,
   });
 }
 

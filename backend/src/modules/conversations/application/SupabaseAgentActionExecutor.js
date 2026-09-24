@@ -3,7 +3,12 @@ import { AgentActionExecutor } from "./AgentActionExecutor.js";
 import { CreateLead } from "../../leads/application/CreateLead.js";
 
 import { CreateBooking } from "../../bookings/application/CreateBooking.js";
+
 import { GetAvailableSlots } from "../../bookings/application/GetAvailableSlots.js";
+
+import { ResendEmailService } from "../../notifications/infrastructure/ResendEmailService.js";
+
+import { SendBookingConfirmation } from "../../notifications/application/SendBookingConfirmation.js";
 
 import { AppError } from "../../../shared/errors/AppError.js";
 
@@ -15,21 +20,21 @@ export class SupabaseAgentActionExecutor extends AgentActionExecutor {
   constructor({
     leadRepository,
     conversationRepository,
-
     bookingRepository,
     businessRepository,
     businessServiceRepository,
     businessHoursRepository,
+    employeeRepository,
   }) {
     super();
 
     this.leadRepository = leadRepository;
     this.conversationRepository = conversationRepository;
-
     this.bookingRepository = bookingRepository;
     this.businessRepository = businessRepository;
     this.businessServiceRepository = businessServiceRepository;
     this.businessHoursRepository = businessHoursRepository;
+    this.employeeRepository = employeeRepository;
 
     this.createLead = new CreateLead(leadRepository);
 
@@ -38,17 +43,28 @@ export class SupabaseAgentActionExecutor extends AgentActionExecutor {
       businessServiceRepository,
       businessHoursRepository,
       businessRepository,
+      employeeRepository,
     });
+
+    /*
+     * Servicio de correo para confirmaciones de reserva.
+     *
+     * El agente crea reservas directamente mediante CreateBooking,
+     * por lo que también necesita recibir SendBookingConfirmation.
+     */
+    const emailService = new ResendEmailService();
+
+    const sendBookingConfirmation = new SendBookingConfirmation(emailService);
 
     this.createBooking = new CreateBooking({
       bookingRepository,
       businessRepository,
       businessServiceRepository,
-
       conversationRepository,
       leadRepository,
-
+      employeeRepository,
       getAvailableSlots: this.getAvailableSlots,
+      sendBookingConfirmation,
     });
   }
 
@@ -103,29 +119,17 @@ export class SupabaseAgentActionExecutor extends AgentActionExecutor {
 
     const existingLead = existingLeads?.[0] || null;
 
-    /*
-     * Si ya existe un lead para esta conversación,
-     * enriquecemos sus datos.
-     */
     if (existingLead) {
-      /*
-       * Protección adicional multi-tenant.
-       */
       if (existingLead.business_id !== businessId) {
         throw new AppError("Lead does not belong to this business", 403);
       }
 
       const updatedLead = {
         ...existingLead,
-
         name: this.getNewValue(data.name, existingLead.name),
-
         phone: this.getNewValue(data.phone, existingLead.phone),
-
         email: this.getNewValue(data.email, existingLead.email),
-
         notes: this.getNewValue(data.notes, existingLead.notes),
-
         status: existingLead.status || "new",
       };
 
@@ -138,7 +142,6 @@ export class SupabaseAgentActionExecutor extends AgentActionExecutor {
     }
 
     const phone = this.normalizeOptionalValue(data.phone);
-
     const email = this.normalizeOptionalValue(data.email);
 
     if (!phone && !email) {
@@ -148,12 +151,9 @@ export class SupabaseAgentActionExecutor extends AgentActionExecutor {
     const lead = await this.createLead.execute({
       businessId,
       conversationId,
-
       name: this.normalizeOptionalValue(data.name),
-
       phone,
       email,
-
       notes: this.normalizeOptionalValue(data.notes),
     });
 
@@ -213,14 +213,15 @@ export class SupabaseAgentActionExecutor extends AgentActionExecutor {
       businessId,
       serviceId: data.serviceId,
       date: data.date,
+      employeeId: data.employeeId || null,
     });
 
     return {
       action: AGENT_ACTIONS.CHECK_AVAILABILITY,
-
       result: {
         serviceId: data.serviceId,
         date: data.date,
+        employeeId: data.employeeId || null,
         slots,
       },
     };
@@ -247,7 +248,7 @@ export class SupabaseAgentActionExecutor extends AgentActionExecutor {
       throw new AppError("Time is required to create a booking", 400);
     }
 
-    if (!data.customerName) {
+    if (!data.customerName?.trim()) {
       throw new AppError("Customer name is required to create a booking", 400);
     }
 
@@ -255,60 +256,38 @@ export class SupabaseAgentActionExecutor extends AgentActionExecutor {
 
     const customerEmail = this.normalizeOptionalValue(data.customerEmail);
 
-    if (!customerPhone && !customerEmail) {
-      throw new AppError("A booking requires at least a phone or email", 400);
+    /*
+     * El email es obligatorio para las reservas.
+     *
+     * Lo necesitamos para:
+     * - confirmación
+     * - cancelación
+     * - modificación
+     * - recordatorios
+     */
+    if (!customerEmail) {
+      throw new AppError("Customer email is required to create a booking", 400);
     }
 
-    /*
-     * Buscamos automáticamente el lead asociado
-     * a la conversación.
-     *
-     * La IA nunca controla leadId.
-     */
     const existingLeads = await this.leadRepository.findByConversationId(conversationId);
 
     const existingLead = existingLeads?.[0] || null;
 
-    /*
-     * Protección multi-tenant.
-     */
     if (existingLead && existingLead.business_id !== businessId) {
       throw new AppError("Lead does not belong to this business", 403);
     }
 
-    /*
-     * IMPORTANTE:
-     *
-     * La IA solamente proporciona:
-     *
-     * date = "2026-09-24"
-     * time = "17:00"
-     *
-     * No proporciona UTC, offset ni startsAt.
-     *
-     * CreateBooking será quien convierta esta
-     * fecha/hora local utilizando la timezone
-     * real del negocio.
-     */
     const booking = await this.createBooking.execute({
       businessId,
-
       serviceId: data.serviceId,
-
+      employeeId: data.employeeId || null,
       conversationId,
-
       leadId: existingLead?.id || null,
-
       customerName: data.customerName.trim(),
-
       customerPhone,
-
       customerEmail,
-
       date: data.date,
-
       time: data.time,
-
       notes: this.normalizeOptionalValue(data.notes),
     });
 

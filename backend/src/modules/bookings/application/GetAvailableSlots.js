@@ -1,15 +1,23 @@
 import { DateTime } from "luxon";
+
 import { AppError } from "../../../shared/errors/AppError.js";
 
 export class GetAvailableSlots {
-  constructor({ bookingRepository, businessServiceRepository, businessHoursRepository, businessRepository }) {
+  constructor({
+    bookingRepository,
+    businessServiceRepository,
+    businessHoursRepository,
+    businessRepository,
+    employeeRepository,
+  }) {
     this.bookingRepository = bookingRepository;
     this.businessServiceRepository = businessServiceRepository;
     this.businessHoursRepository = businessHoursRepository;
     this.businessRepository = businessRepository;
+    this.employeeRepository = employeeRepository;
   }
 
-  async execute({ businessId, serviceId, date, slotIntervalMinutes = 15 }) {
+  async execute({ businessId, serviceId, date, employeeId = null, slotIntervalMinutes = 15 }) {
     if (!businessId || !serviceId || !date) {
       throw new AppError("businessId, serviceId and date are required", 400);
     }
@@ -40,13 +48,7 @@ export class GetAvailableSlots {
       throw new AppError("Invalid booking date", 400);
     }
 
-    /*
-     * No devolvemos disponibilidad de días que ya han pasado
-     * en la zona horaria del negocio.
-     */
-    const today = now.startOf("day");
-
-    if (requestedDate < today) {
+    if (requestedDate < now.startOf("day")) {
       return [];
     }
 
@@ -60,55 +62,74 @@ export class GetAvailableSlots {
       throw new AppError("Business service requires a valid duration", 400);
     }
 
-    const hours = await this.businessHoursRepository.findByBusinessId(businessId);
-
     /*
-     * Luxon:
-     * Monday = 1
-     * ...
-     * Sunday = 7
-     *
-     * Nuestra BD:
-     * Sunday = 0
-     * Monday = 1
-     * ...
-     * Saturday = 6
+     * -------------------------------------------------------
+     * HORARIO DEL NEGOCIO
+     * -------------------------------------------------------
      */
+
+    const businessHours = await this.businessHoursRepository.findByBusinessId(businessId);
+
     const dayOfWeek = requestedDate.weekday === 7 ? 0 : requestedDate.weekday;
 
-    const dayHours = hours.find((item) => Number(item.day_of_week) === dayOfWeek);
-    console.log("\n========== BUSINESS HOURS DEBUG ==========");
+    const businessDayHours = businessHours.find((item) => Number(item.day_of_week) === dayOfWeek);
 
-    console.log("Requested date:", date);
-    console.log("Luxon weekday:", requestedDate.weekday);
-    console.log("DB weekday:", dayOfWeek);
-
-    console.log("ALL HOURS:");
-    console.dir(hours, {
-      depth: null,
-    });
-
-    console.log("SELECTED DAY HOURS:");
-    console.dir(dayHours, {
-      depth: null,
-    });
-
-    console.log("SERVICE:");
-    console.dir(
-      {
-        id: service.id,
-        name: service.name,
-        duration_minutes: service.duration_minutes,
-      },
-      {
-        depth: null,
-      },
-    );
-
-    console.log("==========================================\n");
-    if (!dayHours || dayHours.is_closed) {
+    if (!businessDayHours || businessDayHours.is_closed) {
       return [];
     }
+
+    const businessPeriods = this.getBusinessPeriods(businessDayHours, requestedDate, timezone);
+
+    if (!businessPeriods.length) {
+      return [];
+    }
+
+    /*
+     * -------------------------------------------------------
+     * EMPLEADOS QUE REALIZAN EL SERVICIO
+     * -------------------------------------------------------
+     */
+
+    const employees = await this.employeeRepository.findByBusinessId(businessId);
+
+    const activeEmployees = employees.filter((employee) => employee.active);
+
+    const eligibleEmployees = [];
+
+    for (const employee of activeEmployees) {
+      /*
+       * Si se ha solicitado un empleado concreto,
+       * ignoramos todos los demás.
+       */
+      if (employeeId && employee.id !== employeeId) {
+        continue;
+      }
+
+      const services = await this.employeeRepository.getServices(employee.id);
+
+      const canPerformService = services.some((employeeService) => employeeService.id === serviceId);
+
+      if (!canPerformService) {
+        continue;
+      }
+
+      eligibleEmployees.push(employee);
+    }
+
+    /*
+     * Si nos han pedido explícitamente un empleado
+     * pero no pertenece al negocio, está inactivo o
+     * no realiza el servicio, no hay disponibilidad.
+     */
+    if (!eligibleEmployees.length) {
+      return [];
+    }
+
+    /*
+     * -------------------------------------------------------
+     * RESERVAS DEL DÍA
+     * -------------------------------------------------------
+     */
 
     const dayStart = requestedDate.toUTC().toISO();
 
@@ -119,118 +140,276 @@ export class GetAvailableSlots {
     const blockingBookings = bookings.filter(
       (booking) => booking.status === "pending" || booking.status === "confirmed",
     );
-    console.log("\n========== BOOKINGS DEBUG ==========");
 
-    console.log("TOTAL BOOKINGS:", bookings.length);
-    console.log("BLOCKING BOOKINGS:", blockingBookings.length);
+    /*
+     * -------------------------------------------------------
+     * DISPONIBILIDAD POR EMPLEADO
+     * -------------------------------------------------------
+     */
 
-    console.dir(
-      blockingBookings.map((booking) => ({
-        id: booking.id,
-        status: booking.status,
-        starts_at: booking.starts_at,
-        ends_at: booking.ends_at,
-      })),
-      {
-        depth: null,
-      },
-    );
+    const slotMap = new Map();
 
-    console.log("====================================\n");
+    for (const employee of eligibleEmployees) {
+      const employeeHours = await this.employeeRepository.getHours(employee.id);
+
+      const employeeDayHours = employeeHours.find((item) => Number(item.weekday) === dayOfWeek);
+
+      /*
+       * Si el empleado no tiene horario configurado
+       * para ese día, no trabaja.
+       */
+      if (!employeeDayHours || employeeDayHours.is_closed) {
+        continue;
+      }
+
+      const employeePeriods = this.getEmployeePeriods(employeeDayHours, requestedDate, timezone);
+
+      /*
+       * Calculamos la intersección:
+       *
+       * horario negocio ∩ horario empleado
+       */
+      const effectivePeriods = this.intersectPeriods(businessPeriods, employeePeriods);
+
+      if (!effectivePeriods.length) {
+        continue;
+      }
+
+      /*
+       * Ausencias del empleado.
+       *
+       * Por ahora getTimeOff devuelve todas.
+       * Después podemos optimizar el repositorio para
+       * pedir únicamente las que intersecten este día.
+       */
+      const timeOff = await this.employeeRepository.getTimeOff(employee.id);
+
+      const relevantTimeOff = timeOff.filter((absence) => {
+        const absenceStart = DateTime.fromISO(absence.starts_at, { setZone: true }).toUTC();
+
+        const absenceEnd = DateTime.fromISO(absence.ends_at, { setZone: true }).toUTC();
+
+        const requestedDayStart = requestedDate.toUTC();
+
+        const requestedDayEnd = requestedDate.plus({ days: 1 }).toUTC();
+
+        return absenceStart < requestedDayEnd && absenceEnd > requestedDayStart;
+      });
+
+      /*
+       * IMPORTANTE:
+       *
+       * Solo bloqueamos las reservas asignadas
+       * a ESTE empleado.
+       */
+      const employeeBookings = blockingBookings.filter(
+        (booking) => booking.employee_id === null || booking.employee_id === employee.id,
+      );
+
+      for (const period of effectivePeriods) {
+        let slotStart = period.start;
+
+        while (true) {
+          const slotEnd = slotStart.plus({
+            minutes: service.duration_minutes,
+          });
+
+          if (slotEnd > period.end) {
+            break;
+          }
+
+          /*
+           * Nunca ofrecemos un slot pasado
+           * ni exactamente "ahora".
+           */
+          if (slotStart <= now) {
+            slotStart = slotStart.plus({
+              minutes: slotIntervalMinutes,
+            });
+
+            continue;
+          }
+
+          const slotStartUtc = slotStart.toUTC();
+
+          const slotEndUtc = slotEnd.toUTC();
+
+          /*
+           * ¿Está ausente el empleado durante
+           * alguna parte del slot?
+           */
+          const hasTimeOffConflict = relevantTimeOff.some((absence) => {
+            const absenceStart = DateTime.fromISO(absence.starts_at, { setZone: true }).toUTC();
+
+            const absenceEnd = DateTime.fromISO(absence.ends_at, { setZone: true }).toUTC();
+
+            return absenceStart < slotEndUtc && absenceEnd > slotStartUtc;
+          });
+
+          if (hasTimeOffConflict) {
+            slotStart = slotStart.plus({
+              minutes: slotIntervalMinutes,
+            });
+
+            continue;
+          }
+
+          /*
+           * ¿Tiene ESTE empleado otra reserva?
+           */
+          const hasBookingConflict = employeeBookings.some((booking) => {
+            const existingStart = DateTime.fromISO(booking.starts_at, { setZone: true }).toUTC();
+
+            const existingEnd = DateTime.fromISO(booking.ends_at, { setZone: true }).toUTC();
+
+            return existingStart < slotEndUtc && existingEnd > slotStartUtc;
+          });
+
+          if (hasBookingConflict) {
+            slotStart = slotStart.plus({
+              minutes: slotIntervalMinutes,
+            });
+
+            continue;
+          }
+
+          /*
+           * Puede ocurrir:
+           *
+           * Laura -> 17:00 disponible
+           * Marta -> 17:00 disponible
+           *
+           * No queremos devolver dos slots 17:00.
+           *
+           * Devolvemos un slot con los empleados
+           * disponibles dentro.
+           */
+          const key = slotStartUtc.toISO();
+
+          if (!slotMap.has(key)) {
+            slotMap.set(key, {
+              startsAt: slotStartUtc.toISO(),
+
+              endsAt: slotEndUtc.toISO(),
+
+              localTime: slotStart.toFormat("HH:mm"),
+
+              employees: [],
+            });
+          }
+
+          slotMap.get(key).employees.push({
+            id: employee.id,
+            name: employee.name,
+          });
+
+          slotStart = slotStart.plus({
+            minutes: slotIntervalMinutes,
+          });
+        }
+      }
+    }
+
+    /*
+     * Ordenamos por fecha por seguridad.
+     */
+    return Array.from(slotMap.values()).sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
+  }
+
+  /*
+   * =======================================================
+   * BUSINESS PERIODS
+   * =======================================================
+   */
+
+  getBusinessPeriods(dayHours, requestedDate, timezone) {
     const periods = [];
 
     if (dayHours.open_time && dayHours.close_time) {
       periods.push({
-        open: dayHours.open_time,
-        close: dayHours.close_time,
+        start: this.createLocalDateTime(requestedDate, dayHours.open_time, timezone),
+
+        end: this.createLocalDateTime(requestedDate, dayHours.close_time, timezone),
       });
     }
 
     if (dayHours.second_open_time && dayHours.second_close_time) {
       periods.push({
-        open: dayHours.second_open_time,
-        close: dayHours.second_close_time,
+        start: this.createLocalDateTime(requestedDate, dayHours.second_open_time, timezone),
+
+        end: this.createLocalDateTime(requestedDate, dayHours.second_close_time, timezone),
       });
     }
 
-    const slots = [];
+    this.validatePeriods(periods, "Invalid business hours");
 
-    for (const period of periods) {
-      const periodStart = this.createLocalDateTime(requestedDate, period.open, timezone);
+    return periods;
+  }
 
-      const periodEnd = this.createLocalDateTime(requestedDate, period.close, timezone);
-      console.log("\n========== PERIOD DEBUG ==========");
+  /*
+   * =======================================================
+   * EMPLOYEE PERIODS
+   * =======================================================
+   */
 
-      console.log("period.open:", period.open);
-      console.log("period.close:", period.close);
+  getEmployeePeriods(dayHours, requestedDate, timezone) {
+    const periods = [];
 
-      console.log("periodStart:", periodStart.toISO());
-      console.log("periodEnd:", periodEnd.toISO());
+    if (dayHours.start_time && dayHours.end_time) {
+      periods.push({
+        start: this.createLocalDateTime(requestedDate, dayHours.start_time, timezone),
 
-      console.log("periodStart local:", periodStart.toFormat("yyyy-MM-dd HH:mm:ss"));
-      console.log("periodEnd local:", periodEnd.toFormat("yyyy-MM-dd HH:mm:ss"));
+        end: this.createLocalDateTime(requestedDate, dayHours.end_time, timezone),
+      });
+    }
 
-      console.log("timezone:", timezone);
+    if (dayHours.second_start_time && dayHours.second_end_time) {
+      periods.push({
+        start: this.createLocalDateTime(requestedDate, dayHours.second_start_time, timezone),
 
-      console.log("duration minutes:", periodEnd.diff(periodStart, "minutes").minutes);
+        end: this.createLocalDateTime(requestedDate, dayHours.second_end_time, timezone),
+      });
+    }
 
-      console.log("==================================\n");
-      if (periodEnd <= periodStart) {
-        throw new AppError("Invalid business hours", 400);
-      }
+    this.validatePeriods(periods, "Invalid employee hours");
 
-      let slotStart = periodStart;
+    return periods;
+  }
 
-      while (true) {
-        const slotEnd = slotStart.plus({
-          minutes: service.duration_minutes,
-        });
+  /*
+   * =======================================================
+   * BUSINESS ∩ EMPLOYEE
+   * =======================================================
+   */
 
-        if (slotEnd > periodEnd) {
-          break;
-        }
+  intersectPeriods(businessPeriods, employeePeriods) {
+    const result = [];
 
-        /*
-         * Si estamos consultando hoy, no permitimos
-         * reservar una hora que ya haya pasado.
-         *
-         * También rechazamos exactamente "ahora":
-         * la reserva siempre debe empezar en el futuro.
-         */
-        if (slotStart <= now) {
-          slotStart = slotStart.plus({
-            minutes: slotIntervalMinutes,
-          });
+    for (const businessPeriod of businessPeriods) {
+      for (const employeePeriod of employeePeriods) {
+        const start =
+          businessPeriod.start > employeePeriod.start ? businessPeriod.start : employeePeriod.start;
 
-          continue;
-        }
+        const end = businessPeriod.end < employeePeriod.end ? businessPeriod.end : employeePeriod.end;
 
-        const slotStartUtc = slotStart.toUTC();
-        const slotEndUtc = slotEnd.toUTC();
-
-        const hasConflict = blockingBookings.some((booking) => {
-          const existingStart = DateTime.fromISO(booking.starts_at, { setZone: true }).toUTC();
-
-          const existingEnd = DateTime.fromISO(booking.ends_at, { setZone: true }).toUTC();
-
-          return existingStart < slotEndUtc && existingEnd > slotStartUtc;
-        });
-
-        if (!hasConflict) {
-          slots.push({
-            startsAt: slotStartUtc.toISO(),
-            endsAt: slotEndUtc.toISO(),
-            localTime: slotStart.toFormat("HH:mm"),
+        if (start < end) {
+          result.push({
+            start,
+            end,
           });
         }
-
-        slotStart = slotStart.plus({
-          minutes: slotIntervalMinutes,
-        });
       }
     }
 
-    return slots;
+    return result;
+  }
+
+  validatePeriods(periods, errorMessage) {
+    for (const period of periods) {
+      if (period.end <= period.start) {
+        throw new AppError(errorMessage, 400);
+      }
+    }
   }
 
   createLocalDateTime(date, time, timezone) {
@@ -250,7 +429,7 @@ export class GetAvailableSlots {
     );
 
     if (!result.isValid) {
-      throw new AppError("Invalid business hours", 400);
+      throw new AppError("Invalid hours", 400);
     }
 
     return result;

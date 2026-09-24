@@ -6,11 +6,13 @@ export class GetPublicBusinessContext {
     businessServiceRepository,
     businessHoursRepository,
     businessAgentConfigRepository,
+    employeeRepository,
   }) {
     this.businessRepository = businessRepository;
     this.businessServiceRepository = businessServiceRepository;
     this.businessHoursRepository = businessHoursRepository;
     this.businessAgentConfigRepository = businessAgentConfigRepository;
+    this.employeeRepository = employeeRepository;
   }
 
   async execute(businessId) {
@@ -20,37 +22,48 @@ export class GetPublicBusinessContext {
       return null;
     }
 
-    const services = await this.businessServiceRepository.findByBusinessId(businessId);
+    const [services, businessHours, agentConfig, employees] = await Promise.all([
+      this.businessServiceRepository.findByBusinessId(businessId),
+      this.businessHoursRepository.findByBusinessId(businessId),
+      this.businessAgentConfigRepository.findByBusinessId(businessId),
+      this.employeeRepository.findByBusinessId(businessId),
+    ]);
 
-    const businessHours = await this.businessHoursRepository.findByBusinessId(businessId);
-
-    const agentConfig = await this.businessAgentConfigRepository.findByBusinessId(businessId);
-
-    const dayNames = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+    const activeEmployees = (employees || []).filter((employee) => employee.active);
 
     /*
-     * La zona horaria pertenece al negocio.
+     * Para el LLM solo necesitamos saber qué empleado existe
+     * y qué servicios puede realizar.
      *
-     * Mantenemos Europe/Madrid como fallback
-     * defensivo por compatibilidad con negocios
-     * antiguos, aunque actualmente la columna
-     * timezone de businesses ya es NOT NULL.
+     * Horarios, vacaciones, reservas y conflictos NO se mandan
+     * al modelo: GetAvailableSlots es la fuente de verdad.
      */
+    const employeesWithServices = await Promise.all(
+      activeEmployees.map(async (employee) => {
+        const employeeServices = await this.employeeRepository.getServices(employee.id);
+
+        return {
+          id: employee.id,
+          name: employee.name,
+          service_ids: employeeServices.map((service) => service.id),
+        };
+      }),
+    );
+
+    const dayNames = [
+      "domingo",
+      "lunes",
+      "martes",
+      "miércoles",
+      "jueves",
+      "viernes",
+      "sábado",
+    ];
+
     const timezone = business.timezone || "Europe/Madrid";
 
-    /*
-     * Calculamos la fecha y hora en el backend.
-     *
-     * La IA NO debe intentar adivinar qué día
-     * es ni interpretar "mañana" utilizando
-     * conocimiento temporal propio.
-     */
     let now = DateTime.now().setZone(timezone);
 
-    /*
-     * Protección defensiva ante una timezone
-     * inválida almacenada en base de datos.
-     */
     if (!now.isValid) {
       now = DateTime.now().setZone("Europe/Madrid");
     }
@@ -61,27 +74,20 @@ export class GetPublicBusinessContext {
       description: business.description,
       phone: business.phone,
       address: business.address,
-
       timezone: now.zoneName,
 
       current_datetime: {
         date: now.toISODate(),
-        time: now.toFormat("HH:mm:ss"),
-        datetime: now.toISO(),
+        time: now.toFormat("HH:mm"),
         weekday: now.setLocale("es").toFormat("cccc"),
       },
 
       opening_hours: businessHours.map((hours) => ({
         day_name: dayNames[hours.day_of_week],
-
         open_time: hours.open_time,
-
         close_time: hours.close_time,
-
         second_open_time: hours.second_open_time,
-
         second_close_time: hours.second_close_time,
-
         is_closed: hours.is_closed,
       })),
 
@@ -93,12 +99,12 @@ export class GetPublicBusinessContext {
         duration_minutes: service.duration_minutes,
       })),
 
+      employees: employeesWithServices,
+
       agent_config: agentConfig
         ? {
             system_instructions: agentConfig.system_instructions,
-
             welcome_message: agentConfig.welcome_message,
-
             tone: agentConfig.tone,
           }
         : {

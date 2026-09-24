@@ -492,6 +492,15 @@ onMounted(loadBusiness);
 
               <span class="arrow">→</span>
             </RouterLink>
+
+            <RouterLink :to="`/businesses/${route.params.id}/public-page`" class="action-link">
+              <span class="action-icon">◎</span>
+              <div>
+                <strong>Web pública</strong>
+                <small>Editar y publicar</small>
+              </div>
+              <span class="arrow">→</span>
+            </RouterLink>
           </div>
         </section>
 

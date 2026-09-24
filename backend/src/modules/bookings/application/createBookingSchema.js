@@ -1,35 +1,30 @@
 import { z } from "zod";
 
-export const createBookingSchema = z
-  .object({
-    businessId: z.string().uuid(),
+export const createBookingSchema = z.object({
+  businessId: z.string().uuid(),
 
-    serviceId: z.string().uuid(),
+  serviceId: z.string().uuid(),
 
-    conversationId: z.string().uuid().nullable().optional(),
+  employeeId: z.string().uuid().nullable().optional(),
 
-    leadId: z.string().uuid().nullable().optional(),
+  conversationId: z.string().uuid().nullable().optional(),
 
-    customerName: z.string().trim().min(1).max(120),
+  leadId: z.string().uuid().nullable().optional(),
 
-    customerPhone: z.string().trim().max(50).nullable().optional(),
+  customerName: z.string().trim().min(1, "Customer name is required").max(120),
 
-    customerEmail: z.string().trim().email().max(254).nullable().optional(),
+  customerPhone: z.string().trim().max(50).nullable().optional(),
 
-    startsAt: z.string().datetime({ offset: true }),
+  customerEmail: z
+    .string()
+    .trim()
+    .min(1, "Customer email is required")
+    .email("Customer email must be valid")
+    .max(254),
 
-    notes: z.string().trim().max(1000).nullable().optional(),
-  })
-  .refine(
-    (data) => {
-      const phone = data.customerPhone?.trim();
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must use YYYY-MM-DD format"),
 
-      const email = data.customerEmail?.trim();
+  time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must use HH:mm format"),
 
-      return Boolean(phone || email);
-    },
-    {
-      message: "A booking requires at least a phone or email",
-      path: ["customerPhone"],
-    },
-  );
+  notes: z.string().trim().max(1000).nullable().optional(),
+});

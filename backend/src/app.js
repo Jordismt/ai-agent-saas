@@ -12,6 +12,10 @@ import businessAgentConfigRoutes from "./modules/businesses/presentation/busines
 import leadRoutes from "./modules/leads/presentation/leadRoutes.js";
 import bookingRoutes from "./modules/bookings/presentation/bookingRoutes.js";
 import dashboardRoutes from "./modules/dashboard/presentation/dashboardRoutes.js";
+import employeeRoutes from "./modules/employees/presentation/employeeRoutes.js";
+import businessPublicPageRoutes from "./modules/publicPages/presentation/businessPublicPageRoutes.js";
+import managedBookingRoutes from "./modules/bookings/presentation/managedBookingRoutes.js";
+import bookingReminderRoutes from "./modules/bookings/presentation/bookingReminderRoutes.js";
 
 import { authMiddleware } from "./shared/middleware/authMiddleware.js";
 import { errorHandler } from "./shared/middleware/errorHandler.js";
@@ -52,20 +56,28 @@ app.get("/me", authMiddleware, (req, res) => {
 });
 
 app.use("/businesses", businessRoutes);
-
 app.use("/conversations", conversationRoutes);
 
 app.use("/", leadRoutes);
-
 app.use("/", bookingRoutes);
-
 app.use("/", dashboardRoutes);
+app.use("/", employeeRoutes);
 
 app.use("/public", publicRoutes);
-
 app.use("/business-hours", businessHoursRoutes);
 
 app.use("/", businessAgentConfigRoutes);
+
+app.use(businessPublicPageRoutes);
+app.use(managedBookingRoutes);
+
+/*
+ * Internal routes.
+ *
+ * No authMiddleware here because authentication is performed
+ * using CRON_SECRET inside bookingReminderRoutes.
+ */
+app.use(bookingReminderRoutes);
 
 app.use(errorHandler);
 

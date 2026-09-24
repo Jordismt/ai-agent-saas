@@ -32,7 +32,13 @@ describe("CreateBooking", () => {
         startsAt: "2026-09-25T15:00:00.000Z",
         endsAt: "2026-09-25T15:30:00.000Z",
         localTime: "17:00",
-      },
+      employees: [
+        {
+          id: "employee-123",
+          name: "Laura",
+        },
+      ],
+},
     ],
 
     conflicts = [],
@@ -57,6 +63,25 @@ describe("CreateBooking", () => {
 
       leadRepository: {
         findById: vi.fn(async () => lead),
+      },
+
+      employeeRepository: {
+        findById: vi.fn(async () => ({
+          id: "employee-123",
+          business_id: "business-123",
+          name: "Laura",
+          active: true,
+        })),
+
+        getServices: vi.fn(async () => [
+          {
+            id: "service-123",
+            business_id: "business-123",
+            name: "Corte",
+            duration_minutes: 30,
+            price: 20,
+          },
+        ]),
       },
 
       getAvailableSlots: {
@@ -110,12 +135,14 @@ describe("CreateBooking", () => {
       businessId: "business-123",
       serviceId: "service-123",
       date: "2026-09-25",
+      employeeId: null,
     });
 
     expect(dependencies.bookingRepository.findConflictingBookings).toHaveBeenCalledWith(
       "business-123",
       "2026-09-25T15:00:00.000Z",
       "2026-09-25T15:30:00.000Z",
+      "employee-123",
     );
 
     expect(dependencies.bookingRepository.create).toHaveBeenCalledTimes(1);
@@ -162,7 +189,13 @@ describe("CreateBooking", () => {
           startsAt: "2026-09-25T14:00:00.000Z",
           endsAt: "2026-09-25T15:00:00.000Z",
           localTime: "16:00",
-        },
+        employees: [
+          {
+            id: "employee-123",
+            name: "Laura",
+          },
+        ],
+},
       ],
     });
 
@@ -202,7 +235,13 @@ describe("CreateBooking", () => {
           startsAt: "2026-09-25T14:00:00.000Z",
           endsAt: "2026-09-25T15:00:00.000Z",
           localTime: "16:00",
-        },
+        employees: [
+          {
+            id: "employee-123",
+            name: "Laura",
+          },
+        ],
+},
       ],
     });
 
@@ -396,7 +435,13 @@ describe("CreateBooking", () => {
           startsAt: "2026-09-24T22:30:00.000Z",
           endsAt: "2026-09-24T23:00:00.000Z",
           localTime: "00:30",
-        },
+        employees: [
+          {
+            id: "employee-123",
+            name: "Laura",
+          },
+        ],
+},
       ],
     });
 
@@ -417,6 +462,7 @@ describe("CreateBooking", () => {
       businessId: "business-123",
       serviceId: "service-123",
       date: "2026-09-25",
+      employeeId: null,
     });
 
     /*

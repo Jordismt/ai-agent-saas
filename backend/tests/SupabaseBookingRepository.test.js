@@ -19,6 +19,7 @@ describe("SupabaseBookingRepository", () => {
     const booking = {
       businessId: "business-123",
       serviceId: "service-123",
+      employeeId: "employee-123",
       conversationId: "conversation-123",
       leadId: "lead-123",
 
@@ -43,6 +44,7 @@ describe("SupabaseBookingRepository", () => {
 
         business_id: "business-123",
         service_id: "service-123",
+        employee_id: "employee-123",
         conversation_id: "conversation-123",
         lead_id: "lead-123",
 
@@ -87,6 +89,7 @@ describe("SupabaseBookingRepository", () => {
       expect(insert).toHaveBeenCalledWith({
         business_id: "business-123",
         service_id: "service-123",
+        employee_id: "employee-123",
         conversation_id: "conversation-123",
         lead_id: "lead-123",
 
@@ -421,10 +424,11 @@ describe("SupabaseBookingRepository", () => {
   });
 
   describe("findConflictingBookings", () => {
-    it("should find pending or confirmed overlapping bookings", async () => {
+    it("should find pending or confirmed overlapping bookings for an employee", async () => {
       const bookings = [
         {
           id: "booking-existing",
+          employee_id: "employee-123",
           status: "confirmed",
         },
       ];
@@ -446,12 +450,16 @@ describe("SupabaseBookingRepository", () => {
         lt,
       });
 
-      const eq = vi.fn().mockReturnValue({
+      const eqEmployee = vi.fn().mockReturnValue({
         in: inMock,
       });
 
+      const eqBusiness = vi.fn().mockReturnValue({
+        eq: eqEmployee,
+      });
+
       const select = vi.fn().mockReturnValue({
-        eq,
+        eq: eqBusiness,
       });
 
       mockSupabase.from.mockReturnValue({
@@ -462,16 +470,14 @@ describe("SupabaseBookingRepository", () => {
         "business-123",
         "2026-09-25T15:00:00.000Z",
         "2026-09-25T15:30:00.000Z",
+        "employee-123",
       );
 
       expect(result).toEqual(bookings);
-
-      expect(eq).toHaveBeenCalledWith("business_id", "business-123");
-
+      expect(eqBusiness).toHaveBeenCalledWith("business_id", "business-123");
+      expect(eqEmployee).toHaveBeenCalledWith("employee_id", "employee-123");
       expect(inMock).toHaveBeenCalledWith("status", ["pending", "confirmed"]);
-
       expect(lt).toHaveBeenCalledWith("starts_at", "2026-09-25T15:30:00.000Z");
-
       expect(gt).toHaveBeenCalledWith("ends_at", "2026-09-25T15:00:00.000Z");
     });
 
@@ -495,12 +501,16 @@ describe("SupabaseBookingRepository", () => {
         lt,
       });
 
-      const eq = vi.fn().mockReturnValue({
+      const eqEmployee = vi.fn().mockReturnValue({
         in: inMock,
       });
 
+      const eqBusiness = vi.fn().mockReturnValue({
+        eq: eqEmployee,
+      });
+
       const select = vi.fn().mockReturnValue({
-        eq,
+        eq: eqBusiness,
       });
 
       mockSupabase.from.mockReturnValue({
@@ -512,11 +522,28 @@ describe("SupabaseBookingRepository", () => {
           "business-123",
           "2026-09-25T15:00:00.000Z",
           "2026-09-25T15:30:00.000Z",
+          "employee-123",
         ),
       ).rejects.toMatchObject({
         message: "Failed to find conflicting bookings: Database error",
         statusCode: 500,
       });
+    });
+
+    it("should reject conflict checks without an employee", async () => {
+      await expect(
+        repository.findConflictingBookings(
+          "business-123",
+          "2026-09-25T15:00:00.000Z",
+          "2026-09-25T15:30:00.000Z",
+          null,
+        ),
+      ).rejects.toMatchObject({
+        message: "employeeId is required to check booking conflicts",
+        statusCode: 400,
+      });
+
+      expect(mockSupabase.from).not.toHaveBeenCalled();
     });
   });
 

@@ -9,6 +9,17 @@ function createDependencies({
   service = null,
   hours = [],
   bookings = [],
+  employees = [
+    {
+      id: "employee-123",
+      business_id: "business-123",
+      name: "Laura",
+      active: true,
+    },
+  ],
+  employeeServices = null,
+  employeeHours = null,
+  employeeTimeOff = [],
 } = {}) {
   const leadRepository = {
     findByConversationId: vi.fn(async () => existingLeads),
@@ -45,7 +56,7 @@ function createDependencies({
 
     findByBusinessIdAndDateRange: vi.fn(async () => bookings),
 
-    findConflictingBookings: vi.fn(async (businessId, startsAt, endsAt) => {
+    findConflictingBookings: vi.fn(async (businessId, startsAt, endsAt, employeeId) => {
       const start = new Date(startsAt);
       const end = new Date(endsAt);
 
@@ -58,8 +69,11 @@ function createDependencies({
           return false;
         }
 
-        const existingStart = new Date(booking.starts_at);
+        if (booking.employee_id !== null && booking.employee_id !== undefined && booking.employee_id !== employeeId) {
+          return false;
+        }
 
+        const existingStart = new Date(booking.starts_at);
         const existingEnd = new Date(booking.ends_at);
 
         return existingStart < end && existingEnd > start;
@@ -97,6 +111,41 @@ function createDependencies({
     findByBusinessId: vi.fn(async () => hours),
   };
 
+  const employeeRepository = {
+    findById: vi.fn(async (employeeId) => {
+      return employees.find((employee) => employee.id === employeeId) || null;
+    }),
+
+    findByBusinessId: vi.fn(async (businessId) => {
+      return employees.filter((employee) => employee.business_id === businessId);
+    }),
+
+    getServices: vi.fn(async () => {
+      if (employeeServices) {
+        return employeeServices;
+      }
+
+      return service ? [service] : [];
+    }),
+
+    getHours: vi.fn(async () => {
+      if (employeeHours) {
+        return employeeHours;
+      }
+
+      return hours.map((item) => ({
+        weekday: item.day_of_week,
+        is_closed: item.is_closed,
+        start_time: item.open_time,
+        end_time: item.close_time,
+        second_start_time: item.second_open_time,
+        second_end_time: item.second_close_time,
+      }));
+    }),
+
+    getTimeOff: vi.fn(async () => employeeTimeOff),
+  };
+
   return {
     leadRepository,
     conversationRepository,
@@ -104,6 +153,7 @@ function createDependencies({
     businessRepository,
     businessServiceRepository,
     businessHoursRepository,
+    employeeRepository,
   };
 }
 
@@ -744,6 +794,7 @@ describe("SupabaseAgentActionExecutor", () => {
           {
             id: "existing-booking",
             business_id: "business-123",
+            employee_id: "employee-123",
 
             /*
              * 07:00Z = 09:00 Europe/Madrid

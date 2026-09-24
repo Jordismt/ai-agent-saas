@@ -29,23 +29,19 @@ export class Booking {
     id = null,
     businessId,
     serviceId,
+    employeeId = null,
     conversationId = null,
     leadId = null,
-
     customerName,
     customerPhone = null,
     customerEmail = null,
-
     serviceName,
     durationMinutes,
     price = null,
-
     startsAt,
     endsAt,
-
     status = BOOKING_STATUSES.CONFIRMED,
     notes = null,
-
     createdAt = null,
     updatedAt = null,
   }) {
@@ -71,10 +67,9 @@ export class Booking {
       throw new AppError("Booking customerName is required", 400);
     }
 
-    if (!normalizedCustomerPhone && !normalizedCustomerEmail) {
-      throw new AppError("A booking requires at least a phone or email", 400);
+    if (!normalizedCustomerEmail) {
+      throw new AppError("Booking customerEmail is required", 400);
     }
-
     if (!normalizedServiceName) {
       throw new AppError("Booking serviceName is required", 400);
     }
@@ -105,18 +100,24 @@ export class Booking {
     this.id = id;
     this.businessId = businessId;
     this.serviceId = serviceId;
+    this.employeeId = employeeId;
     this.conversationId = conversationId;
     this.leadId = leadId;
 
     this.customerName = normalizedCustomerName;
+
     this.customerPhone = normalizedCustomerPhone;
+
     this.customerEmail = normalizedCustomerEmail;
 
     this.serviceName = normalizedServiceName;
+
     this.durationMinutes = durationMinutes;
+
     this.price = price;
 
     this.startsAt = startDate.toISOString();
+
     this.endsAt = endDate.toISOString();
 
     this.status = status;

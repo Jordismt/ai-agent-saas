@@ -21,6 +21,7 @@ const updatingBookingId = ref(null);
 const search = ref("");
 const statusFilter = ref("all");
 const dateFilter = ref("upcoming");
+const employeeFilter = ref("all");
 
 const businessId = computed(() => route.params.id);
 
@@ -50,11 +51,24 @@ const loadData = async () => {
     bookings.value = Array.isArray(bookingData) ? bookingData : [];
   } catch (err) {
     console.error(err);
+
     error.value = err.message || "No se han podido cargar las reservas.";
   } finally {
     loading.value = false;
   }
 };
+
+const employees = computed(() => {
+  const map = new Map();
+
+  for (const booking of bookings.value) {
+    if (booking.employee?.id && booking.employee?.name) {
+      map.set(booking.employee.id, booking.employee);
+    }
+  }
+
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "es"));
+});
 
 const getDateParts = (date) => {
   if (!date) return null;
@@ -75,7 +89,9 @@ const getDateParts = (date) => {
   const parts = formatter.formatToParts(parsed);
 
   const year = parts.find((part) => part.type === "year")?.value;
+
   const month = parts.find((part) => part.type === "month")?.value;
+
   const day = parts.find((part) => part.type === "day")?.value;
 
   if (!year || !month || !day) {
@@ -127,15 +143,22 @@ const filteredBookings = computed(() => {
   return bookings.value.filter((booking) => {
     const matchesStatus = statusFilter.value === "all" || booking.status === statusFilter.value;
 
+    const matchesEmployee =
+      employeeFilter.value === "all" ||
+      (employeeFilter.value === "unassigned"
+        ? !booking.employee_id
+        : booking.employee_id === employeeFilter.value);
+
     const matchesSearch =
       !query ||
       booking.customer_name?.toLowerCase().includes(query) ||
       booking.customer_email?.toLowerCase().includes(query) ||
       booking.customer_phone?.toLowerCase().includes(query) ||
       booking.service_name?.toLowerCase().includes(query) ||
+      booking.employee?.name?.toLowerCase().includes(query) ||
       booking.notes?.toLowerCase().includes(query);
 
-    return matchesStatus && matchesSearch && matchesDateFilter(booking);
+    return matchesStatus && matchesEmployee && matchesSearch && matchesDateFilter(booking);
   });
 });
 
@@ -245,6 +268,7 @@ const clearFilters = () => {
   search.value = "";
   statusFilter.value = "all";
   dateFilter.value = "upcoming";
+  employeeFilter.value = "all";
 };
 
 const handleStatusChange = async (booking, event) => {
@@ -367,7 +391,9 @@ onMounted(loadData);
         <button
           type="button"
           class="stat-card"
-          :class="{ selected: statusFilter === 'pending' }"
+          :class="{
+            selected: statusFilter === 'pending',
+          }"
           @click="setStatusFilter('pending')">
           <div class="stat-icon pending">◷</div>
 
@@ -378,7 +404,9 @@ onMounted(loadData);
         <button
           type="button"
           class="stat-card"
-          :class="{ selected: statusFilter === 'confirmed' }"
+          :class="{
+            selected: statusFilter === 'confirmed',
+          }"
           @click="setStatusFilter('confirmed')">
           <div class="stat-icon confirmed">✓</div>
 
@@ -389,7 +417,9 @@ onMounted(loadData);
         <button
           type="button"
           class="stat-card"
-          :class="{ selected: statusFilter === 'completed' }"
+          :class="{
+            selected: statusFilter === 'completed',
+          }"
           @click="setStatusFilter('completed')">
           <div class="stat-icon completed">↑</div>
 
@@ -400,7 +430,9 @@ onMounted(loadData);
         <button
           type="button"
           class="stat-card"
-          :class="{ selected: statusFilter === 'cancelled' }"
+          :class="{
+            selected: statusFilter === 'cancelled',
+          }"
           @click="setStatusFilter('cancelled')">
           <div class="stat-icon cancelled">×</div>
 
@@ -445,13 +477,20 @@ onMounted(loadData);
               <input v-model="search" type="search" placeholder="Buscar reserva..." />
             </div>
 
+            <select v-model="employeeFilter" class="filter-select">
+              <option value="all">Todos los empleados</option>
+
+              <option v-for="employee in employees" :key="employee.id" :value="employee.id">
+                {{ employee.name }}
+              </option>
+
+              <option value="unassigned">Sin asignar</option>
+            </select>
+
             <select v-model="dateFilter" class="filter-select">
               <option value="today">Hoy</option>
-
               <option value="upcoming">Próximas</option>
-
               <option value="past">Pasadas</option>
-
               <option value="all">Todas las fechas</option>
             </select>
 
@@ -476,7 +515,7 @@ onMounted(loadData);
 
           <div>
             <strong>Cargando reservas</strong>
-            <span>Obteniendo la agenda del negocio...</span>
+            <span> Obteniendo la agenda del negocio... </span>
           </div>
         </div>
 
@@ -503,8 +542,8 @@ onMounted(loadData);
             <span>✦</span>
 
             <p>
-              AgentFlow registra el servicio, los datos del cliente, la fecha, la hora y el estado de cada
-              cita.
+              Resbix registra el servicio, el empleado, los datos del cliente, la fecha, la hora y el estado
+              de cada cita.
             </p>
           </div>
         </div>
@@ -531,6 +570,7 @@ onMounted(loadData);
               <tr>
                 <th>Cliente</th>
                 <th>Servicio</th>
+                <th>Empleado</th>
                 <th>Fecha y hora</th>
                 <th>Contacto</th>
                 <th>Precio</th>
@@ -552,7 +592,10 @@ onMounted(loadData);
                         {{ booking.customer_name || "Sin nombre" }}
                       </strong>
 
-                      <span> ID {{ booking.id?.slice(0, 8) }} </span>
+                      <span>
+                        ID
+                        {{ booking.id?.slice(0, 8) }}
+                      </span>
                     </div>
                   </div>
                 </td>
@@ -563,8 +606,29 @@ onMounted(loadData);
                       {{ booking.service_name || "Servicio" }}
                     </strong>
 
-                    <span v-if="booking.duration_minutes"> {{ booking.duration_minutes }} min </span>
+                    <span v-if="booking.duration_minutes">
+                      {{ booking.duration_minutes }}
+                      min
+                    </span>
                   </div>
+                </td>
+
+                <td>
+                  <div v-if="booking.employee" class="employee-info">
+                    <div class="employee-avatar">
+                      {{ getInitials(booking.employee.name) }}
+                    </div>
+
+                    <div>
+                      <strong>
+                        {{ booking.employee.name }}
+                      </strong>
+
+                      <span>Empleado</span>
+                    </div>
+                  </div>
+
+                  <span v-else class="unassigned-employee"> Sin asignar </span>
                 </td>
 
                 <td>
@@ -669,9 +733,13 @@ onMounted(loadData);
         <div v-if="!loading && bookings.length > 0" class="table-footer">
           <span>
             Mostrando
-            <strong>{{ filteredBookings.length }}</strong>
+            <strong>
+              {{ filteredBookings.length }}
+            </strong>
             de
-            <strong>{{ bookings.length }}</strong>
+            <strong>
+              {{ bookings.length }}
+            </strong>
             reservas
           </span>
 
@@ -694,38 +762,28 @@ onMounted(loadData);
 }
 
 .page-container {
-  width: min(1220px, 100%);
+  width: min(1320px, 100%);
   margin: 0 auto;
 }
-
-/* BREADCRUMB */
 
 .breadcrumb {
   display: flex;
   align-items: center;
   gap: 8px;
-
   margin-bottom: 25px;
-
   color: var(--text-muted);
-
   font-size: 13px;
 }
 
 .breadcrumb a,
 .breadcrumb button {
   padding: 0;
-
   border: 0;
-
   background: transparent;
   color: var(--text-secondary);
-
   font: inherit;
   font-weight: 500;
-
   text-decoration: none;
-
   cursor: pointer;
 }
 
@@ -734,20 +792,16 @@ onMounted(loadData);
   color: var(--primary);
 }
 
-/* HEADER */
-
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 30px;
-
   margin-bottom: 26px;
 }
 
 .header-content {
   min-width: 0;
-
   display: flex;
   align-items: center;
   gap: 14px;
@@ -756,26 +810,19 @@ onMounted(loadData);
 .header-icon {
   width: 48px;
   height: 48px;
-
   flex: 0 0 48px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 12px;
-
   background: #0f172a;
   color: #93c5fd;
-
   box-shadow: 0 5px 14px rgba(15, 23, 42, 0.13);
 }
 
 .eyebrow {
   margin: 0 0 4px;
-
   color: var(--primary);
-
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -784,9 +831,7 @@ onMounted(loadData);
 
 .page-header h1 {
   margin: 0;
-
   color: var(--text);
-
   font-size: 30px;
   line-height: 1.15;
   letter-spacing: -0.035em;
@@ -794,37 +839,27 @@ onMounted(loadData);
 
 .page-description {
   max-width: 650px;
-
   margin: 5px 0 0;
-
   color: var(--text-secondary);
-
   font-size: 15px;
   line-height: 1.6;
 }
 
 .refresh-button {
   min-height: 40px;
-
   flex: 0 0 auto;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-
   padding: 0 14px;
-
   border: 1px solid var(--border);
   border-radius: 8px;
-
   background: white;
   color: var(--text-secondary);
-
   font: inherit;
   font-size: 13px;
   font-weight: 600;
-
   cursor: pointer;
 }
 
@@ -843,37 +878,26 @@ onMounted(loadData);
   animation: spin 0.8s linear infinite;
 }
 
-/* STATS */
-
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 9px;
-
   margin-bottom: 18px;
 }
 
 .stat-card {
   min-height: 116px;
-
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-
   padding: 14px;
-
   border: 1px solid var(--border);
   border-radius: 10px;
-
   background: var(--surface);
-
   font: inherit;
   text-align: left;
-
   box-shadow: var(--shadow-sm);
-
   cursor: pointer;
-
   transition:
     border-color 0.15s ease,
     transform 0.15s ease,
@@ -887,7 +911,6 @@ onMounted(loadData);
 
 .stat-card.selected {
   border-color: #93c5fd;
-
   box-shadow:
     var(--shadow-sm),
     0 0 0 2px rgba(37, 99, 235, 0.05);
@@ -896,15 +919,11 @@ onMounted(loadData);
 .stat-icon {
   width: 30px;
   height: 30px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   margin-bottom: 10px;
-
   border-radius: 7px;
-
   font-size: 11px;
   font-weight: 700;
 }
@@ -936,7 +955,6 @@ onMounted(loadData);
 
 .stat-card > strong {
   color: var(--text);
-
   font-size: 23px;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -944,36 +962,26 @@ onMounted(loadData);
 
 .stat-card > span {
   margin-top: 6px;
-
   color: var(--text-muted);
-
   font-size: 12px;
   line-height: 1.4;
 }
 
-/* MAIN CARD */
-
 .bookings-card {
   overflow: hidden;
-
   border: 1px solid var(--border);
   border-radius: 13px;
-
   background: var(--surface);
-
   box-shadow: var(--shadow-sm);
 }
 
 .bookings-toolbar {
   min-height: 76px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-
   padding: 14px 15px;
-
   border-bottom: 1px solid var(--border);
 }
 
@@ -985,36 +993,27 @@ onMounted(loadData);
 
 .bookings-title h2 {
   margin: 0;
-
   color: var(--text);
-
   font-size: 16px;
 }
 
 .bookings-title > span {
   min-width: 22px;
   height: 22px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   padding: 0 6px;
-
   border-radius: 999px;
-
   background: var(--surface-soft);
   color: var(--text-secondary);
-
   font-size: 10px;
   font-weight: 600;
 }
 
 .bookings-toolbar p {
   margin: 4px 0 0;
-
   color: var(--text-muted);
-
   font-size: 12px;
   line-height: 1.45;
 }
@@ -1028,35 +1027,27 @@ onMounted(loadData);
 .search-box {
   width: 190px;
   min-height: 40px;
-
   display: flex;
   align-items: center;
   gap: 7px;
-
   padding: 0 11px;
-
   border: 1px solid var(--border);
   border-radius: 7px;
-
   background: white;
   color: var(--text-muted);
 }
 
 .search-box:focus-within {
   border-color: #93c5fd;
-
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.06);
 }
 
 .search-box input {
   width: 100%;
-
   border: 0;
   outline: 0;
-
   background: transparent;
   color: var(--text);
-
   font: inherit;
   font-size: 13px;
 }
@@ -1067,59 +1058,43 @@ onMounted(loadData);
 
 .filter-select {
   min-height: 40px;
-
   padding: 0 28px 0 11px;
-
   border: 1px solid var(--border);
   border-radius: 7px;
-
   background: white;
   color: var(--text-secondary);
-
   font: inherit;
   font-size: 13px;
-
   outline: none;
-
   cursor: pointer;
 }
 
-/* TABLE */
-
 .table-wrapper {
   width: 100%;
-
   overflow-x: auto;
 }
 
 .bookings-table {
   width: 100%;
-
   border-collapse: collapse;
 }
 
 .bookings-table th {
   padding: 11px 12px;
-
   border-bottom: 1px solid var(--border);
-
   background: #fafbfc;
   color: var(--text-muted);
-
   font-size: 10px;
   font-weight: 600;
   text-align: left;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-
   white-space: nowrap;
 }
 
 .bookings-table td {
   padding: 14px 12px;
-
   border-bottom: 1px solid var(--border);
-
   vertical-align: middle;
 }
 
@@ -1135,11 +1110,8 @@ onMounted(loadData);
   border-bottom: 0;
 }
 
-/* CUSTOMER */
-
 .customer-profile {
   min-width: 155px;
-
   display: flex;
   align-items: center;
   gap: 9px;
@@ -1148,25 +1120,19 @@ onMounted(loadData);
 .customer-avatar {
   width: 35px;
   height: 35px;
-
   flex: 0 0 35px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 8px;
-
   background: #eef2ff;
   color: #4f46e5;
-
   font-size: 11px;
   font-weight: 700;
 }
 
 .customer-profile > div:last-child {
   min-width: 0;
-
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1174,30 +1140,22 @@ onMounted(loadData);
 
 .customer-profile strong {
   overflow: hidden;
-
   max-width: 160px;
-
   color: var(--text);
-
   font-size: 13px;
   font-weight: 600;
-
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .customer-profile span {
   color: var(--text-muted);
-
   font-family: monospace;
   font-size: 10px;
 }
 
-/* SERVICE */
-
 .service-info {
   min-width: 110px;
-
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -1205,22 +1163,65 @@ onMounted(loadData);
 
 .service-info strong {
   color: var(--text);
-
   font-size: 12px;
   font-weight: 600;
 }
 
 .service-info span {
   color: var(--text-muted);
-
   font-size: 11px;
 }
 
-/* DATE */
+.employee-info {
+  min-width: 145px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.employee-avatar {
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.employee-info > div:last-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.employee-info strong {
+  max-width: 130px;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-info span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.unassigned-employee {
+  color: var(--text-muted);
+  font-size: 11px;
+}
 
 .booking-date {
   min-width: 135px;
-
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -1228,24 +1229,18 @@ onMounted(loadData);
 
 .booking-date strong {
   color: var(--text-secondary);
-
   font-size: 12px;
   font-weight: 600;
-
   text-transform: capitalize;
 }
 
 .booking-date span {
   color: var(--text-muted);
-
   font-size: 11px;
 }
 
-/* CONTACT */
-
 .contact-info {
   min-width: 135px;
-
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -1253,20 +1248,14 @@ onMounted(loadData);
 
 .contact-info a {
   max-width: 190px;
-
   display: flex;
   align-items: center;
   gap: 5px;
-
   overflow: hidden;
-
   color: var(--text-secondary);
-
   font-size: 12px;
   line-height: 1.4;
-
   text-decoration: none;
-
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1277,28 +1266,19 @@ onMounted(loadData);
 
 .no-data {
   color: var(--text-muted);
-
   font-size: 11px;
 }
 
-/* PRICE */
-
 .booking-price {
   color: var(--text);
-
   font-size: 12px;
   font-weight: 600;
-
   white-space: nowrap;
 }
 
-/* STATUS */
-
 .status-control {
   position: relative;
-
   min-width: 138px;
-
   display: flex;
   align-items: center;
 }
@@ -1307,30 +1287,22 @@ onMounted(loadData);
   position: absolute;
   left: 9px;
   z-index: 2;
-
   width: 6px;
   height: 6px;
-
   border-radius: 50%;
-
   pointer-events: none;
 }
 
 .status-control select {
   width: 100%;
   min-height: 36px;
-
   padding: 0 27px 0 21px;
-
   border: 1px solid transparent;
   border-radius: 7px;
-
   font: inherit;
   font-size: 11px;
   font-weight: 600;
-
   outline: none;
-
   cursor: pointer;
 }
 
@@ -1387,35 +1359,25 @@ onMounted(loadData);
 .mini-spinner {
   position: absolute;
   right: -18px;
-
   width: 10px;
   height: 10px;
-
   border: 1.5px solid #e2e8f0;
   border-top-color: var(--primary);
   border-radius: 50%;
-
   animation: spin 0.7s linear infinite;
 }
-
-/* CONVERSATION */
 
 .conversation-button {
   width: 34px;
   height: 34px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   border: 1px solid var(--border);
   border-radius: 8px;
-
   background: white;
   color: var(--text-secondary);
-
   cursor: pointer;
-
   transition:
     border-color 0.15s ease,
     background 0.15s ease,
@@ -1424,38 +1386,27 @@ onMounted(loadData);
 
 .conversation-button:hover {
   border-color: #bfdbfe;
-
   background: var(--primary-soft);
   color: var(--primary);
 }
 
 .no-conversation {
   display: inline-flex;
-
   width: 34px;
-
   justify-content: center;
-
   color: var(--text-muted);
-
   font-size: 12px;
 }
-
-/* FOOTER */
 
 .table-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-
   padding: 11px 12px;
-
   border-top: 1px solid var(--border);
-
   background: #fafbfc;
   color: var(--text-muted);
-
   font-size: 11px;
   line-height: 1.45;
 }
@@ -1464,19 +1415,14 @@ onMounted(loadData);
   color: var(--text-secondary);
 }
 
-/* ERROR */
-
 .error-banner {
   display: flex;
   align-items: center;
   gap: 9px;
-
   margin-bottom: 12px;
   padding: 10px;
-
   border: 1px solid #fecaca;
   border-radius: 9px;
-
   background: var(--danger-soft);
   color: var(--danger);
 }
@@ -1484,17 +1430,12 @@ onMounted(loadData);
 .error-icon {
   width: 23px;
   height: 23px;
-
   flex: 0 0 23px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 50%;
-
   background: #fee2e2;
-
   font-size: 10px;
   font-weight: 700;
 }
@@ -1516,34 +1457,24 @@ onMounted(loadData);
 
 .error-banner button {
   margin-left: auto;
-
   padding: 6px 9px;
-
   border: 1px solid currentColor;
   border-radius: 6px;
-
   background: transparent;
   color: inherit;
-
   font: inherit;
   font-size: 12px;
   font-weight: 600;
-
   cursor: pointer;
 }
 
-/* EMPTY */
-
 .empty-state {
   min-height: 320px;
-
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
   padding: 35px;
-
   text-align: center;
 }
 
@@ -1554,94 +1485,69 @@ onMounted(loadData);
 .empty-visual {
   width: 45px;
   height: 45px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   margin-bottom: 12px;
-
   border-radius: 12px;
-
   background: var(--surface-soft);
   color: var(--text-muted);
 }
 
 .empty-state h3 {
   margin: 0;
-
   color: var(--text);
-
   font-size: 16px;
 }
 
 .empty-state > p {
   max-width: 430px;
-
   margin: 5px 0 0;
-
   color: var(--text-muted);
-
   font-size: 13px;
   line-height: 1.6;
 }
 
 .empty-info {
   max-width: 430px;
-
   display: flex;
   align-items: flex-start;
   gap: 7px;
-
   margin-top: 15px;
   padding: 10px 12px;
-
   border-radius: 8px;
-
   background: #f8fbff;
-
   color: var(--text-secondary);
-
   text-align: left;
 }
 
 .empty-info > span {
   color: var(--primary);
-
   font-size: 11px;
 }
 
 .empty-info p {
   margin: 0;
-
   font-size: 12px;
   line-height: 1.55;
 }
 
 .clear-filter {
   min-height: 38px;
-
   margin-top: 13px;
   padding: 0 12px;
-
   border: 1px solid var(--border);
   border-radius: 7px;
-
   background: white;
   color: var(--text-secondary);
-
   font: inherit;
   font-size: 13px;
   font-weight: 600;
-
   cursor: pointer;
 }
 
-/* LOADING */
-
 .loading-state {
   min-height: 300px;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1656,24 +1562,20 @@ onMounted(loadData);
 
 .loading-state strong {
   color: var(--text);
-
   font-size: 13px;
 }
 
 .loading-state span {
   color: var(--text-muted);
-
   font-size: 11px;
 }
 
 .spinner {
   width: 20px;
   height: 20px;
-
   border: 2px solid #e2e8f0;
   border-top-color: var(--primary);
   border-radius: 50%;
-
   animation: spin 0.7s linear infinite;
 }
 
@@ -1683,13 +1585,7 @@ onMounted(loadData);
   }
 }
 
-/* RESPONSIVE */
-
-@media (max-width: 1100px) {
-  .stats-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
+@media (max-width: 1180px) {
   .bookings-toolbar {
     align-items: flex-start;
     flex-direction: column;
@@ -1697,11 +1593,19 @@ onMounted(loadData);
 
   .toolbar-actions {
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .search-box {
     flex: 1;
     width: auto;
+    min-width: 190px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -1732,7 +1636,6 @@ onMounted(loadData);
   .refresh-button {
     width: 100%;
     min-height: 44px;
-
     font-size: 14px;
   }
 
@@ -1749,7 +1652,6 @@ onMounted(loadData);
     width: 100%;
     min-width: 0;
     min-height: 44px;
-
     box-sizing: border-box;
   }
 
@@ -1794,7 +1696,6 @@ onMounted(loadData);
   .header-icon {
     width: 43px;
     height: 43px;
-
     flex-basis: 43px;
   }
 
