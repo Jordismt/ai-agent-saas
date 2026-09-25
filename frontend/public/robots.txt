@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://resbix.com/sitemap.xml
