@@ -147,16 +147,23 @@ import LegalLayout from "../components/LegalLayout.vue";
       APLICABLES].
     </p>
 
-    <h2>8. Conservación</h2>
+    <h2>8. Conservación de los datos</h2>
 
     <p>
-      Los datos se conservarán durante el tiempo necesario para cumplir las finalidades descritas y las
-      obligaciones legales.
+      Los datos asociados a los negocios, incluidas las conversaciones, reservas y solicitudes de contacto,
+      permanecen almacenados en la infraestructura de Resbix después de la cancelación de la suscripción.
     </p>
 
     <p>
-      [COMPLETAR: PLAZOS O CRITERIOS CONCRETOS PARA CUENTAS, CONVERSACIONES, RESERVAS, LEADS, FACTURACIÓN Y
-      REGISTROS TÉCNICOS].
+      La cancelación no implica su eliminación automática. El negocio conserva el acceso a las funcionalidades
+      contratadas hasta que finaliza el periodo de prueba o de suscripción correspondiente.
+    </p>
+
+    <p>Una vez finalizado dicho periodo, el acceso a las funcionalidades de pago queda restringido.</p>
+
+    <p>
+      La conservación posterior de los datos personales estará sujeta a los plazos legalmente aplicables y a
+      las instrucciones del responsable del tratamiento, cuando Resbix actúe como encargado.
     </p>
 
     <h2>9. Derechos de las personas</h2>
