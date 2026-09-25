@@ -129,7 +129,8 @@ const closeMenu = () => {
   <div class="landing">
     <div class="announcement">
       <span class="announcement-dot"></span> OFERTA DE LANZAMIENTO
-      <span class="announcement-divider">/</span> Primeros 20 clientes: <b>50 €/mes el primer año</b>
+      <span class="announcement-divider">/</span> Primeros 20 clientes:
+      <b>55 €/mes el primer año | CODIGO: FOUNDERS50</b>
       <a href="#precios">Ver oferta <span>↗</span></a>
     </div>
     <header class="navbar">
