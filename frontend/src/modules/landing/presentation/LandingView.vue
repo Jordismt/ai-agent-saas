@@ -31,7 +31,7 @@ const faqs = [
   },
   {
     q: "¿Qué ocurre después del primer año de la oferta?",
-    a: "La promoción de los primeros 20 clientes es de 50 €/mes durante los primeros 12 meses. Después se aplica la tarifa habitual de 100 €/mes.",
+    a: "La promoción de los primeros 20 clientes es de 55 €/mes durante los primeros 12 meses. Después se aplica la tarifa habitual de 110 €/mes.",
   },
   {
     q: "¿La promoción se aplica automáticamente?",
@@ -774,40 +774,70 @@ const closeMenu = () => {
             importa.
           </p>
           <RouterLink to="/register" class="button button-white"
-            >Empezar por 50 €/mes <span>↗</span></RouterLink
+            >Empezar por 55 €/mes <span>↗</span></RouterLink
           ><small>Promoción para los primeros 20 clientes durante el primer año.</small>
         </div>
       </section>
     </main>
     <footer class="footer">
       <div class="container footer-main">
+        <!-- Marca -->
         <div>
-          <RouterLink to="/" class="brand"
-            ><img
-              v-if="!logoFailed"
-              :src="logoSrc"
-              alt=""
-              class="brand-logo"
-              @error="logoFailed = true" /><span v-else class="brand-symbol">✳</span
-            ><span>resbix<span class="brand-period">.</span></span></RouterLink
-          >
+          <RouterLink to="/" class="brand">
+            <img v-if="!logoFailed" :src="logoSrc" alt="" class="brand-logo" @error="logoFailed = true" />
+
+            <span v-else class="brand-symbol">✳</span>
+
+            <span> resbix<span class="brand-period">.</span> </span>
+          </RouterLink>
+
           <p>La atención de tu negocio, preparada para lo que viene.</p>
         </div>
+
+        <!-- Enlaces -->
         <div class="footer-links">
+          <!-- Explorar -->
           <div>
-            <b>Explorar</b><a href="#producto">Producto</a><a href="#demo">Ver demo</a
-            ><a href="#funcionamiento">Cómo funciona</a><a href="#sectores">Para quién</a
-            ><a href="#precios">Precios</a>
+            <b>Explorar</b>
+
+            <a href="#producto">Producto</a>
+            <a href="#demo">Ver demo</a>
+            <a href="#funcionamiento">Cómo funciona</a>
+            <a href="#sectores">Para quién</a>
+            <a href="#precios">Precios</a>
           </div>
+
+          <!-- Cuenta -->
           <div>
-            <b>Tu cuenta</b><RouterLink to="/login">Iniciar sesión</RouterLink
-            ><RouterLink to="/register">Crear cuenta</RouterLink>
+            <b>Tu cuenta</b>
+
+            <RouterLink to="/login"> Iniciar sesión </RouterLink>
+
+            <RouterLink to="/register"> Crear cuenta </RouterLink>
+          </div>
+
+          <!-- Legal -->
+          <div>
+            <b>Legal</b>
+
+            <RouterLink to="/aviso-legal"> Aviso legal </RouterLink>
+
+            <RouterLink to="/privacidad"> Política de privacidad </RouterLink>
+
+            <RouterLink to="/cookies"> Política de cookies </RouterLink>
+
+            <RouterLink to="/terminos"> Términos y condiciones </RouterLink>
+
+            <RouterLink to="/tratamiento-datos"> Tratamiento de datos </RouterLink>
           </div>
         </div>
       </div>
+
+      <!-- Footer inferior -->
       <div class="container footer-bottom">
-        <span>© {{ new Date().getFullYear() }} Resbix. Todos los derechos reservados.</span
-        ><span>Hecho para negocios que quieren avanzar. ✳</span>
+        <span> © {{ new Date().getFullYear() }} Resbix. Todos los derechos reservados. </span>
+
+        <span> Hecho para negocios que quieren avanzar. ✳ </span>
       </div>
     </footer>
   </div>
@@ -3088,5 +3118,18 @@ const closeMenu = () => {
   margin: 8px 0 0;
   font-size: 13px;
   line-height: 1.6;
+}
+
+.footer-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 48px;
+}
+
+@media (max-width: 640px) {
+  .footer-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px;
+  }
 }
 </style>

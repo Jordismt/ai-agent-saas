@@ -24,6 +24,18 @@ import PublicBusinessView from "../modules/publicPages/presentation/PublicBusine
 import { authGuard } from "./authGuard.js";
 import { BillingService } from "../modules/billing/infrastructure/BillingService.js";
 import BusinessBillingView from "../modules/billing/presentation/BusinessBillingView.vue";
+
+// Páginas legales
+import AvisoLegalView from "../modules/legal/presentation/AvisoLegalView.vue";
+
+import PrivacidadView from "../modules/legal/presentation/PrivacidadView.vue";
+
+import CookiesView from "../modules/legal/presentation/CookiesView.vue";
+
+import TerminosView from "../modules/legal/presentation/TerminosView.vue";
+
+import TratamientoDatosView from "../modules/legal/presentation/TratamientoDatosView.vue";
+
 const billingService = new BillingService();
 async function paidBusinessGuard(to) {
   try {
@@ -53,7 +65,31 @@ const routes = [
     name: "register",
     component: RegisterView,
   },
-
+  {
+    path: "/aviso-legal",
+    name: "aviso-legal",
+    component: AvisoLegalView,
+  },
+  {
+    path: "/privacidad",
+    name: "privacidad",
+    component: PrivacidadView,
+  },
+  {
+    path: "/cookies",
+    name: "cookies",
+    component: CookiesView,
+  },
+  {
+    path: "/terminos",
+    name: "terminos",
+    component: TerminosView,
+  },
+  {
+    path: "/tratamiento-datos",
+    name: "tratamiento-datos",
+    component: TratamientoDatosView,
+  },
   {
     path: "/chat/:businessId",
     name: "public-chat",
