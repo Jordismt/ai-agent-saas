@@ -94,6 +94,14 @@ export class GetPublishedBusinessPage {
 
         maps_url: page.maps_url,
 
+        theme_primary: page.theme_primary,
+        theme_secondary: page.theme_secondary,
+        theme_background: page.theme_background,
+        theme_surface: page.theme_surface,
+        theme_text: page.theme_text,
+        theme_font: page.theme_font,
+        theme_radius: page.theme_radius,
+        theme_button_style: page.theme_button_style,
         show_services: page.show_services,
 
         show_team: page.show_team,

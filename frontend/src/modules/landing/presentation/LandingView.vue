@@ -1,4124 +1,2024 @@
 <script setup>
 import { ref } from "vue";
 
-const mobileMenuOpen = ref(false);
-
+const menuOpen = ref(false);
+const activeFaq = ref(null);
+const previewTab = ref("dashboard");
+const dashboardTab = ref("reservas");
+const logoFailed = ref(false);
+// Coloca tu logo en frontend/public/resbix-logo.svg (o cambia esta ruta).
+const logoSrc = "/resbix-logo.png";
 const faqs = [
   {
-    question: "¿Qué es AgentFlow?",
-    answer:
-      "AgentFlow es una plataforma para crear agentes de IA adaptados a tu negocio. El agente puede atender consultas, conocer tus servicios y horarios, capturar clientes potenciales y derivar conversaciones a una persona cuando sea necesario.",
+    q: "¿Qué hace exactamente Resbix?",
+    a: "Resbix combina un agente de IA con herramientas para gestionar consultas, oportunidades comerciales y reservas desde un mismo panel.",
   },
   {
-    question: "¿Tengo que saber programar?",
-    answer:
-      "No. Desde el panel puedes configurar la información de tu negocio, servicios, horarios y comportamiento del agente sin tocar código.",
+    q: "¿Necesito conocimientos técnicos?",
+    a: "No. Configuras los datos de tu negocio, servicios, horarios e instrucciones desde tu panel.",
   },
   {
-    question: "¿Puedo intervenir en una conversación?",
-    answer:
-      "Sí. Cuando una conversación necesita atención humana puedes tomar el control, responder al cliente y devolver posteriormente la conversación al agente.",
+    q: "¿Puedo atender personalmente una conversación?",
+    a: "Sí. Puedes tomar el control de una conversación cuando sea necesaria atención humana.",
   },
   {
-    question: "¿AgentFlow puede captar clientes?",
-    answer:
-      "Sí. El agente puede recoger información de clientes interesados y convertir esas conversaciones en leads que puedes gestionar desde el panel.",
+    q: "¿Incluye una página web para mi negocio?",
+    a: "Sí. El plan incluye una página pública para presentar tu negocio, mostrar información y facilitar el contacto y las reservas según las funciones habilitadas.",
   },
   {
-    question: "¿Puedo tener varios negocios?",
-    answer:
-      "Sí. AgentFlow está diseñado para gestionar diferentes negocios desde una misma cuenta, manteniendo separada la información de cada uno.",
+    q: "¿Puedo gestionar mis reservas manualmente?",
+    a: "Sí. Puedes consultar y gestionar las reservas desde el panel, además de las que gestione el agente.",
+  },
+  {
+    q: "¿Qué ocurre después del primer año de la oferta?",
+    a: "La promoción de los primeros 20 clientes es de 50 €/mes durante los primeros 12 meses. Después se aplica la tarifa habitual de 100 €/mes.",
+  },
+  {
+    q: "¿La promoción se aplica automáticamente?",
+    a: "La promoción está limitada a los primeros 20 clientes. La disponibilidad y las condiciones definitivas deben confirmarse antes de contratar.",
   },
 ];
-
-const openedFaq = ref(null);
-
-const toggleFaq = (index) => {
-  openedFaq.value = openedFaq.value === index ? null : index;
-};
-
-const closeMobileMenu = () => {
-  mobileMenuOpen.value = false;
+const features = [
+  {
+    icon: "✳",
+    tag: "ATENCIÓN AUTOMÁTICA",
+    title: "Tu negocio responde incluso cuando tú no puedes.",
+    text: "El agente utiliza la información de tu negocio para responder consultas sobre servicios, precios, disponibilidad y horarios.",
+    color: "violet",
+  },
+  {
+    icon: "▦",
+    tag: "RESERVAS",
+    title: "Menos mensajes. Más citas organizadas.",
+    text: "Centraliza tus reservas, gestiona horarios y empleados y modifica las citas desde tu panel.",
+    color: "blue",
+  },
+  {
+    icon: "↗",
+    tag: "OPORTUNIDADES",
+    title: "Que ninguna conversación interesante se pierda.",
+    text: "Recoge los datos de las personas interesadas y consulta tus leads cuando los necesites.",
+    color: "mint",
+  },
+  {
+    icon: "↔",
+    tag: "CONTROL HUMANO",
+    title: "La IA te ayuda. Tú mantienes el control.",
+    text: "Intervén cuando sea necesario y continúa una conversación sin perder su contexto.",
+    color: "orange",
+  },
+];
+const steps = [
+  { n: "01", title: "Creamos tu espacio", subtitle: "Tu negocio en Resbix", text: "Accede a tu panel y añade el nombre, descripción, ubicación, datos de contacto y horarios de tu negocio. Toda esa información será la base de lo que responderá tu agente.", tags: ["Información del negocio", "Horarios", "Datos de contacto"] },
+  { n: "02", title: "Configuras servicios y equipo", subtitle: "Disponibilidad organizada", text: "Da de alta tus servicios con duración y precio, incorpora a tus empleados y asigna qué servicios realiza cada uno. Define sus horarios para que la disponibilidad se ajuste a tu negocio.", tags: ["Servicios y precios", "Empleados", "Horarios de trabajo"] },
+  { n: "03", title: "Personalizas tu agente de IA", subtitle: "Habla como tu marca", text: "Elige su saludo, tono de comunicación e instrucciones. El agente utiliza la información configurada para responder preguntas y ayudar a tus clientes sin que tengas que repetir siempre lo mismo.", tags: ["Saludo", "Tono", "Instrucciones"] },
+  { n: "04", title: "Compartes tu web pública", subtitle: "Tu escaparate digital", text: "Tus clientes encuentran tu negocio, consultan sus servicios y pueden iniciar una conversación con el agente. La reserva directa desde la web estará disponible cuando se habilite esa función.", tags: ["Web pública", "Agente integrado", "Información accesible"] },
+  { n: "05", title: "Resbix atiende y organiza", subtitle: "Del mensaje a la gestión", text: "El agente responde a las consultas, ayuda a gestionar las reservas disponibles y recoge los datos de los clientes interesados. Tú puedes crear, editar y cancelar citas manualmente desde el panel.", tags: ["Conversaciones", "Reservas", "Leads"] },
+  { n: "06", title: "Tú supervisas todo", subtitle: "Siempre tienes el control", text: "Entra al dashboard para consultar reservas, contactos y conversaciones. Cuando una consulta necesita tu atención, puedes intervenir y continuar la conversación personalmente.", tags: ["Panel centralizado", "Control humano", "Seguimiento"] },
+];
+const sectors = [
+  "Peluquerías y barberías",
+  "Centros de estética",
+  "Clínicas y consultas",
+  "Academias",
+  "Entrenadores",
+  "Negocios de servicios",
+];
+const closeMenu = () => {
+  menuOpen.value = false;
 };
 </script>
 
 <template>
-  <main class="landing">
-    <!-- NAVBAR -->
-
+  <div class="landing">
+    <div class="announcement">
+      <span class="announcement-dot"></span> OFERTA DE LANZAMIENTO
+      <span class="announcement-divider">/</span> Primeros 20 clientes: <b>50 €/mes el primer año</b>
+      <a href="#precios">Ver oferta <span>↗</span></a>
+    </div>
     <header class="navbar">
-      <div class="nav-container">
-        <RouterLink to="/" class="brand">
-          <span class="brand-mark">✦</span>
-          <span>AgentFlow</span>
+      <div class="container nav-inner">
+        <RouterLink to="/" class="brand" @click="closeMenu">
+          <img v-if="!logoFailed" :src="logoSrc" alt="" class="brand-logo" @error="logoFailed = true" />
+          <span v-else class="brand-symbol">✳</span>
+          <span>Resbix<span class="brand-period">.</span></span>
         </RouterLink>
-
-        <nav class="desktop-nav">
-          <a href="#producto">Producto</a>
-          <a href="#como-funciona">Cómo funciona</a>
-          <a href="#casos">Casos de uso</a>
-          <a href="#precios">Precios</a>
+        <nav class="nav-links" aria-label="Navegación principal">
+          <a href="#producto">Producto</a><a href="#demo">Ver demo</a><a href="#funcionamiento">Cómo funciona</a
+          ><a href="#sectores">Para quién</a><a href="#precios">Precios</a>
         </nav>
-
         <div class="nav-actions">
-          <RouterLink to="/login" class="login-link"> Iniciar sesión </RouterLink>
-
-          <RouterLink to="/register" class="nav-cta">
-            Crear mi agente
-
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M5 12h14M13 6l6 6-6 6"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-          </RouterLink>
+          <RouterLink to="/login" class="nav-login">Iniciar sesión</RouterLink
+          ><RouterLink to="/register" class="button button-dark nav-register"
+            >Empezar ahora <span>↗</span></RouterLink
+          >
         </div>
-
         <button
-          class="mobile-menu-button"
+          class="menu-toggle"
           type="button"
-          aria-label="Abrir menú"
-          @click="mobileMenuOpen = !mobileMenuOpen">
-          <span></span>
-          <span></span>
-          <span></span>
+          :aria-expanded="menuOpen"
+          aria-label="Abrir navegación"
+          @click="menuOpen = !menuOpen">
+          {{ menuOpen ? "✕" : "☰" }}
         </button>
       </div>
-
-      <div v-if="mobileMenuOpen" class="mobile-menu">
-        <a href="#producto" @click="closeMobileMenu"> Producto </a>
-
-        <a href="#como-funciona" @click="closeMobileMenu"> Cómo funciona </a>
-
-        <a href="#casos" @click="closeMobileMenu"> Casos de uso </a>
-
-        <a href="#precios" @click="closeMobileMenu"> Precios </a>
-
-        <div class="mobile-actions">
-          <RouterLink to="/login" @click="closeMobileMenu"> Iniciar sesión </RouterLink>
-
-          <RouterLink to="/register" class="mobile-register" @click="closeMobileMenu">
-            Crear mi agente
-          </RouterLink>
-        </div>
-      </div>
+      <nav v-if="menuOpen" class="mobile-nav" aria-label="Navegación móvil">
+        <a href="#producto" @click="closeMenu">Producto</a><a href="#demo" @click="closeMenu">Ver demo</a>
+        ><a href="#funcionamiento" @click="closeMenu">Cómo funciona</a
+        ><a href="#sectores" @click="closeMenu">Para quién</a><a href="#precios" @click="closeMenu">Precios</a
+        ><RouterLink to="/login" @click="closeMenu">Iniciar sesión</RouterLink
+        ><RouterLink to="/register" class="mobile-cta" @click="closeMenu">Empezar ahora ↗</RouterLink>
+      </nav>
     </header>
 
-    <!-- HERO -->
-
-    <section class="hero">
-      <div class="hero-glow hero-glow-one"></div>
-      <div class="hero-glow hero-glow-two"></div>
-
-      <div class="hero-content">
-        <div class="hero-badge">
-          <span class="badge-dot"></span>
-          Agentes IA para negocios
-        </div>
-
-        <h1>
-          Convierte tu web en un empleado que
-          <span>atiende clientes 24/7.</span>
-        </h1>
-
-        <p class="hero-description">
-          AgentFlow responde preguntas, conoce tus servicios, captura oportunidades y te permite tomar el
-          control cuando una conversación necesita atención humana.
-        </p>
-
-        <div class="hero-actions">
-          <RouterLink to="/register" class="primary-button">
-            Crear mi agente
-
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M5 12h14M13 6l6 6-6 6"
-                stroke="currentColor"
-                stroke-width="1.9"
-                stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-          </RouterLink>
-
-          <a href="#producto" class="secondary-button"> Ver cómo funciona </a>
-        </div>
-
-        <div class="hero-trust">
-          <div>
-            <span class="check">✓</span>
-            Configuración sencilla
-          </div>
-
-          <div>
-            <span class="check">✓</span>
-            Sin conocimientos técnicos
-          </div>
-
-          <div>
-            <span class="check">✓</span>
-            Control humano
-          </div>
-        </div>
-      </div>
-
-      <!-- PRODUCT MOCKUP -->
-
-      <div class="product-showcase">
-        <div class="showcase-shadow"></div>
-
-        <div class="browser">
-          <div class="browser-top">
-            <div class="browser-dots">
-              <span></span>
-              <span></span>
-              <span></span>
+    <main>
+      <section class="hero">
+        <div class="hero-orb orb-one"></div>
+        <div class="hero-orb orb-two"></div>
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <div class="eyebrow"><span class="pulse"></span> TU NEGOCIO, SIEMPRE EN MARCHA</div>
+            <h1>Tu próximo cliente no debería <em>esperar.</em></h1>
+            <p class="hero-lead">
+              Conoce al agente de IA que atiende consultas, ayuda con las reservas y convierte conversaciones
+              en oportunidades. Todo conectado a tu negocio, desde un solo panel.
+            </p>
+            <div class="hero-buttons">
+              <RouterLink to="/register" class="button button-primary"
+                >Quiero mi agente <span>↗</span></RouterLink
+              ><a href="#demo" class="button button-outline">Ver Resbix por dentro <span>↓</span></a>
             </div>
-
-            <div class="browser-address">app.agentflow.ai/dashboard</div>
-
-            <div class="browser-space"></div>
+            <div class="hero-checks">
+              <span>✓ Configuración sencilla</span><span>✓ Control humano</span
+              ><span>✓ Reservas y leads</span>
+            </div>
+            <a class="hero-offer" href="#precios"
+              ><span class="offer-gift">✦</span
+              ><span
+                ><b>50% de descuento durante 12 meses</b
+                ><small>Oferta de lanzamiento para los primeros 20 clientes</small></span
+              ><span class="offer-arrow">↗</span></a
+            >
           </div>
-
-          <div class="dashboard">
-            <!-- SIDEBAR -->
-
-            <aside class="demo-sidebar">
-              <div class="demo-brand">
-                <span>✦</span>
-                AgentFlow
+          <div class="hero-art" aria-label="Vista ilustrativa de las funcionalidades de Resbix">
+            <div class="art-grid"></div>
+            <div class="art-glow"></div>
+            <div class="floating-tag tag-top">
+              <span class="tag-icon">✳</span
+              ><span>Tu agente está preparado <small>Atención automatizada</small></span
+              ><span class="tag-live"></span>
+            </div>
+            <div class="mock-window">
+              <div class="mock-top">
+                <span class="mock-dots"><i></i><i></i><i></i></span><span>Vista de ejemplo · Resbix</span
+                ><span>↗</span>
               </div>
-
-              <div class="demo-workspace">
-                <span>WORKSPACE</span>
-              </div>
-
-              <div class="demo-nav active">
-                <span class="demo-icon">⌂</span>
-                Resumen
-              </div>
-
-              <div class="demo-nav">
-                <span class="demo-icon">◇</span>
-                Negocios
-              </div>
-
-              <div class="demo-nav">
-                <span class="demo-icon">◌</span>
-                Conversaciones
-              </div>
-
-              <div class="demo-nav">
-                <span class="demo-icon">♙</span>
-                Leads
-              </div>
-
-              <div class="demo-sidebar-bottom">
-                <span class="online-dot"></span>
-                Sistema operativo
-              </div>
-            </aside>
-
-            <!-- DASHBOARD -->
-
-            <div class="demo-main">
-              <div class="demo-header">
-                <div>
-                  <span class="demo-eyebrow"> WORKSPACE </span>
-
-                  <h3>Resumen</h3>
-
-                  <p>Todo lo que ocurre en tu negocio.</p>
+              <div class="mock-body">
+                <div class="mock-header">
+                  <span class="mock-logo">✳</span
+                  ><span
+                    ><b>Tu asistente virtual</b><small><i></i> Disponible para ayudarte</small></span
+                  ><span class="mock-ellipsis">···</span>
                 </div>
-
-                <div class="demo-header-actions">
-                  <div class="demo-avatar">JC</div>
+                <div class="mock-messages">
+                  <span class="mock-day">HOY</span>
+                  <div class="bubble assistant">¡Hola! 👋 ¿En qué puedo ayudarte hoy?</div>
+                  <div class="bubble visitor">Hola, ¿tenéis hueco para un corte mañana?</div>
+                  <div class="bubble assistant">
+                    ¡Claro! Puedo ayudarte a consultar la disponibilidad. ¿Prefieres por la mañana o por la
+                    tarde?
+                  </div>
+                  <div class="bubble visitor">Por la tarde, gracias.</div>
+                  <div class="typing"><i></i><i></i><i></i></div>
                 </div>
+                <div class="mock-input">Escribe tu mensaje... <span>↑</span></div>
               </div>
-
-              <div class="stats">
-                <div class="stat-card">
-                  <div class="stat-top">
-                    <span>Conversaciones</span>
-                    <div class="stat-icon blue">↗</div>
-                  </div>
-
-                  <strong>128</strong>
-
-                  <small> <b>+18%</b> esta semana </small>
-                </div>
-
-                <div class="stat-card">
-                  <div class="stat-top">
-                    <span>Leads</span>
-                    <div class="stat-icon purple">✦</div>
-                  </div>
-
-                  <strong>34</strong>
-
-                  <small> <b>+12%</b> esta semana </small>
-                </div>
-
-                <div class="stat-card">
-                  <div class="stat-top">
-                    <span>Atendidas por IA</span>
-                    <div class="stat-icon green">✓</div>
-                  </div>
-
-                  <strong>91%</strong>
-
-                  <small>116 conversaciones</small>
-                </div>
-
-                <div class="stat-card">
-                  <div class="stat-top">
-                    <span>Necesitan atención</span>
-                    <div class="stat-icon orange">!</div>
-                  </div>
-
-                  <strong>3</strong>
-
-                  <small>Requieren respuesta</small>
-                </div>
-              </div>
-
-              <div class="demo-grid">
-                <!-- INBOX -->
-
-                <div class="inbox-card">
-                  <div class="card-heading">
-                    <div>
-                      <strong>Conversaciones recientes</strong>
-                      <span>Actividad en tiempo real</span>
-                    </div>
-
-                    <span class="view-all"> Ver todas </span>
-                  </div>
-
-                  <div class="conversation-row">
-                    <div class="conversation-avatar">M</div>
-
-                    <div class="conversation-info">
-                      <strong>María</strong>
-                      <span> ¿Tenéis disponibilidad mañana? </span>
-                    </div>
-
-                    <div class="conversation-status">
-                      <span class="ai-status"> IA </span>
-                      <small>Ahora</small>
-                    </div>
-                  </div>
-
-                  <div class="conversation-row highlighted">
-                    <div class="conversation-avatar human">C</div>
-
-                    <div class="conversation-info">
-                      <strong>Carlos</strong>
-                      <span> Quiero hablar con una persona </span>
-                    </div>
-
-                    <div class="conversation-status">
-                      <span class="human-status"> Humano </span>
-                      <small>2 min</small>
-                    </div>
-                  </div>
-
-                  <div class="conversation-row">
-                    <div class="conversation-avatar">L</div>
-
-                    <div class="conversation-info">
-                      <strong>Laura</strong>
-                      <span> ¿Cuánto cuesta el servicio? </span>
-                    </div>
-
-                    <div class="conversation-status">
-                      <span class="ai-status"> IA </span>
-                      <small>6 min</small>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- LEADS -->
-
-                <div class="leads-card">
-                  <div class="card-heading">
-                    <div>
-                      <strong>Nuevos leads</strong>
-                      <span>Captados por tu agente</span>
-                    </div>
-                  </div>
-
-                  <div class="lead-preview">
-                    <div class="lead-top">
-                      <div class="lead-avatar">LG</div>
-
-                      <span>Nuevo</span>
-                    </div>
-
-                    <strong>Laura García</strong>
-
-                    <small>Interesada en consulta inicial</small>
-
-                    <div class="lead-data">
-                      <span>laura@email.com</span>
-                      <span>+34 600 000 000</span>
-                    </div>
-                  </div>
-
-                  <div class="agent-online">
-                    <div class="agent-symbol">✦</div>
-
-                    <div>
-                      <strong>Agente activo</strong>
-                      <span> Atendiendo clientes ahora </span>
-                    </div>
-
-                    <span class="online-dot"></span>
-                  </div>
-                </div>
-              </div>
+            </div>
+            <div class="floating-tag tag-bottom">
+              <span class="tag-icon green">↗</span
+              ><span>Una nueva oportunidad <small>Contacto recogido por tu agente</small></span
+              ><span class="tag-check">✓</span>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+        <div class="container hero-bottom">
+          <span>MENOS TAREAS REPETITIVAS.</span><span> MÁS TIEMPO PARA TU NEGOCIO.</span
+          ><span class="hero-bottom-line"></span><span>01 / 04</span>
+        </div>
+      </section>
 
-    <!-- LOGOS / POSITIONING -->
+      <section class="sector-ribbon">
+        <div class="container">
+          <p>PENSADO PARA NEGOCIOS QUE TRABAJAN CON PERSONAS</p>
+          <div class="ribbon-items">
+            <span v-for="sector in sectors" :key="sector">{{ sector }}</span>
+          </div>
+        </div>
+      </section>
 
-    <section class="business-strip">
-      <p>Diseñado para negocios que quieren atender mejor sin estar pendientes del chat todo el día.</p>
-
-      <div class="business-types">
-        <span>Clínicas</span>
-        <i></i>
-        <span>Peluquerías</span>
-        <i></i>
-        <span>Restaurantes</span>
-        <i></i>
-        <span>Academias</span>
-        <i></i>
-        <span>Gimnasios</span>
-        <i></i>
-        <span>Servicios</span>
-      </div>
-    </section>
-
-    <!-- PRODUCT -->
-
-    <section id="producto" class="section product-section">
-      <div class="section-heading centered">
-        <span class="section-eyebrow"> TODO EN UN MISMO LUGAR </span>
-
-        <h2>Mucho más que un chatbot.</h2>
-
-        <p>
-          AgentFlow conecta las conversaciones con la información real de tu negocio para convertir preguntas
-          en acciones.
-        </p>
-      </div>
-
-      <div class="feature-grid">
-        <!-- AI -->
-
-        <article class="feature-card feature-large">
-          <div class="feature-copy">
-            <div class="feature-icon-box">✦</div>
-
-            <span class="feature-label"> AGENTE IA </span>
-
-            <h3>Un agente que conoce tu negocio.</h3>
-
+      <section id="producto" class="section product-section">
+        <div class="container">
+          <div class="section-intro">
+            <div>
+              <span class="kicker">01 / EL PRODUCTO</span>
+              <h2>No necesitas otro chatbot.<br /><span>Necesitas que pasen cosas.</span></h2>
+            </div>
             <p>
-              Configura servicios, horarios e instrucciones. Tu agente utiliza esa información para atender a
-              cada cliente de forma contextual.
+              Resbix no se limita a responder preguntas. Conecta la atención al cliente con las herramientas
+              que utilizas para organizar tu negocio.
             </p>
           </div>
-
-          <div class="chat-demo">
-            <div class="chat-demo-header">
-              <div class="mini-avatar">P</div>
-
-              <div>
-                <strong>Peluquería Nova</strong>
-                <span>
-                  <i></i>
-                  Agente disponible
-                </span>
+          <div class="features-grid">
+            <article
+              v-for="(feature, i) in features"
+              :key="feature.title"
+              class="feature"
+              :class="['feature-' + feature.color, { 'feature-wide': i === 0 }]">
+              <div class="feature-top">
+                <span class="feature-icon">{{ feature.icon }}</span
+                ><span class="feature-index">0{{ i + 1 }}</span>
               </div>
-            </div>
+              <div class="feature-copy">
+                <span class="feature-tag">{{ feature.tag }}</span>
+                <h3>{{ feature.title }}</h3>
+                <p>{{ feature.text }}</p>
+              </div>
+              <div v-if="i === 0" class="feature-chat">
+                <div class="feature-chat-row">
+                  <span>Cliente</span><b>¿Cuánto cuesta y cuándo tenéis hueco?</b>
+                </div>
+                <div class="feature-chat-row agent">
+                  <span>✳ Resbix</span><b>Te ayudo con los precios y consultamos la disponibilidad.</b>
+                </div>
+              </div>
+              <div v-if="i === 1" class="feature-detail">
+                <span>PRÓXIMAS CITAS</span>
+                <div><b>09:30</b><span>Corte de pelo</span><i>Confirmada</i></div>
+                <div><b>11:00</b><span>Tratamiento</span><i>Confirmada</i></div>
+              </div>
+              <div v-if="i === 2" class="feature-detail">
+                <span>NUEVO CONTACTO</span>
+                <div>
+                  <b class="contact-avatar">AM</b
+                  ><span>Andrea Martínez<small>Interesada en tus servicios</small></span
+                  ><i>Nuevo</i>
+                </div>
+              </div>
+              <div v-if="i === 3" class="feature-detail handoff-detail">
+                <span>CONTROL DE CONVERSACIÓN</span>
+                <div><b>✳</b><span>Agente IA</span><i>Atendiendo</i></div>
+                <div><b>↳</b><span>Tu equipo</span><i>Disponible</i></div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
 
-            <div class="mini-chat">
-              <div class="mini-message user-message">¿Tenéis hueco mañana por la tarde?</div>
+      <section class="statement-section">
+        <div class="container statement-inner">
+          <span class="kicker kicker-light">MENOS FRICCIÓN. MÁS OPORTUNIDADES.</span>
+          <h2>Mientras tú te ocupas del negocio, <em>Resbix se ocupa de la primera conversación.</em></h2>
+          <div class="statement-bottom">
+            <p>Respuestas, reservas, leads y atención humana en un mismo espacio de trabajo.</p>
+            <RouterLink to="/register" class="button button-white">Empezar con Resbix ↗</RouterLink>
+          </div>
+        </div>
+        <div class="statement-deco">✳</div>
+      </section>
 
-              <div class="assistant-row">
-                <div class="assistant-symbol">✦</div>
-
-                <div class="mini-message assistant-message">
-                  Sí. Mañana estamos abiertos de 16:00 a 20:00. ¿Quieres que te ayude con alguno de nuestros
-                  servicios?
+      <!-- Demostración visual: datos ilustrativos, sin acceso a cuentas reales -->
+      <section id="demo" class="section showcase-section">
+        <div class="container">
+          <div class="showcase-heading">
+            <div><span class="kicker">02 / CONOCE RESBIX POR DENTRO</span><h2>No te lo imagines.<br /><span>Mira cómo se utiliza.</span></h2></div>
+            <p>Explora una representación interactiva del panel de gestión y de la página que verán tus clientes. Los nombres y las citas son ejemplos ilustrativos.</p>
+          </div>
+          <div class="preview-switch" role="tablist" aria-label="Vistas del producto">
+            <button type="button" role="tab" :aria-selected="previewTab === 'dashboard'" :class="{ selected: previewTab === 'dashboard' }" @click="previewTab = 'dashboard'">▦ &nbsp; Panel de tu negocio</button>
+            <button type="button" role="tab" :aria-selected="previewTab === 'website'" :class="{ selected: previewTab === 'website' }" @click="previewTab = 'website'">↗ &nbsp; Tu web + agente IA</button>
+          </div>
+          <div v-if="previewTab === 'dashboard'" class="preview-layout">
+            <div class="product-frame dashboard-frame">
+              <div class="browser-bar"><span class="browser-dots"><i></i><i></i><i></i></span><span class="browser-url">app.resbix · Panel de ejemplo</span><span>↗</span></div>
+              <div class="app-shell">
+                <aside class="app-sidebar"><div class="app-brand"><span>✳</span> resbix.</div><div class="app-business">✂ &nbsp; Estudio Aura <small>Mi negocio</small></div><button v-for="item in ['Resumen','Reservas','Conversaciones','Leads','Servicios','Empleados']" :key="item" type="button" :class="{ current: (dashboardTab === 'reservas' && item === 'Reservas') || (dashboardTab === 'leads' && item === 'Leads') || (dashboardTab === 'conversaciones' && item === 'Conversaciones') }" @click="dashboardTab = item === 'Leads' ? 'leads' : item === 'Conversaciones' ? 'conversaciones' : 'reservas'">{{ item === 'Reservas' ? '▦' : item === 'Leads' ? '↗' : item === 'Conversaciones' ? '☏' : '◈' }} &nbsp; {{ item }}</button><div class="sidebar-foot">✳ &nbsp; Agente configurado</div></aside>
+                <div class="app-main">
+                  <div class="app-top"><span>Tu espacio de trabajo <small>Ejemplo de interfaz</small></span><span class="app-avatar">EA</span></div>
+                  <template v-if="dashboardTab === 'reservas'"><div class="app-page-title"><div><small>GESTIÓN DE CITAS</small><h3>Reservas</h3></div><span class="fake-new">+ Nueva reserva</span></div><div class="app-stat-grid"><div><small>Reservas de hoy</small><b>8</b><span>Calendario organizado</span></div><div><small>Próximas citas</small><b>24</b><span>Consulta rápida</span></div><div><small>Servicios activos</small><b>6</b><span>Tu catálogo</span></div></div><div class="app-table"><div class="app-table-title">Próximas reservas <span>Hoy · Ejemplo</span></div><div class="app-table-head"><span>CLIENTE</span><span>SERVICIO</span><span>HORA</span><span>ESTADO</span></div><div v-for="r in [{n:'Lucía Martínez',i:'LM',s:'Corte y peinado',h:'10:00',c:'Confirmada'},{n:'Carlos Gómez',i:'CG',s:'Corte de pelo',h:'11:30',c:'Confirmada'},{n:'Ana Ruiz',i:'AR',s:'Tratamiento',h:'12:45',c:'Pendiente'}]" :key="r.n" class="app-table-row"><span><i>{{ r.i }}</i>{{ r.n }}</span><span>{{ r.s }}</span><span>{{ r.h }}</span><span class="app-status" :class="{ pending: r.c === 'Pendiente' }">{{ r.c }}</span></div></div></template>
+                  <template v-else-if="dashboardTab === 'leads'"><div class="app-page-title"><div><small>OPORTUNIDADES</small><h3>Contactos interesados</h3></div></div><div class="app-table"><div class="app-table-title">Leads captados <span>Datos de demostración</span></div><div v-for="lead in [{n:'Marina López',s:'Consulta sobre tratamiento',d:'Hoy'},{n:'Pablo Torres',s:'Solicita información de precios',d:'Ayer'},{n:'Clara Pérez',s:'Interesada en una cita',d:'Ayer'}]" :key="lead.n" class="app-lead"><span class="lead-icon">↗</span><div><b>{{ lead.n }}</b><small>{{ lead.s }}</small></div><span>{{ lead.d }}</span></div></div></template>
+                  <template v-else><div class="app-page-title"><div><small>ATENCIÓN AL CLIENTE</small><h3>Conversaciones</h3></div></div><div class="app-chat-demo"><div class="chat-demo-head">Marina López <span>✳ Agente IA</span></div><p class="chat-demo-in">Hola, ¿tenéis hueco mañana por la tarde?</p><p class="chat-demo-out">¡Hola! Claro, vamos a consultar los horarios disponibles. ¿Qué servicio necesitas?</p><div class="chat-demo-note">↔ Puedes intervenir y responder personalmente.</div></div></template>
                 </div>
               </div>
             </div>
+            <div class="preview-description"><span class="preview-pill">EL DASHBOARD</span><h3>Todo tu negocio, en una sola pantalla.</h3><p>Consulta reservas, organiza tus servicios y empleados, revisa los leads y toma el control de las conversaciones cuando lo necesites.</p><div class="preview-mini-tabs"><button type="button" :class="{ active: dashboardTab === 'reservas' }" @click="dashboardTab = 'reservas'">01 &nbsp; Reservas</button><button type="button" :class="{ active: dashboardTab === 'leads' }" @click="dashboardTab = 'leads'">02 &nbsp; Leads</button><button type="button" :class="{ active: dashboardTab === 'conversaciones' }" @click="dashboardTab = 'conversaciones'">03 &nbsp; Conversaciones</button></div><p class="preview-footnote">Demostración visual con datos ficticios. No es una sesión real.</p></div>
           </div>
-        </article>
-
-        <!-- LEADS -->
-
-        <article class="feature-card">
-          <div class="feature-icon-box green-icon">↗</div>
-
-          <span class="feature-label"> LEADS </span>
-
-          <h3>Convierte conversaciones en oportunidades.</h3>
-
-          <p>Guarda los datos de clientes interesados y gestiona su estado desde el panel.</p>
-
-          <div class="lead-card-demo">
-            <div class="lead-demo-head">
-              <div class="lead-demo-avatar">AM</div>
-
-              <div>
-                <strong>Andrea Martínez</strong>
-                <span>Nuevo lead</span>
-              </div>
-
-              <span class="new-pill">Nuevo</span>
-            </div>
-
-            <div class="lead-demo-row">
-              <span>Interés</span>
-              <strong>Primera consulta</strong>
-            </div>
-
-            <div class="lead-demo-row">
-              <span>Estado</span>
-              <strong>Cualificación pendiente</strong>
-            </div>
+          <div v-else class="preview-layout website-layout">
+            <div class="product-frame website-frame"><div class="browser-bar"><span class="browser-dots"><i></i><i></i><i></i></span><span class="browser-url">tu-negocio · Web de ejemplo</span><span>↗</span></div><div class="sample-site"><div class="site-nav"><strong>ESTUDIO <em>AURA</em></strong><span>Inicio &nbsp; Servicios &nbsp; Contacto</span><b>Reservar cita ↗</b></div><div class="site-hero"><span>BIENVENIDOS A ESTUDIO AURA</span><h3>Tu momento.<br /><em>Tu estilo.</em></h3><p>Un espacio pensado para cuidarte. Descubre nuestros servicios y encuentra tu próxima cita.</p><span class="site-button">Descubrir servicios ↗</span></div><div class="site-services"><span>NUESTROS SERVICIOS</span><div><b>Corte y peinado</b><b>Tratamientos</b><b>Coloración</b></div></div><div class="site-chat"><div class="site-chat-head"><span>✳</span><div><b>Asistente de Estudio Aura</b><small>Te ayudamos con tu próxima visita</small></div><span>−</span></div><div class="site-chat-body"><p>¡Hola! 👋 Soy el asistente de Estudio Aura. ¿En qué puedo ayudarte?</p><p>¿Cuánto cuesta un corte?</p><p>¡Claro! El corte tiene un precio desde 20 €. ¿Quieres que consultemos disponibilidad?</p></div><div class="site-chat-input">Escribe tu mensaje... <span>↑</span></div></div></div></div>
+            <div class="preview-description"><span class="preview-pill">LA WEB PÚBLICA</span><h3>Tu escaparate digital, con un agente que atiende.</h3><p>Una página para presentar tus servicios y facilitar el contacto. El agente conoce los datos que has configurado y puede responder a las consultas de tus visitantes.</p><div class="preview-benefits"><span>✓ Tu marca y tus servicios</span><span>✓ Agente integrado</span><span>✓ Disponible desde móvil</span></div><p class="preview-footnote">Diseño ilustrativo. La apariencia final de la web pública puede variar. La reserva directa desde la web depende de su habilitación.</p></div>
           </div>
-        </article>
+        </div>
+      </section>
 
-        <!-- HANDOFF -->
-
-        <article class="feature-card dark-feature">
-          <div class="feature-icon-box dark-icon">↔</div>
-
-          <span class="feature-label"> HANDOFF HUMANO </span>
-
-          <h3>La IA atiende. Tú decides cuándo entrar.</h3>
-
-          <p>
-            Cuando un cliente necesita una persona, toma el control de la conversación y continúa exactamente
-            donde la IA lo dejó.
-          </p>
-
-          <div class="handoff-demo">
-            <div class="handoff-line">
-              <span class="handoff-avatar ai"> ✦ </span>
-
-              <div>
-                <strong>Agente IA</strong>
-                <span>Atendiendo conversación</span>
-              </div>
-
-              <span class="status-green"> Activo </span>
+      <section id="funcionamiento" class="section steps-section">
+        <div class="container">
+          <div class="section-intro">
+            <div>
+              <span class="kicker">03 / CÓMO FUNCIONA</span>
+              <h2>De cero a tener tu negocio <span>conectado.</span></h2>
             </div>
-
-            <div class="handoff-arrow">↓</div>
-
-            <div class="handoff-line human-line">
-              <span class="handoff-avatar person"> JC </span>
-
-              <div>
-                <strong>Atención humana</strong>
-                <span>Control solicitado</span>
-              </div>
-
-              <span class="status-blue"> Tomar control </span>
-            </div>
+            <p>Así es el recorrido, paso a paso: desde configurar tu cuenta hasta atender consultas y gestionar tus reservas.</p>
           </div>
-        </article>
+          <div class="steps detailed-steps"><article v-for="step in steps" :key="step.n"><div class="step-number">{{ step.n }}<span>↗</span></div><span class="step-subtitle">{{ step.subtitle }}</span><h3>{{ step.title }}</h3><p>{{ step.text }}</p><div class="step-tags"><span v-for="tag in step.tags" :key="tag">✓ {{ tag }}</span></div></article></div>
+          <div class="steps-cta">
+            <p>Tu agente, tu información, tus reglas.</p>
+            <RouterLink to="/register">Crear mi cuenta <span>↗</span></RouterLink>
+          </div>
+        </div>
+      </section>
 
-        <!-- CONTROL -->
-
-        <article class="feature-card feature-large control-feature">
-          <div class="feature-copy">
-            <div class="feature-icon-box purple-icon">◫</div>
-
-            <span class="feature-label"> PANEL DE CONTROL </span>
-
-            <h3>Todo tu negocio, organizado.</h3>
-
+      <section id="sectores" class="section sectors-section">
+        <div class="container sectors-layout">
+          <div>
+            <span class="kicker">03 / PARA QUIÉN</span>
+            <h2>Una herramienta.<br /><span>Muchos negocios.</span></h2>
             <p>
-              Consulta conversaciones, leads, servicios, horarios y configuración del agente desde un único
-              workspace.
+              Configura el agente con tus propios servicios, precios, horarios e instrucciones. Resbix se
+              adapta a la información que proporcionas.
             </p>
+            <RouterLink to="/register" class="text-link">Quiero probarlo <span>↗</span></RouterLink>
           </div>
-
-          <div class="control-demo">
-            <div class="control-nav">
-              <span class="selected"></span>
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-
-            <div class="control-content">
-              <div class="control-title">
-                <span></span>
-                <span></span>
-              </div>
-
-              <div class="control-stats">
-                <div>
-                  <small></small>
-                  <strong></strong>
-                </div>
-
-                <div>
-                  <small></small>
-                  <strong></strong>
-                </div>
-
-                <div>
-                  <small></small>
-                  <strong></strong>
-                </div>
-              </div>
-
-              <div class="control-table">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
+          <div class="sector-list">
+            <div v-for="(sector, index) in sectors" :key="sector">
+              <span>0{{ index + 1 }}</span
+              ><b>{{ sector }}</b
+              ><span>↗</span>
             </div>
           </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- HOW IT WORKS -->
-
-    <section id="como-funciona" class="section how-section">
-      <div class="section-heading">
-        <span class="section-eyebrow"> EMPIEZA EN MINUTOS </span>
-
-        <h2>De cero a tu propio agente.</h2>
-
-        <p>
-          No necesitas configurar sistemas complejos. Dale a AgentFlow la información de tu negocio y empieza
-          a construir tu agente.
-        </p>
-      </div>
-
-      <div class="steps-grid">
-        <article class="process-step">
-          <span class="step-number">01</span>
-
-          <div class="process-icon">◇</div>
-
-          <h3>Crea tu negocio</h3>
-
-          <p>Añade la información básica de tu empresa para crear su espacio de trabajo.</p>
-        </article>
-
-        <article class="process-step">
-          <span class="step-number">02</span>
-
-          <div class="process-icon">≡</div>
-
-          <h3>Añade tus servicios</h3>
-
-          <p>Define qué ofreces, precios, duración y horarios de atención.</p>
-        </article>
-
-        <article class="process-step">
-          <span class="step-number">03</span>
-
-          <div class="process-icon">✦</div>
-
-          <h3>Personaliza la IA</h3>
-
-          <p>Configura tono, bienvenida e instrucciones específicas para tu agente.</p>
-        </article>
-
-        <article class="process-step">
-          <span class="step-number">04</span>
-
-          <div class="process-icon">↗</div>
-
-          <h3>Empieza a conversar</h3>
-
-          <p>Tu agente queda preparado para atender clientes y generar oportunidades.</p>
-        </article>
-      </div>
-    </section>
-
-    <!-- HANDOFF -->
-
-    <section class="handoff-section">
-      <div class="handoff-container">
-        <div class="handoff-copy">
-          <span class="section-eyebrow light"> IA + PERSONAS </span>
-
-          <h2>Automatiza sin perder el toque humano.</h2>
-
-          <p>
-            No todas las conversaciones deberían terminar en manos de una IA. AgentFlow permite detectar
-            cuándo hace falta una persona y continuar la conversación desde el panel.
-          </p>
-
-          <div class="handoff-points">
-            <div>
-              <span>✓</span>
-              La IA atiende las consultas habituales.
-            </div>
-
-            <div>
-              <span>✓</span>
-              Las conversaciones pueden pasar a atención humana.
-            </div>
-
-            <div>
-              <span>✓</span>
-              Puedes devolver el control al agente.
-            </div>
-
-            <div>
-              <span>✓</span>
-              Todo el historial permanece en la conversación.
-            </div>
-          </div>
-
-          <RouterLink to="/register" class="light-button">
-            Crear mi agente
-            <span>→</span>
-          </RouterLink>
         </div>
+      </section>
 
-        <div class="handoff-visual">
-          <div class="support-window">
-            <div class="support-header">
+      <section id="precios" class="section pricing-section">
+        <div class="container pricing-layout">
+          <div class="pricing-copy">
+            <span class="kicker">04 / UN SOLO PLAN. TODO INCLUIDO.</span>
+            <h2>No contrates solo un chatbot.<br /><span>Digitaliza la atención de tu negocio.</span></h2>
+            <p>
+              Tu propia página web, un agente que atiende consultas y las herramientas para convertir
+              conversaciones en reservas y oportunidades. Todo conectado en Resbix.
+            </p>
+            <div class="value-stack">
               <div>
-                <span class="support-back">←</span>
-
+                <span class="value-icon">◈</span>
                 <div>
-                  <strong>Conversación #8F2A</strong>
-                  <small>Cliente web</small>
+                  <b>Tu propia web pública</b
+                  ><small
+                    >Una página para presentar tu negocio, servicios, horarios y facilitar el contacto y las
+                    reservas.</small
+                  >
                 </div>
               </div>
-
-              <span class="human-pill"> Atención humana </span>
-            </div>
-
-            <div class="support-body">
-              <div class="support-message left">
-                <small>Cliente</small>
-
-                <p>Necesitaría hablar con alguien para resolver una duda más concreta.</p>
-              </div>
-
-              <div class="support-message right">
-                <small>Agente IA</small>
-
-                <p>Por supuesto. Voy a derivar tu conversación para que pueda ayudarte una persona.</p>
-              </div>
-
-              <div class="handoff-notice">
-                <span>↔</span>
-
+              <div>
+                <span class="value-icon">✳</span>
                 <div>
-                  <strong>Intervención solicitada</strong>
-                  <small> Esta conversación necesita atención. </small>
+                  <b>Un agente IA que conoce tu negocio</b
+                  ><small
+                    >Atención a consultas sobre tus servicios, precios, horarios y disponibilidad.</small
+                  >
+                </div>
+              </div>
+              <div>
+                <span class="value-icon">▦</span>
+                <div>
+                  <b>Reservas y organización en un solo panel</b
+                  ><small>Consulta las citas y gestiona reservas manualmente, servicios y empleados.</small>
+                </div>
+              </div>
+              <div>
+                <span class="value-icon">↗</span>
+                <div>
+                  <b>Captación y seguimiento de clientes</b
+                  ><small>Guarda los datos de personas interesadas y revisa las conversaciones.</small>
                 </div>
               </div>
             </div>
-
-            <div class="support-footer">
-              <span>Escribe una respuesta...</span>
-
-              <button>Enviar</button>
+          </div>
+          <div class="pricing-card">
+            <div class="pricing-card-top">
+              <span>✦ OFERTA DE LANZAMIENTO</span><span>PRIMEROS 20 CLIENTES</span>
+            </div>
+            <div class="pricing-card-body">
+              <span class="pricing-label">Resbix · Plataforma completa</span>
+              <div class="price-old">Precio habitual <s>100 €/mes</s></div>
+              <div class="price-main">50<span>€</span><small>/ mes</small></div>
+              <div class="price-save">AHORRAS 600 € DURANTE TU PRIMER AÑO</div>
+              <p class="price-intro">
+                Todo lo que necesitas para atender, captar y organizar clientes desde un mismo sitio.
+              </p>
+              <div class="included-heading">TODO ESTO ESTÁ INCLUIDO</div>
+              <ul class="included-list">
+                <li class="included-highlight">
+                  <span>✓</span>
+                  <div>
+                    <strong>Página web pública para tu negocio</strong
+                    ><small>Tu escaparate digital, conectado con Resbix</small>
+                  </div>
+                  <b>INCLUIDA</b>
+                </li>
+                <li><span>✓</span> Agente IA personalizado con tu información</li>
+                <li><span>✓</span> Atención automática a consultas, 24/7</li>
+                <li><span>✓</span> Sistema de reservas y disponibilidad</li>
+                <li><span>✓</span> Gestión manual de citas desde el panel</li>
+                <li><span>✓</span> Gestión de servicios, horarios y empleados</li>
+                <li><span>✓</span> Captación y gestión de leads</li>
+                <li><span>✓</span> Historial de conversaciones</li>
+                <li><span>✓</span> Control humano del chat cuando lo necesites</li>
+                <li><span>✓</span> Emails de confirmación y recordatorio de reservas*</li>
+                <li><span>✓</span> Panel de control para gestionarlo todo</li>
+              </ul>
+              <RouterLink to="/register" class="button button-primary pricing-cta"
+                >Quiero aprovechar la oferta <span>↗</span></RouterLink
+              >
+              <div class="pricing-under-cta">Un solo plan · Sin elegir entre funciones esenciales</div>
+              <small class="pricing-terms"
+                >50 €/mes durante los primeros 12 meses para los primeros 20 clientes. Después, 100 €/mes.
+                Promoción sujeta a disponibilidad real. *Los emails requieren que el cliente facilite su
+                dirección. Consulta las condiciones antes de contratar.</small
+              >
             </div>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- USE CASES -->
-
-    <section id="casos" class="section cases-section">
-      <div class="section-heading centered">
-        <span class="section-eyebrow"> PARA NEGOCIOS REALES </span>
-
-        <h2>Un agente adaptado a tu negocio.</h2>
-
-        <p>Configura AgentFlow con tus propios servicios, horarios e instrucciones.</p>
-      </div>
-
-      <div class="cases-grid">
-        <article class="case-card">
-          <div class="case-icon">✂</div>
-          <h3>Peluquerías y estética</h3>
-          <p>Responde sobre servicios, precios, horarios y consultas frecuentes.</p>
-        </article>
-
-        <article class="case-card">
-          <div class="case-icon">+</div>
-          <h3>Clínicas</h3>
-          <p>Atiende primeras consultas y captura datos de potenciales pacientes.</p>
-        </article>
-
-        <article class="case-card">
-          <div class="case-icon">⌂</div>
-          <h3>Restaurantes</h3>
-          <p>Resuelve preguntas sobre horarios, servicios e información del establecimiento.</p>
-        </article>
-
-        <article class="case-card">
-          <div class="case-icon">△</div>
-          <h3>Gimnasios y entrenadores</h3>
-          <p>Informa sobre planes, servicios y convierte consultas en nuevos contactos.</p>
-        </article>
-
-        <article class="case-card">
-          <div class="case-icon">A</div>
-          <h3>Academias</h3>
-          <p>Responde dudas sobre cursos, horarios, servicios y solicitudes de información.</p>
-        </article>
-
-        <article class="case-card">
-          <div class="case-icon">↗</div>
-          <h3>Empresas de servicios</h3>
-          <p>Convierte las visitas de tu web en conversaciones y oportunidades comerciales.</p>
-        </article>
-      </div>
-    </section>
-
-    <!-- PRICING -->
-
-    <section id="precios" class="section pricing-section">
-      <div class="section-heading centered">
-        <span class="section-eyebrow"> PRECIOS </span>
-
-        <h2>Un plan para cada etapa.</h2>
-
-        <p>
-          La estructura está preparada para crecer contigo. Puedes empezar con lo esencial y ampliar cuando tu
-          negocio lo necesite.
-        </p>
-      </div>
-
-      <div class="pricing-grid">
-        <article class="pricing-card">
-          <div class="pricing-header">
-            <span class="plan-name"> Starter </span>
-
-            <p>Para pequeños negocios que quieren empezar a automatizar su atención.</p>
+      </section>
+      <section class="section faq-section">
+        <div class="container faq-layout">
+          <div>
+            <span class="kicker">PREGUNTAS FRECUENTES</span>
+            <h2>Todo claro <span>desde el principio.</span></h2>
+            <p>Lo que probablemente quieras saber antes de empezar.</p>
           </div>
-
-          <div class="price">
-            <strong>—</strong>
-            <span>/ mes</span>
+          <div class="faq-list">
+            <article v-for="(faq, index) in faqs" :key="faq.q" :class="{ expanded: activeFaq === index }">
+              <button
+                type="button"
+                :aria-expanded="activeFaq === index"
+                @click="activeFaq = activeFaq === index ? null : index">
+                <span>{{ faq.q }}</span
+                ><span>{{ activeFaq === index ? "−" : "+" }}</span>
+              </button>
+              <p v-if="activeFaq === index">{{ faq.a }}</p>
+            </article>
           </div>
-
-          <RouterLink to="/register" class="pricing-button secondary"> Empezar </RouterLink>
-
-          <div class="plan-features">
-            <span>✓ 1 negocio</span>
-            <span>✓ Agente IA</span>
-            <span>✓ Servicios y horarios</span>
-            <span>✓ Historial de conversaciones</span>
-            <span>✓ Captura de leads</span>
-          </div>
-        </article>
-
-        <article class="pricing-card featured">
-          <div class="popular-badge">RECOMENDADO</div>
-
-          <div class="pricing-header">
-            <span class="plan-name"> Growth </span>
-
-            <p>Para negocios que utilizan AgentFlow como parte de su atención diaria.</p>
-          </div>
-
-          <div class="price">
-            <strong>—</strong>
-            <span>/ mes</span>
-          </div>
-
-          <RouterLink to="/register" class="pricing-button primary"> Crear mi agente </RouterLink>
-
-          <div class="plan-features">
-            <span>✓ Todo lo incluido en Starter</span>
-            <span>✓ Mayor volumen de conversaciones</span>
-            <span>✓ Handoff humano</span>
-            <span>✓ Gestión avanzada de leads</span>
-            <span>✓ Soporte prioritario</span>
-          </div>
-        </article>
-
-        <article class="pricing-card">
-          <div class="pricing-header">
-            <span class="plan-name"> Pro </span>
-
-            <p>Para equipos y negocios con necesidades de automatización más avanzadas.</p>
-          </div>
-
-          <div class="price">
-            <strong>—</strong>
-            <span>/ mes</span>
-          </div>
-
-          <RouterLink to="/register" class="pricing-button secondary"> Empezar </RouterLink>
-
-          <div class="plan-features">
-            <span>✓ Todo lo incluido en Growth</span>
-            <span>✓ Mayor capacidad</span>
-            <span>✓ Varios negocios</span>
-            <span>✓ Funciones avanzadas</span>
-            <span>✓ Soporte prioritario</span>
-          </div>
-        </article>
-      </div>
-
-      <p class="pricing-note">Los precios y límites definitivos se anunciarán antes del lanzamiento.</p>
-    </section>
-
-    <!-- FAQ -->
-
-    <section class="section faq-section">
-      <div class="faq-layout">
-        <div class="faq-heading">
-          <span class="section-eyebrow"> PREGUNTAS FRECUENTES </span>
-
-          <h2>Todo lo que necesitas saber.</h2>
-
-          <p>Algunas de las preguntas más habituales antes de empezar con AgentFlow.</p>
         </div>
+      </section>
 
-        <div class="faq-list">
-          <article
-            v-for="(faq, index) in faqs"
-            :key="faq.question"
-            class="faq-item"
-            :class="{ open: openedFaq === index }">
-            <button type="button" @click="toggleFaq(index)">
-              <span>{{ faq.question }}</span>
-
-              <span class="faq-plus">
-                {{ openedFaq === index ? "−" : "+" }}
-              </span>
-            </button>
-
-            <div v-if="openedFaq === index" class="faq-answer">
-              <p>{{ faq.answer }}</p>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- FINAL CTA -->
-
-    <section class="final-cta-section">
-      <div class="final-cta">
-        <div class="cta-glow"></div>
-
-        <div class="cta-content">
-          <span class="cta-eyebrow"> EMPIEZA CON AGENTFLOW </span>
-
-          <h2>Tu próximo cliente podría estar escribiéndote ahora.</h2>
-
+      <section class="final-section">
+        <div class="container final-content">
+          <span class="kicker kicker-light">TU NEGOCIO NO SE DETIENE</span>
+          <h2>El siguiente mensaje<br />puede ser <em>tu próximo cliente.</em></h2>
           <p>
-            Crea tu agente y prepara tu negocio para atender conversaciones incluso cuando tú no estás
-            disponible.
+            Empieza a atender mejor, organiza tus oportunidades y recupera tiempo para lo que de verdad
+            importa.
           </p>
-
-          <div class="cta-actions">
-            <RouterLink to="/register" class="cta-primary">
-              Crear mi agente
-              <span>→</span>
-            </RouterLink>
-
-            <RouterLink to="/login" class="cta-secondary"> Ya tengo una cuenta </RouterLink>
-          </div>
+          <RouterLink to="/register" class="button button-white"
+            >Empezar por 50 €/mes <span>↗</span></RouterLink
+          ><small>Promoción para los primeros 20 clientes durante el primer año.</small>
         </div>
-      </div>
-    </section>
-
-    <!-- FOOTER -->
-
+      </section>
+    </main>
     <footer class="footer">
-      <div class="footer-main">
-        <div class="footer-brand">
-          <RouterLink to="/" class="brand">
-            <span class="brand-mark footer-mark"> ✦ </span>
-
-            <span>AgentFlow</span>
-          </RouterLink>
-
-          <p>Agentes de inteligencia artificial para negocios que quieren atender mejor.</p>
+      <div class="container footer-main">
+        <div>
+          <RouterLink to="/" class="brand"
+            ><img
+              v-if="!logoFailed"
+              :src="logoSrc"
+              alt=""
+              class="brand-logo"
+              @error="logoFailed = true" /><span v-else class="brand-symbol">✳</span
+            ><span>resbix<span class="brand-period">.</span></span></RouterLink
+          >
+          <p>La atención de tu negocio, preparada para lo que viene.</p>
         </div>
-
         <div class="footer-links">
           <div>
-            <strong>Producto</strong>
-            <a href="#producto">Funciones</a>
-            <a href="#como-funciona">Cómo funciona</a>
-            <a href="#precios">Precios</a>
+            <b>Explorar</b><a href="#producto">Producto</a><a href="#demo">Ver demo</a><a href="#funcionamiento">Cómo funciona</a
+            ><a href="#sectores">Para quién</a><a href="#precios">Precios</a>
           </div>
-
           <div>
-            <strong>Cuenta</strong>
-            <RouterLink to="/login"> Iniciar sesión </RouterLink>
-            <RouterLink to="/register"> Crear cuenta </RouterLink>
-          </div>
-
-          <div>
-            <strong>AgentFlow</strong>
-            <a href="#casos">Casos de uso</a>
-            <a href="#producto">Producto</a>
+            <b>Tu cuenta</b><RouterLink to="/login">Iniciar sesión</RouterLink
+            ><RouterLink to="/register">Crear cuenta</RouterLink>
           </div>
         </div>
       </div>
-
-      <div class="footer-bottom">
-        <span> © {{ new Date().getFullYear() }} AgentFlow. Todos los derechos reservados. </span>
-
-        <div>
-          <span class="online-dot"></span>
-          Todos los sistemas operativos
-        </div>
+      <div class="container footer-bottom">
+        <span>© {{ new Date().getFullYear() }} Resbix. Todos los derechos reservados.</span
+        ><span>Hecho para negocios que quieren avanzar. ✳</span>
       </div>
     </footer>
-  </main>
+  </div>
 </template>
 
 <style scoped>
-* {
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+.landing {
+  --ink: #11192b;
+  --muted: #697287;
+  --line: #e7eaf0;
+  --accent: #6656ed;
+  color: var(--ink);
+  background: #fff;
+  font-family: "DM Sans", sans-serif;
+  overflow: hidden;
+}
+.landing * {
   box-sizing: border-box;
 }
-
-.landing {
-  --landing-text: #0f172a;
-  --landing-muted: #64748b;
-  --landing-border: #e2e8f0;
-  --landing-blue: #2563eb;
-  --landing-dark: #0b1120;
-
-  min-height: 100vh;
-
-  overflow: hidden;
-
-  background: #ffffff;
-  color: var(--landing-text);
+.landing a {
+  text-decoration: none;
 }
-
-/* NAVBAR */
-
+.landing button {
+  font: inherit;
+  cursor: pointer;
+}
+.container {
+  width: min(1200px, calc(100% - 64px));
+  margin-inline: auto;
+}
+.announcement {
+  min-height: 37px;
+  background: #16182f;
+  color: #e5e5ff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 16px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.announcement b {
+  color: #fff;
+}
+.announcement a {
+  color: #bfb7ff;
+  font-weight: 700;
+  margin-left: 9px;
+}
+.announcement-dot,
+.pulse {
+  width: 7px;
+  height: 7px;
+  background: #9eecbd;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px #9eecbd24;
+  display: inline-block;
+}
+.announcement-divider {
+  color: #565a81;
+}
 .navbar {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  z-index: 100;
-
-  width: 100%;
-
-  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
-
-  background: rgba(255, 255, 255, 0.88);
-
-  backdrop-filter: blur(18px);
+  z-index: 40;
+  background: #ffffffed;
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid #eceef2;
 }
-
-.nav-container {
-  width: min(1180px, calc(100% - 40px));
-  height: 64px;
-
+.nav-inner {
+  height: 78px;
   display: flex;
   align-items: center;
-
-  margin: 0 auto;
+  gap: 36px;
 }
-
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-
-  color: #0f172a;
-
+  gap: 9px;
+  color: var(--ink);
+  font:
+    800 27px "Manrope",
+    sans-serif;
+  letter-spacing: -1.9px;
+}
+.brand-logo,
+.brand-symbol {
+  width: 37px;
+  height: 37px;
+  object-fit: contain;
+  display: grid;
+  place-items: center;
+}
+.brand-symbol {
+  border-radius: 12px;
+  background: #6656ed;
+  color: white;
+  font-size: 25px;
+}
+.brand-period {
+  color: #6656ed;
+}
+.nav-links {
+  display: flex;
+  gap: 34px;
+  margin: auto;
+}
+.nav-links a,
+.nav-login {
+  color: #515a6d;
   font-size: 13px;
-  font-weight: 750;
-  letter-spacing: -0.03em;
-
-  text-decoration: none;
+  font-weight: 700;
 }
-
-.brand-mark {
-  width: 29px;
-  height: 29px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 8px;
-
-  background: #0f172a;
-  color: #93c5fd;
-
-  font-size: 10px;
+.nav-links a:hover,
+.nav-login:hover {
+  color: #6656ed;
 }
-
-.desktop-nav {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-
-  margin-left: auto;
-  margin-right: 32px;
-}
-
-.desktop-nav a,
-.login-link {
-  color: #64748b;
-
-  font-size: 9px;
-  font-weight: 550;
-
-  text-decoration: none;
-
-  transition: color 0.15s ease;
-}
-
-.desktop-nav a:hover,
-.login-link:hover {
-  color: #0f172a;
-}
-
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 25px;
 }
-
-.nav-cta {
-  min-height: 34px;
-
+.button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-
-  padding: 0 13px;
-
-  border-radius: 8px;
-
-  background: #0f172a;
-  color: #ffffff;
-
-  font-size: 8px;
-  font-weight: 600;
-
-  text-decoration: none;
-
+  justify-content: center;
+  gap: 28px;
+  padding: 15px 22px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 13px;
   transition:
-    transform 0.15s ease,
-    background 0.15s ease;
+    transform 0.2s,
+    box-shadow 0.2s;
 }
-
-.nav-cta:hover {
-  background: #1e293b;
-
-  transform: translateY(-1px);
+.button:hover {
+  transform: translateY(-2px);
 }
-
-.mobile-menu-button,
-.mobile-menu {
+.button-dark {
+  background: #171c2c;
+  color: #fff;
+}
+.button-primary {
+  background: #6656ed;
+  color: #fff;
+  box-shadow: 0 13px 30px #6656ed32;
+}
+.button-primary:hover {
+  box-shadow: 0 16px 35px #6656ed55;
+}
+.button-outline {
+  border: 1px solid #dcdfe9;
+  color: #222c40;
+  background: white;
+}
+.button-white {
+  background: #fff;
+  color: #25203c;
+}
+.menu-toggle,
+.mobile-nav {
   display: none;
 }
-
-/* HERO */
-
 .hero {
   position: relative;
-
-  padding: 148px 24px 80px;
-
-  background:
-    radial-gradient(circle at 50% 10%, rgba(59, 130, 246, 0.09), transparent 29%),
-    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  background: linear-gradient(115deg, #fff 0%, #fbfaff 60%, #f3f1ff 100%);
+  padding: 92px 0 28px;
 }
-
-.hero-glow {
+.hero-orb {
   position: absolute;
-
   border-radius: 50%;
-
   pointer-events: none;
 }
-
-.hero-glow-one {
-  top: 60px;
-  left: -250px;
-
-  width: 500px;
-  height: 500px;
-
-  border: 1px solid rgba(37, 99, 235, 0.05);
+.orb-one {
+  width: 540px;
+  height: 540px;
+  right: -200px;
+  top: 20px;
+  background: #e9e4ff8a;
+  filter: blur(70px);
 }
-
-.hero-glow-two {
-  top: 180px;
-  right: -300px;
-
-  width: 600px;
-  height: 600px;
-
-  border: 1px solid rgba(99, 102, 241, 0.05);
+.orb-two {
+  width: 400px;
+  height: 400px;
+  left: -300px;
+  top: 200px;
+  background: #dff7ff9c;
+  filter: blur(80px);
 }
-
-.hero-content {
+.hero-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+  align-items: center;
+}
+.hero-copy {
   position: relative;
   z-index: 2;
-
-  width: min(820px, 100%);
-
-  margin: 0 auto;
-
-  text-align: center;
 }
-
-.hero-badge {
-  width: fit-content;
-
+.eyebrow,
+.kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #6859d8;
+}
+.eyebrow {
   display: flex;
   align-items: center;
-  gap: 6px;
-
-  margin: 0 auto 17px;
-  padding: 5px 9px;
-
-  border: 1px solid #dbeafe;
-  border-radius: 999px;
-
-  background: #eff6ff;
-  color: #2563eb;
-
-  font-size: 7px;
-  font-weight: 650;
+  gap: 12px;
+  margin-bottom: 26px;
 }
-
-.badge-dot {
-  width: 5px;
-  height: 5px;
-
-  border-radius: 50%;
-
-  background: #22c55e;
-
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+.hero h1,
+.section h2,
+.statement-section h2,
+.final-section h2 {
+  font-family: "Manrope", sans-serif;
+  letter-spacing: -3.6px;
+  font-weight: 800;
 }
-
 .hero h1 {
-  max-width: 820px;
-
-  margin: 0 auto;
-
-  color: #0f172a;
-
-  font-size: clamp(44px, 6vw, 72px);
-  line-height: 0.98;
-  letter-spacing: -0.065em;
+  font-size: clamp(45px, 5vw, 75px);
+  line-height: 1.09;
+  margin: 0;
+  max-width: 660px;
 }
-
-.hero h1 span {
-  display: block;
-
-  color: #2563eb;
+.hero h1 em,
+.statement-section h2 em,
+.final-section h2 em {
+  font-style: normal;
+  color: #705dec;
 }
-
-.hero-description {
-  max-width: 620px;
-
-  margin: 22px auto 0;
-
-  color: #64748b;
-
-  font-size: 13px;
-  line-height: 1.7;
+.hero-lead {
+  font-size: 17px;
+  line-height: 1.8;
+  color: #687185;
+  max-width: 560px;
+  margin: 25px 0 28px;
 }
-
-.hero-actions {
+.hero-buttons {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-
-  margin-top: 27px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
-
-.primary-button,
-.secondary-button {
-  min-height: 42px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-
-  padding: 0 17px;
-
-  border-radius: 9px;
-
-  font-size: 9px;
-  font-weight: 600;
-
-  text-decoration: none;
-}
-
-.primary-button {
-  background: #2563eb;
-  color: white;
-
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
-}
-
-.primary-button:hover {
-  background: #1d4ed8;
-}
-
-.secondary-button {
-  border: 1px solid #dfe4ea;
-
-  background: white;
-  color: #344054;
-}
-
-.secondary-button:hover {
-  background: #f8fafc;
-}
-
-.hero-trust {
+.hero-checks {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-
-  margin-top: 17px;
-
-  color: #94a3b8;
-
-  font-size: 7px;
-}
-
-.hero-trust > div {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.check {
-  color: #22c55e;
-
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 26px;
+  color: #737d90;
+  font-size: 12px;
   font-weight: 700;
 }
-
-/* PRODUCT SHOWCASE */
-
-.product-showcase {
-  position: relative;
-  z-index: 3;
-
-  width: min(1080px, 100%);
-
-  margin: 65px auto 0;
+.hero-checks span:first-letter {
+  color: #31a879;
 }
-
-.showcase-shadow {
-  position: absolute;
-  left: 10%;
-  bottom: -30px;
-
-  width: 80%;
-  height: 80px;
-
-  border-radius: 50%;
-
-  background: rgba(15, 23, 42, 0.12);
-
-  filter: blur(35px);
-}
-
-.browser {
-  position: relative;
-
-  overflow: hidden;
-
-  border: 1px solid #dce3eb;
-  border-radius: 14px;
-
-  background: white;
-
-  box-shadow:
-    0 35px 80px rgba(15, 23, 42, 0.13),
-    0 10px 30px rgba(15, 23, 42, 0.06);
-}
-
-.browser-top {
-  height: 37px;
-
-  display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+.hero-offer {
+  display: flex;
   align-items: center;
-
-  padding: 0 13px;
-
-  border-bottom: 1px solid #e5e7eb;
-
-  background: #f8fafc;
+  gap: 14px;
+  width: min(480px, 100%);
+  padding: 14px 16px;
+  margin-top: 35px;
+  background: #fff;
+  border: 1px solid #e6e2ff;
+  border-radius: 15px;
+  box-shadow: 0 15px 35px #4e42a60c;
+  color: #26213d;
 }
-
-.browser-dots {
+.offer-gift {
+  width: 37px;
+  height: 37px;
+  border-radius: 10px;
+  background: #eeeaff;
+  color: #6956e5;
+  display: grid;
+  place-items: center;
+  font-size: 21px;
+}
+.hero-offer b,
+.hero-offer small {
+  display: block;
+}
+.hero-offer b {
+  font-size: 12px;
+}
+.hero-offer small {
+  font-size: 11px;
+  color: #81869a;
+  margin-top: 4px;
+}
+.offer-arrow {
+  margin-left: auto;
+  color: #6755e8;
+}
+.hero-art {
+  height: 550px;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.art-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(#6656ed0d 1px, transparent 1px), linear-gradient(90deg, #6656ed0d 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(ellipse, #000 20%, transparent 75%);
+}
+.art-glow {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: #bdb3ff85;
+  border-radius: 50%;
+  filter: blur(65px);
+}
+.mock-window {
+  position: relative;
+  z-index: 2;
+  width: 390px;
+  max-width: 85%;
+  background: #fff;
+  border: 1px solid #e3e3f1;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 35px 90px #35306529;
+  transform: rotate(-2deg);
+}
+.mock-top {
+  height: 39px;
+  background: #fafafe;
+  border-bottom: 1px solid #edf0f6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  font-size: 10px;
+  color: #a1a6b6;
+}
+.mock-dots {
   display: flex;
   gap: 5px;
 }
-
-.browser-dots span {
+.mock-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #dadce9;
+}
+.mock-dots i:first-child {
+  background: #ffb9b4;
+}
+.mock-dots i:nth-child(2) {
+  background: #ffe3a7;
+}
+.mock-body {
+  padding: 17px;
+}
+.mock-header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid #edf0f5;
+}
+.mock-logo {
+  background: #6d5bec;
+  color: #fff;
+  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  font-size: 23px;
+}
+.mock-header b,
+.mock-header small {
+  display: block;
+}
+.mock-header b {
+  font-size: 13px;
+}
+.mock-header small {
+  font-size: 10px;
+  color: #9198a7;
+  margin-top: 3px;
+}
+.mock-header small i {
+  display: inline-block;
   width: 6px;
   height: 6px;
-
   border-radius: 50%;
-
-  background: #d1d5db;
+  background: #37c88a;
+  margin-right: 4px;
 }
-
-.browser-address {
-  justify-self: center;
-
-  width: 210px;
-
-  padding: 5px 10px;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 5px;
-
-  background: white;
-  color: #94a3b8;
-
-  font-size: 5px;
-
-  text-align: center;
+.mock-ellipsis {
+  margin-left: auto;
+  color: #adb3c3;
 }
-
-.dashboard {
-  height: 540px;
-
-  display: grid;
-  grid-template-columns: 155px minmax(0, 1fr);
-}
-
-.demo-sidebar {
+.mock-messages {
+  min-height: 290px;
+  padding: 14px 0;
   display: flex;
+  align-items: flex-start;
   flex-direction: column;
-
-  padding: 17px 12px;
-
-  border-right: 1px solid #e5e7eb;
-
-  background: #ffffff;
+  gap: 12px;
 }
-
-.demo-brand {
+.mock-day {
+  align-self: center;
+  color: #aab0be;
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+.bubble {
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 11px 13px;
+  max-width: 82%;
+}
+.bubble.assistant {
+  background: #f2f0ff;
+  color: #514b7d;
+  border-radius: 3px 12px 12px 12px;
+}
+.bubble.visitor {
+  background: #6555e9;
+  color: #fff;
+  border-radius: 12px 3px 12px 12px;
+  align-self: flex-end;
+}
+.typing {
+  background: #f2f0ff;
+  padding: 10px 13px;
+  border-radius: 10px;
   display: flex;
-  align-items: center;
-  gap: 6px;
-
-  margin-bottom: 24px;
-
-  color: #0f172a;
-
-  font-size: 8px;
-  font-weight: 700;
+  gap: 4px;
 }
-
-.demo-brand > span {
-  width: 20px;
-  height: 20px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 5px;
-
-  background: #0f172a;
-  color: #93c5fd;
-
-  font-size: 6px;
-}
-
-.demo-workspace {
-  margin-bottom: 6px;
-
-  color: #94a3b8;
-
-  font-size: 4px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.demo-nav {
-  min-height: 30px;
-
-  display: flex;
-  align-items: center;
-  gap: 7px;
-
-  padding: 0 8px;
-
-  border-radius: 6px;
-
-  color: #64748b;
-
-  font-size: 6px;
-}
-
-.demo-nav.active {
-  background: #eff6ff;
-  color: #2563eb;
-
-  font-weight: 600;
-}
-
-.demo-icon {
-  width: 13px;
-
-  text-align: center;
-}
-
-.demo-sidebar-bottom {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-
-  margin-top: auto;
-  padding: 8px;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-
-  color: #64748b;
-
-  font-size: 5px;
-}
-
-.online-dot {
+.typing i {
   width: 5px;
   height: 5px;
-
-  display: inline-block;
-
+  background: #9a90d3;
   border-radius: 50%;
-
-  background: #22c55e;
 }
-
-.demo-main {
-  padding: 24px;
-
-  background: #f8fafc;
-}
-
-.demo-header {
+.mock-input {
+  height: 43px;
+  border: 1px solid #e7e8f1;
+  border-radius: 10px;
+  color: #a5a9b8;
+  font-size: 10px;
+  padding: 8px 8px 8px 14px;
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-
-  margin-bottom: 19px;
-}
-
-.demo-eyebrow {
-  color: #2563eb;
-
-  font-size: 4px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.demo-header h3 {
-  margin: 4px 0 2px;
-
-  color: #0f172a;
-
-  font-size: 17px;
-  letter-spacing: -0.04em;
-}
-
-.demo-header p {
-  margin: 0;
-
-  color: #94a3b8;
-
-  font-size: 6px;
-}
-
-.demo-avatar {
-  width: 27px;
-  height: 27px;
-
-  display: flex;
   align-items: center;
-  justify-content: center;
-
-  border-radius: 7px;
-
-  background: #0f172a;
-  color: white;
-
-  font-size: 6px;
-  font-weight: 600;
 }
-
-.stats {
+.mock-input span {
+  background: #6656ed;
+  color: #fff;
+  width: 26px;
+  height: 26px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 9px;
-
-  margin-bottom: 12px;
-}
-
-.stat-card {
-  padding: 12px;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-
-  background: white;
-}
-
-.stat-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  color: #64748b;
-
-  font-size: 5px;
-}
-
-.stat-icon {
-  width: 20px;
-  height: 20px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 5px;
-
-  font-size: 6px;
-}
-
-.stat-icon.blue {
-  background: #eff6ff;
-  color: #2563eb;
-}
-
-.stat-icon.purple {
-  background: #eef2ff;
-  color: #4f46e5;
-}
-
-.stat-icon.green {
-  background: #ecfdf3;
-  color: #16a34a;
-}
-
-.stat-icon.orange {
-  background: #fff7ed;
-  color: #ea580c;
-}
-
-.stat-card > strong {
-  display: block;
-
-  margin: 7px 0 4px;
-
-  color: #0f172a;
-
+  place-items: center;
+  border-radius: 7px;
   font-size: 16px;
 }
-
-.stat-card small {
-  color: #94a3b8;
-
-  font-size: 4.5px;
-}
-
-.stat-card small b {
-  color: #16a34a;
-}
-
-.demo-grid {
-  display: grid;
-  grid-template-columns: 1.55fr 0.75fr;
-  gap: 10px;
-}
-
-.inbox-card,
-.leads-card {
-  padding: 13px;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-
-  background: white;
-}
-
-.card-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-
-  margin-bottom: 12px;
-}
-
-.card-heading > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.card-heading strong {
-  color: #0f172a;
-
-  font-size: 7px;
-}
-
-.card-heading span {
-  color: #94a3b8;
-
-  font-size: 4.5px;
-}
-
-.view-all {
-  color: #2563eb !important;
-}
-
-.conversation-row {
+.floating-tag {
+  position: absolute;
+  z-index: 3;
   display: flex;
   align-items: center;
-  gap: 8px;
-
-  padding: 9px 7px;
-
-  border-bottom: 1px solid #f1f5f9;
+  gap: 11px;
+  padding: 13px 15px;
+  background: #fff;
+  border: 1px solid #eeecf8;
+  border-radius: 13px;
+  box-shadow: 0 17px 50px #37305e23;
+  color: #252a3d;
+  font-size: 11px;
+  font-weight: 800;
 }
-
-.conversation-row.highlighted {
-  border: 1px solid #dbeafe;
-  border-radius: 6px;
-
-  background: #f8fbff;
-}
-
-.conversation-avatar {
-  width: 24px;
-  height: 24px;
-
-  flex: 0 0 24px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 6px;
-
-  background: #f1f5f9;
-  color: #475569;
-
-  font-size: 6px;
-  font-weight: 600;
-}
-
-.conversation-avatar.human {
-  background: #eff6ff;
-  color: #2563eb;
-}
-
-.conversation-info {
-  min-width: 0;
-
-  flex: 1;
-
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.conversation-info strong {
-  color: #334155;
-
-  font-size: 6px;
-}
-
-.conversation-info span {
-  overflow: hidden;
-
-  color: #94a3b8;
-
-  font-size: 5px;
-
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.conversation-status {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-}
-
-.ai-status,
-.human-status {
-  padding: 2px 5px;
-
-  border-radius: 999px;
-
-  font-size: 4px;
-  font-weight: 600;
-}
-
-.ai-status {
-  background: #ecfdf3;
-  color: #15803d;
-}
-
-.human-status {
-  background: #eff6ff;
-  color: #2563eb;
-}
-
-.conversation-status small {
-  color: #cbd5e1;
-
-  font-size: 4px;
-}
-
-.lead-preview {
-  padding: 10px;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 7px;
-
-  background: #fafafa;
-}
-
-.lead-top {
-  display: flex;
-  align-items: center;
-
-  margin-bottom: 7px;
-}
-
-.lead-avatar {
-  width: 25px;
-  height: 25px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  margin-right: 6px;
-
-  border-radius: 6px;
-
-  background: #eff6ff;
-  color: #2563eb;
-
-  font-size: 5px;
-  font-weight: 700;
-}
-
-.new-pill {
-  margin-left: auto;
-  padding: 2px 5px;
-
-  border-radius: 999px;
-
-  background: #ecfdf3;
-  color: #15803d;
-
-  font-size: 4px;
-}
-
-.lead-preview > strong {
+.floating-tag small {
   display: block;
-
-  color: #334155;
-
-  font-size: 6px;
-}
-
-.lead-preview > small {
-  display: block;
-
-  margin: 2px 0 7px;
-
-  color: #94a3b8;
-
-  font-size: 4.5px;
-}
-
-.lead-data {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-
-  color: #64748b;
-
-  font-size: 4.5px;
-}
-
-.agent-online {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  margin-top: 9px;
-  padding: 8px;
-
-  border-radius: 7px;
-
-  background: #0f172a;
-}
-
-.agent-symbol {
-  width: 22px;
-  height: 22px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 5px;
-
-  background: rgba(255, 255, 255, 0.08);
-  color: #93c5fd;
-
-  font-size: 6px;
-}
-
-.agent-online > div:nth-child(2) {
-  flex: 1;
-
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.agent-online strong {
-  color: white;
-
-  font-size: 5.5px;
-}
-
-.agent-online span {
-  color: #64748b;
-
-  font-size: 4px;
-}
-
-/* BUSINESS STRIP */
-
-.business-strip {
-  padding: 35px 24px;
-
-  border-top: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
-
-  background: white;
-
-  text-align: center;
-}
-
-.business-strip p {
-  margin: 0 0 18px;
-
-  color: #94a3b8;
-
-  font-size: 8px;
-}
-
-.business-types {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-
-  color: #64748b;
-
-  font-size: 10px;
-  font-weight: 650;
-}
-
-.business-types i {
-  width: 3px;
-  height: 3px;
-
-  border-radius: 50%;
-
-  background: #cbd5e1;
-}
-
-/* GENERAL SECTIONS */
-
-.section {
-  padding: 110px 24px;
-}
-
-.section-heading {
-  max-width: 590px;
-
-  margin-bottom: 45px;
-}
-
-.section-heading.centered {
-  margin-left: auto;
-  margin-right: auto;
-
-  text-align: center;
-}
-
-.section-eyebrow {
-  display: block;
-
-  margin-bottom: 8px;
-
-  color: #2563eb;
-
-  font-size: 7px;
-  font-weight: 750;
-  letter-spacing: 0.1em;
-}
-
-.section-heading h2,
-.handoff-copy h2,
-.faq-heading h2 {
-  margin: 0;
-
-  color: #0f172a;
-
-  font-size: clamp(32px, 4vw, 48px);
-  line-height: 1.05;
-  letter-spacing: -0.055em;
-}
-
-.section-heading p,
-.faq-heading p {
-  margin: 13px 0 0;
-
-  color: #64748b;
-
-  font-size: 10px;
-  line-height: 1.7;
-}
-
-/* FEATURES */
-
-.product-section {
-  background: #ffffff;
-}
-
-.feature-grid {
-  width: min(1120px, 100%);
-
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-
-  margin: 0 auto;
-}
-
-.feature-card {
-  min-height: 390px;
-
-  padding: 28px;
-
-  overflow: hidden;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-
-  background: linear-gradient(180deg, #ffffff, #fbfdff);
-}
-
-.feature-large {
-  display: grid;
-  grid-template-columns: 0.85fr 1.15fr;
-  gap: 25px;
-  align-items: center;
-
-  grid-column: span 2;
-}
-
-.feature-copy {
-  max-width: 390px;
-}
-
-.feature-icon-box {
-  width: 35px;
-  height: 35px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  margin-bottom: 17px;
-
-  border-radius: 9px;
-
-  background: #eff6ff;
-  color: #2563eb;
-
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.green-icon {
-  background: #ecfdf3;
-  color: #16a34a;
-}
-
-.purple-icon {
-  background: #eef2ff;
-  color: #4f46e5;
-}
-
-.feature-label {
-  color: #2563eb;
-
-  font-size: 6px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-}
-
-.feature-card h3 {
-  max-width: 420px;
-
-  margin: 7px 0 9px;
-
-  color: #0f172a;
-
-  font-size: 22px;
-  line-height: 1.12;
-  letter-spacing: -0.04em;
-}
-
-.feature-card > p,
-.feature-copy p {
-  max-width: 390px;
-
-  margin: 0;
-
-  color: #64748b;
-
+  color: #a0a4b3;
   font-size: 9px;
-  line-height: 1.65;
+  font-weight: 500;
+  margin-top: 4px;
 }
-
-/* CHAT DEMO */
-
-.chat-demo {
-  overflow: hidden;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 11px;
-
-  background: #f8fafc;
-
-  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.08);
+.tag-top {
+  top: 50px;
+  right: -8px;
+  transform: rotate(4deg);
 }
-
-.chat-demo-header {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-
-  padding: 10px;
-
-  border-bottom: 1px solid #e5e7eb;
-
-  background: white;
+.tag-bottom {
+  bottom: 62px;
+  left: -20px;
+  transform: rotate(3deg);
 }
-
-.mini-avatar {
-  width: 27px;
-  height: 27px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 7px;
-
-  background: #0f172a;
-  color: white;
-
-  font-size: 7px;
-}
-
-.chat-demo-header > div:last-child {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.chat-demo-header strong {
-  color: #334155;
-
-  font-size: 6px;
-}
-
-.chat-demo-header span {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-
-  color: #94a3b8;
-
-  font-size: 4px;
-}
-
-.chat-demo-header i {
-  width: 4px;
-  height: 4px;
-
-  border-radius: 50%;
-
-  background: #22c55e;
-}
-
-.mini-chat {
-  min-height: 210px;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 13px;
-
-  padding: 20px;
-}
-
-.mini-message {
-  max-width: 75%;
-
-  padding: 9px 11px;
-
-  font-size: 6px;
-  line-height: 1.5;
-}
-
-.user-message {
-  align-self: flex-end;
-
-  border-radius: 9px 9px 3px 9px;
-
-  background: #0f172a;
-  color: white;
-}
-
-.assistant-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-}
-
-.assistant-symbol {
-  width: 22px;
-  height: 22px;
-
-  flex: 0 0 22px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 6px;
-
-  background: #0f172a;
-  color: #93c5fd;
-
-  font-size: 6px;
-}
-
-.assistant-message {
-  border: 1px solid #e5e7eb;
-  border-radius: 9px 9px 9px 3px;
-
-  background: white;
-  color: #475569;
-}
-
-/* LEAD DEMO */
-
-.lead-card-demo {
-  margin-top: 32px;
-  padding: 15px;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-
-  background: white;
-
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
-}
-
-.lead-demo-head {
-  display: flex;
-  align-items: center;
-
-  padding-bottom: 11px;
-
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.lead-demo-avatar {
-  width: 29px;
-  height: 29px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  margin-right: 7px;
-
-  border-radius: 7px;
-
-  background: #eff6ff;
-  color: #2563eb;
-
-  font-size: 6px;
-  font-weight: 700;
-}
-
-.lead-demo-head > div:nth-child(2) {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.lead-demo-head strong {
-  color: #334155;
-
-  font-size: 7px;
-}
-
-.lead-demo-head span {
-  color: #94a3b8;
-
-  font-size: 5px;
-}
-
-.new-pill {
-  margin-left: auto;
-
-  padding: 3px 6px;
-
-  border-radius: 999px;
-
-  background: #ecfdf3;
-  color: #15803d !important;
-
-  font-size: 5px !important;
-  font-weight: 600;
-}
-
-.lead-demo-row {
-  display: flex;
-  justify-content: space-between;
-
-  padding-top: 10px;
-
-  color: #94a3b8;
-
-  font-size: 6px;
-}
-
-.lead-demo-row strong {
-  color: #475569;
-
-  font-weight: 550;
-}
-
-/* DARK FEATURE */
-
-.dark-feature {
-  background: radial-gradient(circle at 90% 10%, rgba(59, 130, 246, 0.16), transparent 30%), #0f172a;
-
-  border-color: #1e293b;
-}
-
-.dark-feature .feature-label {
-  color: #93c5fd;
-}
-
-.dark-feature h3 {
-  color: white;
-}
-
-.dark-feature > p {
-  color: #94a3b8;
-}
-
-.dark-icon {
-  background: rgba(59, 130, 246, 0.1);
-  color: #93c5fd;
-}
-
-.handoff-demo {
-  margin-top: 25px;
-}
-
-.handoff-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  padding: 10px;
-
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.handoff-avatar {
-  width: 28px;
-  height: 28px;
-
-  flex: 0 0 28px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 7px;
-
-  font-size: 6px;
-}
-
-.handoff-avatar.ai {
-  background: rgba(59, 130, 246, 0.1);
-  color: #93c5fd;
-}
-
-.handoff-avatar.person {
-  background: #2563eb;
-  color: white;
-}
-
-.handoff-line > div {
-  flex: 1;
-
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.handoff-line strong {
-  color: #e2e8f0;
-
-  font-size: 6px;
-}
-
-.handoff-line > div span {
-  color: #64748b;
-
-  font-size: 5px;
-}
-
-.status-green,
-.status-blue {
-  padding: 3px 6px;
-
-  border-radius: 999px;
-
-  font-size: 4px;
-}
-
-.status-green {
-  background: rgba(34, 197, 94, 0.1);
-  color: #4ade80;
-}
-
-.status-blue {
-  background: rgba(59, 130, 246, 0.12);
-  color: #93c5fd;
-}
-
-.handoff-arrow {
-  padding: 4px 0;
-
-  color: #475569;
-
-  font-size: 7px;
-
-  text-align: center;
-}
-
-.human-line {
-  border-color: rgba(59, 130, 246, 0.16);
-
-  background: rgba(59, 130, 246, 0.05);
-}
-
-/* CONTROL DEMO */
-
-.control-demo {
-  min-height: 250px;
-
+.tag-icon {
+  width: 33px;
+  height: 33px;
+  border-radius: 9px;
+  background: #eeeaff;
+  color: #6556e9;
   display: grid;
-  grid-template-columns: 48px 1fr;
-
-  overflow: hidden;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-
-  background: white;
-
-  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.07);
+  place-items: center;
+  font-size: 20px;
 }
-
-.control-nav {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-
-  padding-top: 20px;
-
-  border-right: 1px solid #e5e7eb;
+.tag-icon.green {
+  background: #e7f9f0;
+  color: #1caf76;
 }
-
-.control-nav span {
-  width: 20px;
-  height: 20px;
-
-  border-radius: 5px;
-
-  background: #f1f5f9;
-}
-
-.control-nav span.selected {
-  background: #dbeafe;
-}
-
-.control-content {
-  padding: 20px;
-}
-
-.control-title {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-
-  margin-bottom: 20px;
-}
-
-.control-title span:first-child {
-  width: 45px;
-  height: 4px;
-
-  border-radius: 999px;
-
-  background: #93c5fd;
-}
-
-.control-title span:last-child {
-  width: 100px;
-  height: 9px;
-
-  border-radius: 3px;
-
-  background: #334155;
-}
-
-.control-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
-}
-
-.control-stats > div {
-  height: 55px;
-
-  padding: 9px;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-}
-
-.control-stats small,
-.control-stats strong {
-  display: block;
-
-  border-radius: 999px;
-}
-
-.control-stats small {
-  width: 40px;
-  height: 4px;
-
-  margin-bottom: 8px;
-
-  background: #cbd5e1;
-}
-
-.control-stats strong {
-  width: 28px;
-  height: 8px;
-
-  background: #64748b;
-}
-
-.control-table {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-
-  margin-top: 15px;
-  padding: 12px;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-}
-
-.control-table span {
-  width: 100%;
+.tag-live {
+  width: 7px;
   height: 7px;
-
-  border-radius: 3px;
-
-  background: #f1f5f9;
-}
-
-/* HOW */
-
-.how-section {
-  background: #f8fafc;
-}
-
-.how-section > .section-heading,
-.steps-grid {
-  width: min(1120px, 100%);
-
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.steps-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.process-step {
-  position: relative;
-
-  padding: 25px 28px 25px 0;
-
-  border-top: 1px solid #cbd5e1;
-}
-
-.process-step:not(:last-child) {
-  margin-right: 22px;
-}
-
-.step-number {
-  position: absolute;
-  top: -8px;
-  right: 0;
-
-  padding-left: 7px;
-
-  background: #f8fafc;
-  color: #94a3b8;
-
-  font-size: 6px;
-  font-weight: 700;
-}
-
-.process-icon {
-  width: 34px;
-  height: 34px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  margin-bottom: 16px;
-
-  border: 1px solid #dbeafe;
-  border-radius: 9px;
-
-  background: #eff6ff;
-  color: #2563eb;
-
-  font-size: 10px;
-}
-
-.process-step h3 {
-  margin: 0 0 7px;
-
-  color: #0f172a;
-
-  font-size: 13px;
-  letter-spacing: -0.025em;
-}
-
-.process-step p {
-  margin: 0;
-
-  color: #64748b;
-
-  font-size: 8px;
-  line-height: 1.65;
-}
-
-/* BIG HANDOFF */
-
-.handoff-section {
-  padding: 110px 24px;
-
-  background: radial-gradient(circle at 75% 50%, rgba(37, 99, 235, 0.15), transparent 30%), #0b1120;
-}
-
-.handoff-container {
-  width: min(1120px, 100%);
-
-  display: grid;
-  grid-template-columns: 0.85fr 1.15fr;
-  align-items: center;
-  gap: 70px;
-
-  margin: 0 auto;
-}
-
-.section-eyebrow.light {
-  color: #60a5fa;
-}
-
-.handoff-copy h2 {
-  color: white;
-}
-
-.handoff-copy > p {
-  max-width: 480px;
-
-  margin: 14px 0 0;
-
-  color: #94a3b8;
-
-  font-size: 10px;
-  line-height: 1.7;
-}
-
-.handoff-points {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-
-  margin: 25px 0;
-}
-
-.handoff-points > div {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-
-  color: #cbd5e1;
-
-  font-size: 8px;
-}
-
-.handoff-points > div > span {
-  width: 18px;
-  height: 18px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
+  background: #2bc487;
   border-radius: 50%;
-
-  background: rgba(34, 197, 94, 0.1);
-  color: #4ade80;
-
-  font-size: 6px;
 }
-
-.light-button {
-  min-height: 39px;
-
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-
-  padding: 0 14px;
-
-  border-radius: 8px;
-
-  background: white;
-  color: #0f172a;
-
-  font-size: 8px;
-  font-weight: 600;
-
-  text-decoration: none;
+.tag-check {
+  margin-left: 10px;
+  color: #1caf76;
 }
-
-/* SUPPORT WINDOW */
-
-.support-window {
-  overflow: hidden;
-
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 13px;
-
-  background: white;
-
-  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.3);
-}
-
-.support-header {
-  min-height: 57px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  padding: 0 15px;
-
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.support-header > div {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.support-back {
-  color: #64748b;
-
-  font-size: 9px;
-}
-
-.support-header > div > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.support-header strong {
-  color: #334155;
-
-  font-size: 7px;
-}
-
-.support-header small {
-  color: #94a3b8;
-
-  font-size: 5px;
-}
-
-.human-pill {
-  padding: 4px 7px;
-
-  border-radius: 999px;
-
-  background: #eff6ff;
-  color: #2563eb;
-
-  font-size: 5px;
-  font-weight: 600;
-}
-
-.support-body {
-  min-height: 310px;
-
-  display: flex;
-  flex-direction: column;
-  gap: 13px;
-
-  padding: 24px;
-
-  background: #f8fafc;
-}
-
-.support-message {
-  max-width: 72%;
-}
-
-.support-message small {
-  display: block;
-
-  margin-bottom: 4px;
-
-  color: #94a3b8;
-
-  font-size: 5px;
-}
-
-.support-message p {
-  margin: 0;
-  padding: 10px 12px;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 9px;
-
-  background: white;
-  color: #475569;
-
-  font-size: 7px;
-  line-height: 1.5;
-}
-
-.support-message.right {
-  align-self: flex-end;
-}
-
-.support-message.right small {
-  text-align: right;
-}
-
-.support-message.right p {
-  border: 0;
-
-  background: #0f172a;
-  color: white;
-}
-
-.handoff-notice {
-  align-self: center;
-
+.hero-bottom {
   display: flex;
   align-items: center;
   gap: 8px;
-
-  margin-top: 10px;
-  padding: 8px 10px;
-
-  border: 1px solid #dbeafe;
-  border-radius: 8px;
-
-  background: #eff6ff;
+  margin-top: 38px;
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  font-weight: 800;
+  color: #a2a5b4;
 }
-
-.handoff-notice > span {
-  width: 23px;
-  height: 23px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 6px;
-
-  background: #dbeafe;
-  color: #2563eb;
-
-  font-size: 7px;
+.hero-bottom span:nth-child(2) {
+  color: #6057a2;
 }
-
-.handoff-notice > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.handoff-notice strong {
-  color: #1d4ed8;
-
-  font-size: 6px;
-}
-
-.handoff-notice small {
-  color: #64748b;
-
-  font-size: 5px;
-}
-
-.support-footer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  padding: 11px;
-
-  border-top: 1px solid #e5e7eb;
-
-  background: white;
-}
-
-.support-footer > span {
+.hero-bottom-line {
   flex: 1;
-
-  padding: 9px;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 7px;
-
-  color: #94a3b8;
-
-  font-size: 6px;
+  height: 1px;
+  background: #e5e3f3;
+  margin: 0 15px;
 }
-
-.support-footer button {
-  padding: 9px 13px;
-
-  border: 0;
-  border-radius: 7px;
-
-  background: #2563eb;
-  color: white;
-
-  font-size: 6px;
+.sector-ribbon {
+  padding: 32px 0;
+  border-block: 1px solid #eff0f5;
+  background: #fff;
 }
-
-/* CASES */
-
-.cases-section {
-  background: white;
-}
-
-.cases-grid {
-  width: min(1050px, 100%);
-
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-
-  margin: 0 auto;
-}
-
-.case-card {
-  padding: 25px;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-
-  background: white;
-
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-.case-card:hover {
-  transform: translateY(-3px);
-
-  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.06);
-}
-
-.case-icon {
-  width: 34px;
-  height: 34px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  margin-bottom: 18px;
-
-  border-radius: 9px;
-
-  background: #f1f5f9;
-  color: #475569;
-
+.sector-ribbon p {
+  text-align: center;
+  color: #a3a8b5;
   font-size: 10px;
-  font-weight: 650;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin: 0 0 21px;
 }
-
-.case-card h3 {
-  margin: 0 0 7px;
-
-  color: #0f172a;
-
-  font-size: 12px;
-}
-
-.case-card p {
-  margin: 0;
-
-  color: #64748b;
-
-  font-size: 8px;
-  line-height: 1.65;
-}
-
-/* PRICING */
-
-.pricing-section {
-  background: #f8fafc;
-}
-
-.pricing-grid {
-  width: min(980px, 100%);
-
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-
-  margin: 0 auto;
-}
-
-.pricing-card {
-  position: relative;
-
-  padding: 25px;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 13px;
-
-  background: white;
-}
-
-.pricing-card.featured {
-  border-color: #93c5fd;
-
-  box-shadow: 0 18px 40px rgba(37, 99, 235, 0.09);
-}
-
-.popular-badge {
-  position: absolute;
-  top: -9px;
-  left: 50%;
-
-  padding: 4px 8px;
-
-  border-radius: 999px;
-
-  background: #2563eb;
-  color: white;
-
-  font-size: 5px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-
-  transform: translateX(-50%);
-}
-
-.plan-name {
-  color: #0f172a;
-
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.pricing-header p {
-  min-height: 42px;
-
-  margin: 7px 0 0;
-
-  color: #64748b;
-
-  font-size: 7px;
-  line-height: 1.55;
-}
-
-.price {
+.ribbon-items {
   display: flex;
-  align-items: flex-end;
-  gap: 5px;
-
-  margin: 20px 0;
-}
-
-.price strong {
-  color: #0f172a;
-
-  font-size: 30px;
-  letter-spacing: -0.04em;
-}
-
-.price span {
-  padding-bottom: 5px;
-
-  color: #94a3b8;
-
-  font-size: 6px;
-}
-
-.pricing-button {
-  width: 100%;
-  min-height: 38px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 8px;
-
-  font-size: 8px;
-  font-weight: 600;
-
-  text-decoration: none;
-}
-
-.pricing-button.primary {
-  background: #2563eb;
-  color: white;
-}
-
-.pricing-button.secondary {
-  border: 1px solid #dfe4ea;
-
-  color: #334155;
-}
-
-.plan-features {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-
-  margin-top: 21px;
-  padding-top: 18px;
-
-  border-top: 1px solid #f1f5f9;
-
-  color: #64748b;
-
-  font-size: 7px;
-}
-
-.plan-features span::first-letter {
-  color: #22c55e;
-}
-
-.pricing-note {
-  margin: 20px 0 0;
-
-  color: #94a3b8;
-
-  font-size: 7px;
-
-  text-align: center;
-}
-
-/* FAQ */
-
-.faq-section {
-  background: white;
-}
-
-.faq-layout {
-  width: min(1000px, 100%);
-
-  display: grid;
-  grid-template-columns: 0.8fr 1.2fr;
-  gap: 80px;
-
-  margin: 0 auto;
-}
-
-.faq-heading p {
-  max-width: 330px;
-}
-
-.faq-list {
-  border-top: 1px solid #e2e8f0;
-}
-
-.faq-item {
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.faq-item button {
-  width: 100%;
-
-  display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 20px;
-
-  padding: 18px 0;
-
-  border: 0;
-
-  background: transparent;
-  color: #334155;
-
-  font: inherit;
-  font-size: 9px;
-  font-weight: 600;
-
-  text-align: left;
-
-  cursor: pointer;
+  gap: 14px;
 }
-
-.faq-plus {
-  color: #94a3b8;
-
-  font-size: 14px;
-  font-weight: 400;
+.ribbon-items span {
+  font-size: 12px;
+  color: #6f7788;
+  font-weight: 800;
 }
-
-.faq-answer {
-  padding: 0 30px 17px 0;
+.section {
+  padding: 120px 0;
 }
-
-.faq-answer p {
-  margin: 0;
-
-  color: #64748b;
-
-  font-size: 8px;
-  line-height: 1.7;
+.section-intro {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 60px;
+  margin-bottom: 52px;
 }
-
-/* CTA */
-
-.final-cta-section {
-  padding: 30px 24px 100px;
-
-  background: white;
+.section h2 {
+  font-size: clamp(36px, 4vw, 56px);
+  line-height: 1.14;
+  margin: 15px 0 0;
 }
-
-.final-cta {
+.section h2 span {
+  color: #7565ea;
+}
+.section-intro > p {
+  max-width: 370px;
+  color: #798092;
+  font-size: 15px;
+  line-height: 1.8;
+  margin: 0 0 6px;
+}
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.feature {
   position: relative;
-
-  width: min(1120px, 100%);
-
+  min-height: 355px;
+  padding: 31px;
   overflow: hidden;
-
-  margin: 0 auto;
-  padding: 75px 30px;
-
-  border-radius: 18px;
-
-  background: radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.2), transparent 30%), #0b1120;
-
-  text-align: center;
+  border: 1px solid #e9eaf0;
+  border-radius: 21px;
+  background: #fbfcff;
 }
-
-.cta-glow {
-  position: absolute;
-  top: -250px;
-  left: 50%;
-
-  width: 600px;
-  height: 600px;
-
-  border: 1px solid rgba(147, 197, 253, 0.07);
-  border-radius: 50%;
-
-  transform: translateX(-50%);
+.feature-wide {
+  grid-column: span 2;
+  min-height: 360px;
+  background: #f6f4ff;
 }
-
-.cta-content {
+.feature-top {
+  display: flex;
+  justify-content: space-between;
+}
+.feature-icon {
+  display: grid;
+  place-items: center;
+  width: 49px;
+  height: 49px;
+  border-radius: 13px;
+  background: #e9e5ff;
+  color: #6554e6;
+  font-size: 27px;
+}
+.feature-index {
+  font-size: 11px;
+  color: #b7bac6;
+  font-weight: 800;
+}
+.feature-copy {
   position: relative;
   z-index: 1;
-
-  max-width: 650px;
-
-  margin: 0 auto;
+  max-width: 410px;
+  margin-top: 31px;
 }
-
-.cta-eyebrow {
-  color: #60a5fa;
-
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-}
-
-.cta-content h2 {
-  margin: 9px 0 0;
-
-  color: white;
-
-  font-size: clamp(32px, 4vw, 50px);
-  line-height: 1.03;
-  letter-spacing: -0.055em;
-}
-
-.cta-content p {
-  max-width: 500px;
-
-  margin: 15px auto 0;
-
-  color: #94a3b8;
-
+.feature-tag {
+  color: #7366c9;
   font-size: 10px;
-  line-height: 1.7;
+  letter-spacing: 1.8px;
+  font-weight: 800;
 }
-
-.cta-actions {
+.feature h3 {
+  font:
+    800 clamp(23px, 2.2vw, 31px)/1.2 "Manrope",
+    sans-serif;
+  letter-spacing: -1px;
+  margin: 10px 0;
+}
+.feature p {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #7b8193;
+  margin: 0;
+}
+.feature-wide .feature-copy {
+  max-width: 400px;
+}
+.feature-chat {
+  position: absolute;
+  width: 42%;
+  right: 35px;
+  bottom: 35px;
   display: flex;
-  justify-content: center;
-  gap: 9px;
-
-  margin-top: 24px;
+  flex-direction: column;
+  gap: 12px;
+  transform: rotate(-2deg);
 }
-
-.cta-primary,
-.cta-secondary {
-  min-height: 40px;
-
-  display: inline-flex;
+.feature-chat-row {
+  background: #fff;
+  border: 1px solid #e8e6f5;
+  box-shadow: 0 10px 25px #6255c00b;
+  padding: 16px;
+  border-radius: 13px;
+}
+.feature-chat-row span {
+  display: block;
+  color: #a3a4b4;
+  font-size: 10px;
+  margin-bottom: 8px;
+}
+.feature-chat-row b {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #34334e;
+}
+.feature-chat-row.agent {
+  background: #6b5aee;
+}
+.feature-chat-row.agent span,
+.feature-chat-row.agent b {
+  color: #fff;
+}
+.feature-blue {
+  background: #f5f9ff;
+}
+.feature-blue .feature-icon {
+  background: #e4efff;
+  color: #4885df;
+}
+.feature-mint {
+  background: #f4fbf8;
+}
+.feature-mint .feature-icon {
+  background: #dff7e9;
+  color: #24a77c;
+}
+.feature-orange {
+  background: #fffbf6;
+}
+.feature-orange .feature-icon {
+  background: #fff0d9;
+  color: #d69b3c;
+}
+.feature-detail {
+  margin-top: 25px;
+  background: #fff;
+  border: 1px solid #e8eaf0;
+  padding: 15px;
+  border-radius: 13px;
+  box-shadow: 0 12px 25px #202a3708;
+}
+.feature-detail > span {
+  font-size: 9px;
+  font-weight: 800;
+  color: #9ba3b2;
+  letter-spacing: 1px;
+}
+.feature-detail > div {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-
-  padding: 0 15px;
-
-  border-radius: 8px;
-
-  font-size: 8px;
-  font-weight: 600;
-
-  text-decoration: none;
+  gap: 12px;
+  padding: 12px 0 0;
+  font-size: 12px;
 }
-
-.cta-primary {
-  background: white;
-  color: #0f172a;
+.feature-detail > div b {
+  color: #373b4d;
 }
-
-.cta-secondary {
-  border: 1px solid rgba(255, 255, 255, 0.14);
-
-  color: #cbd5e1;
+.feature-detail > div span {
+  flex: 1;
 }
-
-/* FOOTER */
-
-.footer {
-  padding: 55px 24px 25px;
-
-  border-top: 1px solid #e5e7eb;
-
-  background: #f8fafc;
+.feature-detail i {
+  font-style: normal;
+  font-size: 10px;
+  color: #20a679;
+  background: #e9f8f0;
+  padding: 5px 8px;
+  border-radius: 7px;
 }
-
-.footer-main {
-  width: min(1120px, 100%);
-
+.feature-detail small {
+  display: block;
+  color: #9ba3b2;
+  font-size: 10px;
+  margin-top: 3px;
+}
+.contact-avatar {
+  background: #e4f5e9;
+  color: #239b72 !important;
+  padding: 11px;
+  border-radius: 10px;
+}
+.statement-section {
+  position: relative;
+  background: #1a1938;
+  color: white;
+  padding: 105px 0;
+  overflow: hidden;
+}
+.statement-inner {
+  position: relative;
+  z-index: 1;
+}
+.kicker-light {
+  color: #b5aaff;
+}
+.statement-section h2 {
+  font-size: clamp(40px, 5.3vw, 75px);
+  max-width: 1000px;
+  line-height: 1.15;
+  margin: 22px 0 40px;
+}
+.statement-section h2 em {
+  color: #b1a4ff;
+}
+.statement-bottom {
+  display: flex;
+  align-items: center;
+  gap: 45px;
+}
+.statement-bottom p {
+  color: #b1b1c9;
+  max-width: 400px;
+  line-height: 1.7;
+  font-size: 15px;
+}
+.statement-deco {
+  position: absolute;
+  font-size: 450px;
+  color: #ffffff06;
+  right: -90px;
+  top: -190px;
+}
+.steps-section {
+  background: #fff;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+.steps article {
+  border-top: 1px solid #dfe1e9;
+  padding: 24px 25px 20px 0;
+}
+.step-number {
+  font-size: 14px;
+  color: #7b6cea;
+  font-weight: 800;
   display: flex;
   justify-content: space-between;
-  gap: 80px;
-
-  margin: 0 auto;
 }
-
-.footer-brand {
+.step-number span {
+  color: #b2b3c3;
+}
+.steps h3 {
+  font:
+    800 22px "Manrope",
+    sans-serif;
+  letter-spacing: -0.8px;
+  margin: 40px 0 10px;
+}
+.steps p {
+  color: #81889a;
+  line-height: 1.8;
+  font-size: 14px;
+  max-width: 300px;
+}
+.steps-cta {
+  border-top: 1px solid #e8e9f0;
+  margin-top: 36px;
+  padding-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.steps-cta p {
+  font-size: 13px;
+  color: #959aaa;
+}
+.steps-cta a,
+.text-link {
+  color: #6857e6;
+  font-size: 13px;
+  font-weight: 800;
+}
+.sectors-section {
+  background: #f8f9fc;
+}
+.sectors-layout {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 90px;
+  align-items: center;
+}
+.sectors-layout > div:first-child > p {
+  color: #81899a;
+  font-size: 15px;
+  line-height: 1.85;
+  max-width: 380px;
+  margin: 25px 0;
+}
+.sector-list {
+  border-top: 1px solid #dfe2ea;
+}
+.sector-list > div {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  border-bottom: 1px solid #dfe2ea;
+  padding: 23px 5px;
+}
+.sector-list > div span:first-child {
+  font-size: 11px;
+  color: #9b9eac;
+  font-weight: 800;
+}
+.sector-list b {
+  font:
+    800 17px "Manrope",
+    sans-serif;
+  flex: 1;
+}
+.sector-list > div span:last-child {
+  color: #7363e8;
+}
+.pricing-section {
+  background: #fff;
+}
+.pricing-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 95px;
+  align-items: center;
+}
+.pricing-copy > p {
+  font-size: 15px;
+  line-height: 1.85;
+  color: #81899b;
+  max-width: 450px;
+  margin: 25px 0;
+}
+.pricing-points {
+  border-top: 1px solid #eceef2;
+  padding-top: 18px;
+  display: grid;
+  gap: 17px;
+  color: #444c60;
+  font-size: 13px;
+  font-weight: 700;
+}
+.pricing-points span {
+  color: #22aa79;
+  margin-right: 9px;
+}
+.pricing-card {
+  border-radius: 24px;
+  background: #fff;
+  overflow: hidden;
+  border: 1px solid #e3dfff;
+  box-shadow: 0 30px 75px #6251dd20;
+}
+.pricing-card-top {
+  background: #6756e9;
+  color: white;
+  padding: 15px 25px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.pricing-card-top span:last-child {
+  color: #dedaff;
+}
+.pricing-card-body {
+  padding: 37px 40px;
+}
+.pricing-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #3d4056;
+}
+.price-old {
+  color: #959aab;
+  font-size: 13px;
+  margin-top: 24px;
+}
+.price-old s {
+  margin-left: 7px;
+}
+.price-main {
+  font:
+    800 96px/0.95 "Manrope",
+    sans-serif;
+  letter-spacing: -6px;
+  margin-top: 10px;
+}
+.price-main > span {
+  font-size: 50px;
+  vertical-align: top;
+  letter-spacing: -2px;
+  margin-left: 5px;
+}
+.price-main small {
+  font:
+    600 16px "DM Sans",
+    sans-serif;
+  color: #9197a6;
+  letter-spacing: 0;
+  margin-left: 9px;
+}
+.price-save {
+  display: inline-block;
+  margin: 20px 0 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: #e9f9f0;
+  color: #239568;
+  font-size: 10px;
+  letter-spacing: 0.7px;
+  font-weight: 800;
+}
+.pricing-card-body > p {
+  color: #7d8497;
+  line-height: 1.7;
+  font-size: 13px;
+}
+.pricing-cta {
+  width: 100%;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+.pricing-terms {
+  display: block;
+  text-align: center;
+  color: #a2a5b4;
+  line-height: 1.6;
+  font-size: 10px;
+  margin-top: 17px;
+}
+.faq-section {
+  background: #f8f9fc;
+}
+.faq-layout {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 85px;
+}
+.faq-layout > div:first-child > p {
+  color: #8c91a1;
+  line-height: 1.7;
+}
+.faq-list {
+  border-top: 1px solid #dfe2eb;
+}
+.faq-list article {
+  border-bottom: 1px solid #dfe2eb;
+}
+.faq-list button {
+  border: 0;
+  background: none;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  text-align: left;
+  padding: 22px 0;
+  color: #30394c;
+  font-weight: 800;
+  font-size: 14px;
+}
+.faq-list button > span:last-child {
+  color: #7363e8;
+  font-size: 22px;
+  font-weight: 400;
+}
+.faq-list article > p {
+  margin: 0 0 22px;
+  color: #81889a;
+  line-height: 1.8;
+  font-size: 13px;
+  max-width: 560px;
+}
+.final-section {
+  background: radial-gradient(circle at 85% 30%, #5244a6 0%, transparent 35%), #191835;
+  color: #fff;
+  text-align: center;
+  padding: 110px 0;
+}
+.final-section h2 {
+  font-size: clamp(42px, 5vw, 70px);
+  line-height: 1.16;
+  margin: 24px 0;
+}
+.final-section h2 em {
+  color: #b5aaff;
+}
+.final-content > p {
+  color: #b8b5d0;
+  font-size: 16px;
+  line-height: 1.8;
+  max-width: 560px;
+  margin: 0 auto 30px;
+}
+.final-content > small {
+  display: block;
+  color: #aaa7c9;
+  font-size: 11px;
+  margin-top: 20px;
+}
+.footer {
+  background: #fff;
+}
+.footer-main {
+  padding: 65px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 50px;
+}
+.footer-main > div:first-child > p {
+  font-size: 13px;
+  color: #8d95a5;
   max-width: 250px;
+  line-height: 1.7;
 }
-
-.footer-brand p {
-  margin: 13px 0 0;
-
-  color: #94a3b8;
-
-  font-size: 7px;
-  line-height: 1.65;
-}
-
 .footer-links {
   display: flex;
-  gap: 75px;
+  gap: 100px;
 }
-
 .footer-links > div {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 14px;
 }
-
-.footer-links strong {
-  margin-bottom: 2px;
-
-  color: #334155;
-
-  font-size: 7px;
+.footer-links b {
+  font-size: 13px;
 }
-
 .footer-links a {
-  color: #94a3b8;
-
-  font-size: 7px;
-
-  text-decoration: none;
+  color: #838a9b;
+  font-size: 13px;
 }
-
-.footer-links a:hover {
-  color: #2563eb;
-}
-
 .footer-bottom {
-  width: min(1120px, 100%);
-
+  border-top: 1px solid #eceef2;
+  padding: 24px 0;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-
-  margin: 45px auto 0;
-  padding-top: 18px;
-
-  border-top: 1px solid #e2e8f0;
-
-  color: #94a3b8;
-
-  font-size: 6px;
+  gap: 20px;
+  color: #9ba1ae;
+  font-size: 11px;
 }
-
-.footer-bottom > div {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* RESPONSIVE */
-
-@media (max-width: 950px) {
-  .desktop-nav {
-    display: none;
+@media (max-width: 1050px) {
+  .nav-links {
+    gap: 15px;
   }
-
-  .nav-actions {
-    margin-left: auto;
+  .hero-grid {
+    gap: 12px;
   }
-
-  .dashboard {
-    height: 470px;
-
-    grid-template-columns: 125px minmax(0, 1fr);
+  .hero h1 {
+    font-size: 55px;
   }
-
-  .demo-main {
-    padding: 18px;
+  .tag-top {
+    right: 0;
   }
-
-  .feature-large,
-  .handoff-container {
-    gap: 35px;
+  .tag-bottom {
+    left: 0;
   }
-
-  .faq-layout {
+  .pricing-layout {
+    gap: 45px;
+  }
+  .sectors-layout {
     gap: 45px;
   }
 }
-
-@media (max-width: 760px) {
-  .nav-actions,
-  .desktop-nav {
+@media (max-width: 800px) {
+  .container {
+    width: min(100% - 38px, 650px);
+  }
+  .nav-inner {
+    height: 68px;
+  }
+  .nav-links,
+  .nav-actions {
     display: none;
   }
-
-  .mobile-menu-button {
-    width: 32px;
-    height: 32px;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-
+  .menu-toggle {
+    display: block;
     margin-left: auto;
-
-    border: 1px solid #e2e8f0;
-    border-radius: 7px;
-
-    background: white;
+    border: 1px solid #e5e6ef;
+    background: #fff;
+    padding: 7px 12px;
+    border-radius: 9px;
+    font-size: 21px;
   }
-
-  .mobile-menu-button span {
-    width: 13px;
-    height: 1px;
-
-    background: #475569;
-  }
-
-  .mobile-menu {
+  .mobile-nav {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-
-    padding: 10px 20px 18px;
-
-    border-top: 1px solid #f1f5f9;
-
-    background: white;
+    gap: 0;
+    padding: 12px 20px 20px;
+    border-top: 1px solid #eceef2;
   }
-
-  .mobile-menu > a {
-    padding: 9px 0;
-
-    color: #475569;
-
-    font-size: 9px;
-
-    text-decoration: none;
+  .mobile-nav a {
+    padding: 12px 4px;
+    color: #343a50;
+    font-size: 14px;
+    font-weight: 700;
   }
-
-  .mobile-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 7px;
-
+  .mobile-nav .mobile-cta {
+    background: #6656ed;
+    color: white;
+    border-radius: 10px;
+    text-align: center;
     margin-top: 7px;
   }
-
-  .mobile-actions a {
-    min-height: 38px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-
-    color: #334155;
-
-    font-size: 8px;
-    font-weight: 600;
-
-    text-decoration: none;
-  }
-
-  .mobile-actions .mobile-register {
-    border-color: #2563eb;
-
-    background: #2563eb;
-    color: white;
-  }
-
   .hero {
-    padding-top: 120px;
+    padding-top: 65px;
   }
-
-  .hero h1 {
-    font-size: clamp(39px, 11vw, 58px);
-  }
-
-  .product-showcase {
-    margin-top: 45px;
-  }
-
-  .dashboard {
-    height: 400px;
-
-    grid-template-columns: 90px minmax(0, 1fr);
-  }
-
-  .demo-sidebar {
-    padding: 12px 7px;
-  }
-
-  .demo-nav {
-    font-size: 4.5px;
-  }
-
-  .demo-main {
-    padding: 12px;
-  }
-
-  .stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .stats .stat-card:nth-child(n + 3) {
-    display: none;
-  }
-
-  .demo-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .leads-card {
-    display: none;
-  }
-
-  .business-types {
-    flex-wrap: wrap;
-  }
-
-  .feature-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .feature-card,
-  .feature-large {
-    grid-column: auto;
-  }
-
-  .feature-large {
-    grid-template-columns: 1fr;
-  }
-
-  .steps-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 25px;
-  }
-
-  .handoff-container {
-    grid-template-columns: 1fr;
-  }
-
-  .cases-grid,
-  .pricing-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .pricing-card.featured {
-    order: -1;
-  }
-
+  .hero-grid,
+  .sectors-layout,
+  .pricing-layout,
   .faq-layout {
     grid-template-columns: 1fr;
   }
-
-  .footer-main {
-    flex-direction: column;
+  .hero h1 {
+    font-size: clamp(46px, 9vw, 70px);
   }
-}
-
-@media (max-width: 540px) {
-  .nav-container {
-    width: calc(100% - 30px);
+  .hero-art {
+    height: 510px;
+    margin-top: 20px;
   }
-
-  .hero {
-    padding: 110px 16px 60px;
-  }
-
-  .hero-description {
-    font-size: 11px;
-  }
-
-  .hero-actions {
-    align-items: stretch;
-    flex-direction: column;
-
-    max-width: 300px;
-
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .hero-trust {
-    flex-direction: column;
-    gap: 7px;
-  }
-
-  .browser-top {
-    height: 30px;
-  }
-
-  .browser-address {
-    width: 130px;
-  }
-
-  .dashboard {
-    height: 360px;
-
-    grid-template-columns: 55px minmax(0, 1fr);
-  }
-
-  .demo-brand {
-    justify-content: center;
-
-    font-size: 0;
-  }
-
-  .demo-brand > span {
-    width: 22px;
-    height: 22px;
-  }
-
-  .demo-workspace,
-  .demo-nav {
-    font-size: 0;
-  }
-
-  .demo-nav {
-    justify-content: center;
-  }
-
-  .demo-icon {
-    font-size: 8px;
-  }
-
-  .demo-sidebar-bottom {
-    justify-content: center;
-
-    font-size: 0;
-  }
-
-  .demo-main {
-    padding: 10px;
-  }
-
-  .demo-header h3 {
-    font-size: 13px;
-  }
-
-  .demo-header p {
-    display: none;
-  }
-
-  .stat-card {
-    padding: 8px;
-  }
-
-  .stat-card > strong {
-    font-size: 12px;
-  }
-
-  .conversation-row {
-    padding: 7px 3px;
-  }
-
-  .business-types i {
-    display: none;
-  }
-
   .section {
-    padding: 80px 17px;
+    padding: 85px 0;
   }
-
-  .feature-card {
-    min-height: auto;
-
-    padding: 22px;
+  .section-intro {
+    display: block;
   }
-
-  .steps-grid,
-  .cases-grid,
-  .pricing-grid {
+  .section-intro > p {
+    margin-top: 20px;
+  }
+  .features-grid {
     grid-template-columns: 1fr;
   }
-
-  .process-step:not(:last-child) {
-    margin-right: 0;
+  .feature-wide {
+    grid-column: auto;
+    min-height: 550px;
   }
-
-  .handoff-section {
-    padding: 80px 17px;
+  .feature-chat {
+    width: calc(100% - 60px);
+    bottom: 24px;
+    left: 30px;
+    right: auto;
   }
-
-  .support-body {
-    min-height: 270px;
-
-    padding: 16px;
+  .feature-wide .feature-copy {
+    max-width: 100%;
   }
-
-  .support-message {
-    max-width: 88%;
+  .steps {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
-
-  .final-cta-section {
-    padding: 20px 17px 70px;
+  .steps article {
+    padding-bottom: 24px;
   }
-
-  .final-cta {
-    padding: 55px 20px;
+  .steps h3 {
+    margin-top: 20px;
   }
-
-  .cta-actions {
-    flex-direction: column;
-
-    max-width: 260px;
-
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .footer {
-    padding: 45px 20px 22px;
-  }
-
-  .footer-links {
+  .statement-bottom {
     flex-wrap: wrap;
-    gap: 35px;
   }
-
-  .footer-bottom {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 9px;
+  .pricing-layout,
+  .faq-layout,
+  .sectors-layout {
+    gap: 40px;
   }
-}
-/* =========================
-   LANDING TYPOGRAPHY FIX
-========================= */
-
-/* NAVBAR */
-
-.brand {
-  font-size: 15px;
-}
-
-.brand-mark {
-  font-size: 12px;
-}
-
-.desktop-nav a,
-.login-link {
-  font-size: 14px;
-}
-
-.nav-cta {
-  min-height: 38px;
-  padding: 0 15px;
-  font-size: 13px;
-}
-
-/* HERO */
-
-.hero-badge {
-  padding: 6px 11px;
-  font-size: 12px;
-}
-
-.hero-description {
-  max-width: 650px;
-  font-size: 17px;
-  line-height: 1.65;
-}
-
-.primary-button,
-.secondary-button {
-  min-height: 44px;
-  padding: 0 19px;
-  font-size: 14px;
-}
-
-.hero-trust {
-  font-size: 12px;
-}
-
-/* BUSINESS STRIP */
-
-.business-strip p {
-  font-size: 13px;
-}
-
-.business-types {
-  font-size: 14px;
-}
-
-/* SECTION HEADERS */
-
-.section-eyebrow {
-  font-size: 12px;
-}
-
-.section-heading p,
-.faq-heading p {
-  font-size: 15px;
-  line-height: 1.7;
-}
-
-/* FEATURE CARDS */
-
-.feature-icon-box {
-  font-size: 14px;
-}
-
-.feature-label {
-  font-size: 12px;
-}
-
-.feature-card h3 {
-  font-size: 24px;
-}
-
-.feature-card > p,
-.feature-copy p {
-  font-size: 14px;
-  line-height: 1.65;
-}
-
-/* HOW IT WORKS */
-
-.step-number {
-  font-size: 11px;
-}
-
-.process-icon {
-  font-size: 14px;
-}
-
-.process-step h3 {
-  font-size: 17px;
-}
-
-.process-step p {
-  font-size: 14px;
-  line-height: 1.65;
-}
-
-/* HANDOFF SECTION */
-
-.handoff-copy > p {
-  font-size: 15px;
-  line-height: 1.7;
-}
-
-.handoff-points > div {
-  font-size: 14px;
-}
-
-.handoff-points > div > span {
-  font-size: 10px;
-}
-
-.light-button {
-  min-height: 42px;
-  padding: 0 16px;
-  font-size: 14px;
-}
-
-/* CASES */
-
-.case-icon {
-  font-size: 14px;
-}
-
-.case-card h3 {
-  font-size: 17px;
-}
-
-.case-card p {
-  font-size: 14px;
-  line-height: 1.65;
-}
-
-/* PRICING */
-
-.popular-badge {
-  font-size: 11px;
-}
-
-.plan-name {
-  font-size: 17px;
-}
-
-.pricing-header p {
-  min-height: 48px;
-  font-size: 14px;
-  line-height: 1.55;
-}
-
-.price strong {
-  font-size: 36px;
-}
-
-.price span {
-  font-size: 13px;
-}
-
-.pricing-button {
-  min-height: 42px;
-  font-size: 14px;
-}
-
-.plan-features {
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.pricing-note {
-  font-size: 13px;
-}
-
-/* FAQ */
-
-.faq-item button {
-  font-size: 15px;
-}
-
-.faq-plus {
-  font-size: 18px;
-}
-
-.faq-answer p {
-  font-size: 14px;
-  line-height: 1.7;
-}
-
-/* FINAL CTA */
-
-.cta-eyebrow {
-  font-size: 12px;
-}
-
-.cta-content p {
-  font-size: 15px;
-  line-height: 1.7;
-}
-
-.cta-primary,
-.cta-secondary {
-  min-height: 43px;
-  padding: 0 17px;
-  font-size: 14px;
-}
-
-/* FOOTER */
-
-.footer-brand p {
-  font-size: 13px;
-}
-
-.footer-links strong {
-  font-size: 13px;
-}
-
-.footer-links a {
-  font-size: 13px;
-}
-
-.footer-bottom {
-  font-size: 12px;
-}
-
-/* MOBILE */
-
-@media (max-width: 760px) {
-  .mobile-menu > a {
-    font-size: 14px;
+  .pricing-card {
+    max-width: 540px;
   }
-
-  .mobile-actions a {
-    min-height: 40px;
-    font-size: 13px;
+  .footer-links {
+    gap: 50px;
   }
 }
-
-@media (max-width: 540px) {
-  .hero-description {
+@media (max-width: 500px) {
+  .announcement {
+    font-size: 10px;
+    gap: 5px;
+  }
+  .announcement a {
+    margin-left: 2px;
+  }
+  .hero h1 {
+    letter-spacing: -2.5px;
+  }
+  .hero-lead {
     font-size: 15px;
   }
-
-  .primary-button,
-  .secondary-button {
-    font-size: 14px;
+  .hero-buttons {
+    display: grid;
   }
-
-  .section-heading p,
-  .faq-heading p {
-    font-size: 14px;
+  .hero-buttons .button {
+    justify-content: space-between;
+  }
+  .hero-art {
+    height: 430px;
+    margin-inline: -15px;
+  }
+  .mock-window {
+    width: 340px;
+    max-width: 85%;
+  }
+  .floating-tag {
+    padding: 10px;
+    font-size: 9px;
+  }
+  .tag-top {
+    top: 16px;
+  }
+  .tag-bottom {
+    bottom: 8px;
+  }
+  .hero-bottom {
+    font-size: 8px;
+  }
+  .hero-bottom span:nth-child(2) {
+    display: none;
+  }
+  .ribbon-items {
+    justify-content: center;
+  }
+  .section h2 {
+    letter-spacing: -2px;
+  }
+  .feature {
+    padding: 24px;
+  }
+  .feature-wide {
+    min-height: 555px;
+  }
+  .feature-chat {
+    width: calc(100% - 48px);
+    left: 24px;
+  }
+  .statement-section h2,
+  .final-section h2 {
+    letter-spacing: -2px;
+  }
+  .pricing-card-top {
+    font-size: 8px;
+    padding: 13px;
+  }
+  .pricing-card-body {
+    padding: 27px;
+  }
+  .price-main {
+    font-size: 80px;
+  }
+  .price-main > span {
+    font-size: 38px;
+  }
+  .footer-main,
+  .footer-bottom {
+    flex-direction: column;
+  }
+  .footer-links {
+    gap: 55px;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+  .button:hover {
+    transform: none;
+  }
+}
+
+/* Pricing: hacer visible el valor completo del plan */
+.value-stack {
+  display: grid;
+  gap: 0;
+  margin-top: 33px;
+  border-top: 1px solid #e9e8f2;
+}
+.value-stack > div {
+  display: flex;
+  gap: 16px;
+  padding: 21px 0;
+  border-bottom: 1px solid #e9e8f2;
+  align-items: flex-start;
+}
+.value-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 43px;
+  width: 43px;
+  height: 43px;
+  border-radius: 13px;
+  background: #f0edff;
+  color: #6857e6;
+  font-size: 21px;
+  font-weight: 800;
+}
+.value-stack b {
+  display: block;
+  color: #25233e;
+  font-size: 15px;
+  line-height: 1.4;
+}
+.value-stack small {
+  display: block;
+  margin-top: 6px;
+  color: #83899b;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.pricing-layout {
+  align-items: start;
+  gap: 65px;
+}
+.pricing-card-body {
+  padding: 34px;
+}
+.price-intro {
+  margin: 13px 0 25px !important;
+  color: #525a6e !important;
+  font-size: 14px !important;
+}
+.included-heading {
+  padding-top: 21px;
+  border-top: 1px solid #ebe9f4;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.6px;
+  color: #7466b8;
+}
+.included-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 15px;
+}
+.included-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #41485b;
+  font-weight: 600;
+}
+.included-list li > span {
+  display: grid;
+  place-items: center;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e9f8f0;
+  color: #1e9c6e;
+  font-size: 11px;
+  font-weight: 900;
+}
+.included-highlight {
+  position: relative;
+  padding: 15px 11px;
+  margin: 0 -11px 3px;
+  background: #f3f0ff;
+  border: 1px solid #e2dcff;
+  border-radius: 13px;
+  align-items: center !important;
+  flex-wrap: wrap;
+}
+.included-highlight div {
+  flex: 1;
+  min-width: 150px;
+}
+.included-highlight strong {
+  display: block;
+  color: #3e32a0;
+  font-size: 14px;
+}
+.included-highlight small {
+  display: block;
+  color: #7a73a2;
+  font-size: 11px;
+  margin-top: 4px;
+}
+.included-highlight > b {
+  font-size: 9px;
+  letter-spacing: 0.8px;
+  color: #6857e6;
+  background: #e5dfff;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.pricing-under-cta {
+  text-align: center;
+  margin-top: 14px;
+  color: #6f6b8a;
+  font-size: 11px;
+  font-weight: 700;
+}
+@media (max-width: 800px) {
+  .pricing-layout {
+    gap: 38px;
+  }
+  .pricing-card-body {
+    padding: 27px;
+  }
+}
+
+/* V4: demostración de producto y recorrido detallado */
+.showcase-section{background:linear-gradient(180deg,#f7f7ff,#fff)}
+.showcase-heading{display:flex;justify-content:space-between;align-items:end;gap:50px;margin-bottom:38px}
+.showcase-heading h2{font:800 clamp(36px,4vw,57px)/1.13 Manrope,sans-serif;letter-spacing:-2.8px;margin:16px 0 0}
+.showcase-heading h2 span{color:#7565ea}.showcase-heading>p{max-width:380px;line-height:1.8;color:#7a8295;font-size:15px}
+.preview-switch{display:inline-flex;background:#eae8fa;padding:5px;border-radius:13px;gap:4px;margin-bottom:30px}
+.preview-switch button{border:0;border-radius:10px;padding:13px 21px;background:transparent;color:#615c80;font-size:13px;font-weight:800}
+.preview-switch button.selected{background:#fff;color:#4c3fc0;box-shadow:0 3px 14px #312d7518}
+.preview-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,.75fr);gap:44px;align-items:center}
+.product-frame{min-width:0;overflow:hidden;border:1px solid #e1e1f0;background:#fff;border-radius:17px;box-shadow:0 28px 65px #28215818}
+.browser-bar{height:38px;background:#f7f8fc;border-bottom:1px solid #e8e9f1;display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:#9ca2b1;font-size:10px}
+.browser-dots{display:flex;gap:5px}.browser-dots i{width:8px;height:8px;border-radius:50%;background:#d8dce9}.browser-dots i:first-child{background:#ffbcb7}.browser-dots i:nth-child(2){background:#ffe0a1}
+.app-shell{display:flex;min-height:410px;font-size:11px}.app-sidebar{width:165px;flex-shrink:0;background:#1e203c;color:#aeb3d0;padding:17px 10px;display:flex;flex-direction:column;gap:4px}
+.app-brand{color:#fff;font:800 20px Manrope,sans-serif;letter-spacing:-1px;padding:4px 8px 20px}.app-brand span{color:#a79bff}.app-business{border:1px solid #444563;background:#30324f;border-radius:8px;padding:10px 8px;margin-bottom:14px;color:#fff;font-weight:800}.app-business small{display:block;font-size:9px;color:#aab0c7;margin:4px 0 0 24px}
+.app-sidebar button{border:0;background:transparent;color:#b7bad0;text-align:left;padding:10px 9px;border-radius:7px;font-size:10px}.app-sidebar button.current{background:#6354d9;color:white;font-weight:800}.sidebar-foot{margin-top:auto;border-top:1px solid #3a3c58;padding:14px 5px 0;font-size:9px;color:#c7c2ff}
+.app-main{flex:1;min-width:0;background:#fafbff;padding:0 18px 20px}.app-top{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid #e9ebf2;font-weight:800;color:#4a5268}.app-top small{display:block;font-size:9px;color:#a5a9b8;font-weight:500;margin-top:3px}.app-avatar{background:#e8e4ff;color:#5e51b7;padding:8px;border-radius:50%;font-size:9px}
+.app-page-title{display:flex;justify-content:space-between;align-items:center;margin:21px 0}.app-page-title small{color:#8e82cf;font-size:8px;font-weight:900;letter-spacing:1px}.app-page-title h3{font:800 23px Manrope,sans-serif;letter-spacing:-1px;margin:5px 0}.fake-new{background:#6656ed;color:#fff;padding:9px;border-radius:7px;font-weight:800;font-size:9px}
+.app-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:18px}.app-stat-grid>div{border:1px solid #eceef4;border-radius:9px;padding:12px;background:#fff}.app-stat-grid small,.app-stat-grid span{display:block;font-size:9px;color:#959db0}.app-stat-grid b{display:block;font:800 24px Manrope,sans-serif;margin:8px 0 3px}.app-stat-grid span{font-size:8px;color:#32a478}
+.app-table{border:1px solid #e8eaf2;background:#fff;border-radius:10px;overflow:hidden}.app-table-title{padding:15px;font-weight:900;display:flex;justify-content:space-between}.app-table-title span{color:#a3a8b6;font-size:9px;font-weight:500}.app-table-head,.app-table-row{display:grid;grid-template-columns:1.4fr 1fr .55fr .9fr;gap:6px;align-items:center;padding:11px 13px}.app-table-head{background:#f6f7fb;color:#a0a7b8;font-size:8px;font-weight:900}.app-table-row{border-top:1px solid #f0f1f6;color:#5c6275;font-size:9px}.app-table-row>span:first-child{display:flex;align-items:center;gap:5px;font-weight:800}.app-table-row i{font-style:normal;background:#eeeaff;color:#6656d6;padding:7px;border-radius:50%;font-size:8px}.app-status{color:#269b6d;background:#eaf8f0;padding:6px 3px;border-radius:6px;text-align:center;font-size:8px}.app-status.pending{background:#fff4e2;color:#ad7c2c}
+.app-lead{display:flex;align-items:center;gap:12px;border-top:1px solid #f0f1f6;padding:17px}.app-lead>div{flex:1}.app-lead b,.app-lead small{display:block}.app-lead small{color:#999fb1;margin-top:5px}.app-lead>span:last-child{color:#a6aaba}.lead-icon{background:#eaf9f0;color:#2aa574;border-radius:9px;padding:10px}
+.app-chat-demo{border:1px solid #e9eaf1;border-radius:12px;background:#fff;padding:15px;display:flex;flex-direction:column;gap:15px}.chat-demo-head{padding-bottom:12px;border-bottom:1px solid #eee;font-weight:900}.chat-demo-head span{float:right;color:#6c5bdf}.app-chat-demo p{max-width:80%;margin:0;padding:13px;border-radius:11px;line-height:1.6}.chat-demo-in{align-self:flex-end;background:#6656ed;color:white}.chat-demo-out{background:#f0eeff;color:#534a9b}.chat-demo-note{border-top:1px solid #eee;padding:13px 0 0;color:#7567bd}
+.preview-description{padding:10px 0}.preview-pill{display:inline-block;padding:8px 11px;background:#edeaff;color:#6656d6;border-radius:6px;font-size:10px;font-weight:900;letter-spacing:1px}.preview-description h3{font:800 clamp(27px,3vw,38px)/1.2 Manrope,sans-serif;letter-spacing:-1.5px;margin:22px 0}.preview-description>p{color:#7c8498;font-size:14px;line-height:1.85}.preview-mini-tabs{border-top:1px solid #e5e4ef;margin-top:30px;padding-top:15px;display:grid;gap:8px}.preview-mini-tabs button{border:1px solid transparent;background:transparent;text-align:left;padding:13px;color:#858aa0;border-radius:9px;font-size:13px;font-weight:800}.preview-mini-tabs button.active{border-color:#ded9ff;background:#f0edff;color:#6554d5}.preview-description .preview-footnote{font-size:11px;color:#a1a4b3;margin-top:24px}
+.sample-site{position:relative;min-height:440px;background:#fffaf5}.site-nav{height:65px;display:flex;align-items:center;justify-content:space-between;padding:0 25px;background:#fff;gap:10px}.site-nav strong{font-size:16px;letter-spacing:2px;color:#30312f}.site-nav em{color:#ae8466;font-style:normal}.site-nav>span{color:#8e8c86;font-size:9px}.site-nav>b{background:#34322f;color:#fff;padding:10px;border-radius:4px;font-size:9px}.site-hero{padding:40px 28px 54px;background:radial-gradient(circle at 90% 20%,#d7bfa9 0%,transparent 37%),linear-gradient(130deg,#f6e9db,#faf5ed);max-width:100%}.site-hero>span:first-child{font-size:9px;letter-spacing:2px;color:#957b66;font-weight:900}.site-hero h3{font:800 clamp(37px,4.4vw,57px)/1.12 Georgia,serif;letter-spacing:-2px;margin:18px 0;color:#342d2b}.site-hero h3 em{color:#ac8467}.site-hero p{font-size:11px;color:#776d67;max-width:260px;line-height:1.8}.site-button{display:inline-block;background:#332f2c;color:white;padding:12px 16px;border-radius:4px;margin-top:14px;font-size:10px;font-weight:800}.site-services{padding:23px 28px 34px}.site-services>span{font-size:9px;color:#aa8066;letter-spacing:1px}.site-services>div{display:flex;gap:10px;margin-top:15px;flex-wrap:wrap}.site-services b{padding:13px 10px;background:#f6f0eb;color:#65574c;border-radius:5px;font-size:10px}
+.site-chat{position:absolute;right:16px;top:90px;width:245px;background:#fff;border:1px solid #e6e2e0;border-radius:13px;box-shadow:0 20px 45px #49372735;overflow:hidden}.site-chat-head{background:#6554dc;color:#fff;display:flex;align-items:center;gap:8px;padding:11px}.site-chat-head>span:first-child{font-size:20px}.site-chat-head>div{flex:1}.site-chat-head b,.site-chat-head small{display:block}.site-chat-head b{font-size:10px}.site-chat-head small{font-size:8px;color:#e6e0ff;margin-top:3px}.site-chat-body{padding:12px;display:flex;flex-direction:column;gap:8px}.site-chat-body p{background:#f1efff;border-radius:9px 9px 9px 2px;color:#544b8c;font-size:9px;line-height:1.5;padding:9px;margin:0;max-width:90%}.site-chat-body p:nth-child(2){align-self:flex-end;background:#6554dc;color:white;border-radius:9px 9px 2px 9px}.site-chat-input{border-top:1px solid #ececf2;color:#a8aabb;padding:10px;font-size:9px;display:flex;justify-content:space-between}.site-chat-input span{background:#6656ed;color:white;border-radius:5px;padding:3px 7px}.preview-benefits{display:grid;gap:12px;margin-top:24px;color:#4b5365;font-size:13px;font-weight:800}
+.detailed-steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;counter-reset:none}.detailed-steps article{border:1px solid #e8e8f2;background:#fff;border-radius:16px;padding:28px;min-height:295px;transition:box-shadow .2s}.detailed-steps article:hover{box-shadow:0 15px 35px #2b246e0c}.detailed-steps .step-number{font-size:19px}.step-subtitle{display:block;color:#7364d6;font-size:10px;font-weight:900;letter-spacing:1px;text-transform:uppercase;margin-top:20px}.detailed-steps h3{margin:10px 0 12px}.detailed-steps p{max-width:none;margin:0}.step-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:20px}.step-tags span{font-size:10px;color:#5c51b1;background:#f1efff;padding:7px 9px;border-radius:6px;font-weight:700}
+@media(max-width:1000px){.preview-layout{grid-template-columns:1fr}.preview-description{max-width:650px}.preview-mini-tabs{grid-template-columns:repeat(3,1fr)}.preview-mini-tabs button{font-size:11px}}
+@media(max-width:650px){.showcase-heading{display:block}.preview-switch{display:flex;width:100%}.preview-switch button{flex:1;padding:11px 6px;font-size:11px}.app-sidebar{width:92px;padding:10px 5px}.app-brand{font-size:14px;padding:4px 4px 15px}.app-business{font-size:9px;padding:8px 4px}.app-business small{margin-left:0}.app-sidebar button{font-size:8px;padding:9px 4px}.sidebar-foot{font-size:8px}.app-main{padding:0 7px 12px}.app-table-head,.app-table-row{grid-template-columns:1.3fr 1fr .6fr}.app-table-head>span:last-child,.app-table-row>span:last-child{display:none}.app-table-row{font-size:8px;padding:9px 6px}.app-stat-grid{gap:4px}.app-stat-grid>div{padding:8px 5px}.app-stat-grid small{font-size:8px}.app-stat-grid b{font-size:18px}.app-stat-grid span{display:none}.app-page-title h3{font-size:19px}.fake-new{font-size:8px;padding:7px}.site-nav{padding:0 12px}.site-nav>span{display:none}.site-chat{right:8px;top:125px;width:190px}.site-hero{padding:45px 12px}.site-hero h3{font-size:38px}.site-hero p{max-width:130px}.site-services{padding:22px 12px}.site-services>div{max-width:145px}.detailed-steps{grid-template-columns:1fr}.preview-mini-tabs{grid-template-columns:1fr}.showcase-heading h2{letter-spacing:-2px}}
+
 </style>

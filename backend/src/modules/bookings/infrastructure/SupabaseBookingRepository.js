@@ -186,6 +186,17 @@ export class SupabaseBookingRepository extends BookingRepository {
     return data;
   }
 
+  async adminUpdate(id, fields) {
+    const { data, error } = await this.supabase.from("bookings")
+      .update({ ...fields, updated_at: new Date().toISOString() })
+      .eq("id", id).select(BOOKING_SELECT).single();
+    if (error) {
+      if (error.code === "23P01") throw new AppError("The selected time is not available", 409);
+      throw new AppError(`Failed to update booking: ${error.message}`, 500);
+    }
+    return data;
+  }
+
   async updateStatus(id, status) {
     const { data, error } = await this.supabase
       .from("bookings")

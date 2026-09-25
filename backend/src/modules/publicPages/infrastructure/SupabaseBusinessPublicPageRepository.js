@@ -66,6 +66,16 @@ export class SupabaseBusinessPublicPageRepository extends BusinessPublicPageRepo
       show_about: page.showAbout,
       show_contact: page.showContact,
 
+      theme_primary: page.themePrimary,
+      theme_secondary: page.themeSecondary,
+      theme_background: page.themeBackground,
+      theme_surface: page.themeSurface,
+      theme_text: page.themeText,
+      theme_font: page.themeFont,
+      theme_radius: page.themeRadius,
+      theme_button_style: page.themeButtonStyle,
+      theme_template: page.themeTemplate,
+      theme_hero_layout: page.themeHeroLayout,
       updated_at: new Date().toISOString(),
     };
 

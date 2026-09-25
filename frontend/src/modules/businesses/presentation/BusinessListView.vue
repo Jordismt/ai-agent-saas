@@ -1,5 +1,9 @@
 <script setup>
 import { onMounted, ref } from "vue";
+import { BillingService } from "../../billing/infrastructure/BillingService.js";
+const billingService = new BillingService();
+const activeIds = ref(new Set());
+const businessTarget = id => activeIds.value.has(id) ? `/businesses/${id}` : `/businesses/${id}/billing`;
 import { BusinessService } from "../infrastructure/BusinessService.js";
 import { GetBusinesses } from "../application/GetBusinesses.js";
 
@@ -16,6 +20,11 @@ const loadBusinesses = async () => {
 
   try {
     businesses.value = await getBusinesses.execute();
+    const states = await Promise.all(businesses.value.map(async business => {
+      try { const {billing}=await billingService.getStatus(business.id); return [business.id,["active","trialing"].includes(billing?.status)]; }
+      catch { return [business.id,false]; }
+    }));
+    activeIds.value = new Set(states.filter(([,active])=>active).map(([id])=>id));
   } catch (err) {
     error.value = err.message || "No se han podido cargar los negocios.";
   } finally {
@@ -149,10 +158,9 @@ onMounted(loadBusinesses);
           </div>
 
           <div class="business-grid">
-            <RouterLink
+            <div
               v-for="business in businesses"
               :key="business.id"
-              :to="`/businesses/${business.id}`"
               class="business-card">
               <div class="card-top">
                 <div class="business-avatar">
@@ -199,12 +207,11 @@ onMounted(loadBusinesses);
                 </div>
               </div>
 
-              <div class="card-footer">
-                <span>Gestionar negocio</span>
-
-                <span class="card-arrow">→</span>
+              <div class="card-footer" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+                <RouterLink :to="businessTarget(business.id)" style="color:inherit;font-weight:750">Gestionar negocio →</RouterLink>
+                <RouterLink :to="`/businesses/${business.id}/billing`" style="color:#3153ed;font-weight:750">Gestionar suscripción ↗</RouterLink>
               </div>
-            </RouterLink>
+            </div>
 
             <!-- CREATE CARD -->
 

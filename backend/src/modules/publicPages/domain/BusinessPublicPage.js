@@ -22,6 +22,16 @@ export class BusinessPublicPage {
     websiteUrl = null,
     mapsUrl = null,
 
+    themePrimary = "#2563eb",
+    themeSecondary = "#0f172a",
+    themeBackground = "#ffffff",
+    themeSurface = "#f8fafc",
+    themeText = "#0f172a",
+    themeFont = "Inter",
+    themeRadius = 14,
+    themeButtonStyle = "rounded",
+    themeTemplate = "editorial",
+    themeHeroLayout = "split",
     showServices = true,
     showTeam = true,
     showHours = true,
@@ -50,6 +60,16 @@ export class BusinessPublicPage {
     this.websiteUrl = websiteUrl;
     this.mapsUrl = mapsUrl;
 
+    this.themePrimary = themePrimary;
+    this.themeSecondary = themeSecondary;
+    this.themeBackground = themeBackground;
+    this.themeSurface = themeSurface;
+    this.themeText = themeText;
+    this.themeFont = themeFont;
+    this.themeRadius = themeRadius;
+    this.themeButtonStyle = themeButtonStyle;
+    this.themeTemplate = themeTemplate;
+    this.themeHeroLayout = themeHeroLayout;
     this.showServices = showServices;
     this.showTeam = showTeam;
     this.showHours = showHours;

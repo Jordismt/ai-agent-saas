@@ -4,15 +4,22 @@ import { useRoute, useRouter } from "vue-router";
 
 import { BookingService } from "../infrastructure/BookingService.js";
 import { BusinessService } from "../../businesses/infrastructure/BusinessService.js";
+import { EmployeeService } from "../../employees/infrastructure/EmployeeService.js";
 
 const route = useRoute();
 const router = useRouter();
 
 const bookingService = new BookingService();
 const businessService = new BusinessService();
+const employeeService = new EmployeeService();
 
 const bookings = ref([]);
 const business = ref(null);
+const allEmployees = ref([]);
+const services = ref([]);
+const employeeServiceIds = ref({});
+const employeeServicesLoading = ref(false);
+const employeeServicesError = ref(false);
 
 const loading = ref(false);
 const error = ref("");
@@ -42,13 +49,34 @@ const loadData = async () => {
   error.value = "";
 
   try {
-    const [businessData, bookingData] = await Promise.all([
+    const [businessData, bookingData, servicesData, employeesData] = await Promise.all([
       businessService.getBusinessById(businessId.value),
       bookingService.getByBusinessId(businessId.value),
+      businessService.getBusinessServices(businessId.value),
+      employeeService.getByBusinessId(businessId.value),
     ]);
 
     business.value = businessData;
     bookings.value = Array.isArray(bookingData) ? bookingData : [];
+    services.value = Array.isArray(servicesData) ? servicesData : [];
+    allEmployees.value = Array.isArray(employeesData) ? employeesData : [];
+    employeeServicesLoading.value = true;
+    employeeServicesError.value = false;
+    const assignments = await Promise.allSettled(
+      allEmployees.value.filter(e => e.active !== false).map(async employee => ({
+        id: employee.id,
+        services: await employeeService.getServices(employee.id),
+      }))
+    );
+    employeeServiceIds.value = Object.fromEntries(assignments
+      .filter(result => result.status === "fulfilled")
+      .map(result => {
+        const { id, services: data } = result.value;
+        const items = Array.isArray(data) ? data : (data?.services || []);
+        return [id, items.map(item => typeof item === "string" ? item : (item.service_id || item.serviceId || item.id))];
+      }));
+    employeeServicesError.value = assignments.some(result => result.status === "rejected");
+    employeeServicesLoading.value = false;
   } catch (err) {
     console.error(err);
 
@@ -58,17 +86,10 @@ const loadData = async () => {
   }
 };
 
-const employees = computed(() => {
-  const map = new Map();
-
-  for (const booking of bookings.value) {
-    if (booking.employee?.id && booking.employee?.name) {
-      map.set(booking.employee.id, booking.employee);
-    }
-  }
-
-  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "es"));
-});
+const employees = computed(() => allEmployees.value.filter(e => e.active !== false).sort((a,b) => a.name.localeCompare(b.name,"es")));
+const qualifiedEmployees = computed(() => form.value.serviceId
+  ? employees.value.filter(e => employeeServiceIds.value[e.id]?.includes(form.value.serviceId))
+  : []);
 
 const getDateParts = (date) => {
   if (!date) return null;
@@ -299,6 +320,135 @@ const handleStatusChange = async (booking, event) => {
   }
 };
 
+
+// Formulario de reservas manuales. Las horas proceden siempre del backend.
+const modalOpen = ref(false);
+const modalMode = ref("create");
+const selectedBooking = ref(null);
+const modalError = ref("");
+const saving = ref(false);
+const loadingSlots = ref(false);
+const slots = ref([]);
+const sendEmail = ref(true);
+const form = ref(emptyForm());
+let availabilityRequest = 0;
+function emptyForm() {
+  return { serviceId:"", employeeId:"", date:"", time:"", customerName:"", customerPhone:"", customerEmail:"", notes:"" };
+}
+const isEditing = computed(() => modalMode.value === "edit");
+const editable = booking => !["cancelled","completed","no_show"].includes(booking.status);
+const currentService = computed(() => services.value.find(s => s.id === form.value.serviceId));
+const availableSlots = computed(() => {
+  const result = slots.value.filter(slot => !form.value.employeeId || slot.employees?.some(e => e.id === form.value.employeeId));
+  // En edición, el horario actual se puede mantener aunque la consulta lo excluya.
+  if (isEditing.value && selectedBooking.value && form.value.serviceId === selectedBooking.value.service_id &&
+      form.value.date === getDateParts(selectedBooking.value.starts_at)) {
+    const existingTime = formatTime(selectedBooking.value.starts_at);
+    if (!result.some(slot => slot.localTime === existingTime)) {
+      result.unshift({localTime: existingTime, employees: selectedBooking.value.employee ? [selectedBooking.value.employee] : [], existing:true});
+    }
+  }
+  return result;
+});
+function openCreate() {
+  selectedBooking.value = null;
+  modalMode.value = "create";
+  modalError.value = "";
+  sendEmail.value = true;
+  slots.value = [];
+  form.value = emptyForm();
+  modalOpen.value = true;
+}
+async function openEdit(booking) {
+  if (!editable(booking)) return;
+  selectedBooking.value = booking;
+  modalMode.value = "edit";
+  modalError.value = "";
+  sendEmail.value = !!booking.customer_email;
+  form.value = {
+    serviceId: booking.service_id || "", employeeId: booking.employee_id || "",
+    date: getDateParts(booking.starts_at) || "", time: formatTime(booking.starts_at),
+    customerName: booking.customer_name || "", customerPhone: booking.customer_phone || "",
+    customerEmail: booking.customer_email || "", notes: booking.notes || "",
+  };
+  modalOpen.value = true;
+  await fetchSlots();
+}
+function closeModal() {
+  if (saving.value) return;
+  availabilityRequest++;
+  modalOpen.value = false;
+}
+async function fetchSlots() {
+  const request = ++availabilityRequest;
+  slots.value = [];
+  if (!form.value.serviceId || !form.value.date) return;
+  loadingSlots.value = true;
+  modalError.value = "";
+  try {
+    const result = await bookingService.getAvailability(businessId.value, form.value.serviceId, form.value.date);
+    if (request === availabilityRequest) slots.value = Array.isArray(result) ? result : [];
+  } catch(err) {
+    if (request === availabilityRequest) modalError.value = err.message || "No se ha podido consultar la disponibilidad.";
+  } finally {
+    if (request === availabilityRequest) loadingSlots.value = false;
+  }
+}
+function changeAvailability() {
+  if (form.value.employeeId && !qualifiedEmployees.value.some(e => e.id === form.value.employeeId)) {
+    form.value.employeeId = "";
+  }
+  form.value.time = "";
+  fetchSlots();
+}
+function getSlotEmployees() {
+  return availableSlots.value.find(s => s.localTime === form.value.time)?.employees || [];
+}
+async function saveManual() {
+  modalError.value = "";
+  if (!form.value.serviceId || !form.value.date || !form.value.time || !form.value.customerName.trim()) {
+    modalError.value = "Completa el servicio, fecha, hora y nombre del cliente."; return;
+  }
+  if (sendEmail.value && !form.value.customerEmail.trim()) {
+    modalError.value = "Introduce el correo o desactiva las notificaciones."; return;
+  }
+  if (employeeServicesLoading.value || employeeServicesError.value) {
+    modalError.value = "No se han podido verificar los servicios de los empleados. Actualiza la página e inténtalo de nuevo."; return;
+  }
+  if (form.value.employeeId && !qualifiedEmployees.value.some(e => e.id === form.value.employeeId)) {
+    modalError.value = "Este empleado no realiza el servicio seleccionado."; return;
+  }
+  const slot = availableSlots.value.find(s => s.localTime === form.value.time);
+  if (!slot) { modalError.value = "Selecciona una hora disponible."; return; }
+  if (form.value.employeeId && !slot.existing && !slot.employees?.some(e => e.id === form.value.employeeId)) {
+    modalError.value = "El empleado no está disponible a esa hora."; return;
+  }
+  saving.value = true;
+  try {
+    const payload = {
+      serviceId: form.value.serviceId, date: form.value.date, time: form.value.time,
+      employeeId: form.value.employeeId || null, customerName: form.value.customerName.trim(),
+      customerPhone: form.value.customerPhone.trim() || null,
+      customerEmail: sendEmail.value ? form.value.customerEmail.trim() : null,
+      notes: form.value.notes.trim() || null,
+    };
+    if (isEditing.value) await bookingService.updateManual(selectedBooking.value.id,payload);
+    else await bookingService.createManual(businessId.value,payload);
+    modalOpen.value = false;
+    await loadData();
+  } catch(err) {
+    modalError.value = err.message || "No se ha podido guardar la reserva.";
+  } finally { saving.value = false; }
+}
+async function cancelBooking(booking) {
+  if (!window.confirm(`¿Cancelar la reserva de ${booking.customer_name}? Se conservará en el historial.`)) return;
+  updatingBookingId.value = booking.id;
+  error.value = "";
+  try { await bookingService.cancelManual(booking.id); await loadData(); }
+  catch(err) { error.value = err.message || "No se ha podido cancelar la reserva."; }
+  finally { updatingBookingId.value = null; }
+}
+
 onMounted(loadData);
 </script>
 
@@ -345,10 +495,11 @@ onMounted(loadData);
 
             <h1>Reservas</h1>
 
-            <p class="page-description">Gestiona las citas captadas automáticamente por tu agente.</p>
+            <p class="page-description">Gestiona todas tus reservas, tanto automáticas como manuales.</p>
           </div>
         </div>
 
+        <div class="manual-header-actions"><button type="button" class="manual-primary" @click="openCreate">+ Nueva reserva</button>
         <button type="button" class="refresh-button" :disabled="loading" @click="loadData">
           <svg :class="{ rotating: loading }" width="15" height="15" viewBox="0 0 24 24" fill="none">
             <path
@@ -360,7 +511,7 @@ onMounted(loadData);
           </svg>
 
           {{ loading ? "Actualizando..." : "Actualizar" }}
-        </button>
+        </button></div>
       </header>
 
       <section class="stats-grid">
@@ -535,7 +686,7 @@ onMounted(loadData);
           <h3>Todavía no tienes reservas</h3>
 
           <p>
-            Cuando un cliente reserve una cita mediante el agente, aparecerá automáticamente en esta sección.
+            Cuando se registre una reserva desde el agente o manualmente, aparecerá aquí.
           </p>
 
           <div class="empty-info">
@@ -724,6 +875,7 @@ onMounted(loadData);
                   </button>
 
                   <span v-else class="no-conversation" title="Sin conversación asociada"> — </span>
+                  <div v-if="editable(booking)" class="manual-row-actions"><button type="button" @click="openEdit(booking)">Editar</button><button type="button" class="manual-danger-link" :disabled="updatingBookingId === booking.id" @click="cancelBooking(booking)">Cancelar</button></div>
                 </td>
               </tr>
             </tbody>
@@ -753,6 +905,40 @@ onMounted(loadData);
       </section>
     </div>
   </div>
+
+    <div v-if="modalOpen" class="manual-overlay" @click.self="closeModal">
+      <section class="manual-modal" role="dialog" aria-modal="true" aria-labelledby="manual-modal-title">
+        <div class="manual-modal-head">
+          <div><p class="eyebrow">Agenda · Resbix</p><h2 id="manual-modal-title">{{ isEditing ? 'Editar reserva' : 'Nueva reserva' }}</h2><p>Selecciona una cita disponible y completa los datos del cliente.</p></div>
+          <button type="button" class="manual-close" :disabled="saving" aria-label="Cerrar" @click="closeModal">×</button>
+        </div>
+        <form class="manual-form" @submit.prevent="saveManual">
+          <div v-if="modalError" class="manual-alert">{{ modalError }}</div>
+          <div class="manual-grid">
+            <label class="manual-field manual-wide">Servicio <select v-model="form.serviceId" required @change="changeAvailability"><option value="">Seleccionar servicio</option><option v-for="service in services" :key="service.id" :value="service.id">{{ service.name }} · {{ service.duration_minutes }} min</option></select></label>
+            <label class="manual-field">Fecha <input v-model="form.date" type="date" required @change="changeAvailability" /></label>
+            <label class="manual-field">Empleado
+              <select v-model="form.employeeId" :disabled="!form.serviceId || employeeServicesLoading || employeeServicesError" @change="form.time = ''">
+                <option value="">{{ employeeServicesLoading ? 'Cargando empleados...' : (!form.serviceId ? 'Selecciona primero un servicio' : 'Cualquiera disponible') }}</option>
+                <option v-for="employee in qualifiedEmployees" :key="employee.id" :value="employee.id">{{ employee.name }}</option>
+              </select>
+              <small v-if="employeeServicesError" class="manual-hint">No se pudieron cargar las especialidades. Actualiza la página.</small>
+              <small v-else-if="form.serviceId && !employeeServicesLoading && !qualifiedEmployees.length" class="manual-hint">No hay empleados asignados a este servicio.</small>
+            </label>
+            <div class="manual-field manual-wide"><span>Horario disponible</span><div v-if="loadingSlots" class="manual-hint">Consultando disponibilidad...</div><div v-else-if="!form.date || !form.serviceId" class="manual-hint">Selecciona un servicio y una fecha.</div><div v-else-if="!availableSlots.length" class="manual-hint">No hay horarios disponibles para esta selección.</div><div v-else class="manual-slot-grid"><button v-for="slot in availableSlots" :key="slot.localTime" type="button" :class="['manual-slot', {chosen:form.time===slot.localTime}]" @click="form.time=slot.localTime">{{ slot.localTime }}</button></div></div>
+          </div>
+          <div class="manual-separator"></div>
+          <div class="manual-grid">
+            <label class="manual-field manual-wide">Nombre del cliente <input v-model="form.customerName" type="text" maxlength="120" placeholder="Nombre y apellidos" required /></label>
+            <label class="manual-field">Teléfono (opcional) <input v-model="form.customerPhone" type="tel" maxlength="50" placeholder="600 000 000" /></label>
+            <label class="manual-field">Email (opcional) <input v-model="form.customerEmail" type="email" :disabled="!sendEmail" placeholder="cliente@correo.com" /></label>
+            <label class="manual-toggle manual-wide"><input v-model="sendEmail" type="checkbox" /><span><strong>Utilizar correo para notificaciones</strong><small>Si introduces un email, el backend puede enviar la confirmación y el recordatorio. Las notificaciones de edición y cancelación manual requieren completar su integración.</small></span></label>
+            <label class="manual-field manual-wide">Notas internas <textarea v-model="form.notes" rows="3" maxlength="1000" placeholder="Observaciones de la reserva..."></textarea></label>
+          </div>
+          <div class="manual-modal-footer"><button type="button" class="manual-secondary" :disabled="saving" @click="closeModal">Cerrar</button><button type="submit" class="manual-primary" :disabled="saving || loadingSlots">{{ saving ? 'Guardando...' : (isEditing ? 'Guardar cambios' : 'Crear reserva') }}</button></div>
+        </form>
+      </section>
+    </div>
 </template>
 
 <style scoped>
@@ -1715,4 +1901,41 @@ onMounted(loadData);
     font-size: 22px;
   }
 }
+
+/* Reservas manuales */
+.manual-header-actions{display:flex;align-items:center;gap:10px}
+.manual-primary{border:0;border-radius:9px;padding:11px 18px;background:#2563eb;color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.manual-primary:hover:not(:disabled){background:#1d4ed8}
+.manual-primary:disabled{opacity:.55;cursor:wait}
+.manual-row-actions{display:flex;gap:8px;margin-top:7px}
+.manual-row-actions button{border:0;background:none;color:#2563eb;font-size:12px;font-weight:650;cursor:pointer;padding:3px}
+.manual-row-actions .manual-danger-link{color:#dc2626}
+.manual-overlay{position:fixed;inset:0;z-index:1100;background:rgba(15,23,42,.56);display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+.manual-modal{width:min(660px,100%);max-height:calc(100vh - 40px);overflow:auto;border-radius:17px;background:#fff;box-shadow:0 24px 90px rgba(0,0,0,.24)}
+.manual-modal-head{display:flex;justify-content:space-between;gap:15px;padding:24px 27px 19px;border-bottom:1px solid #e5e7eb}
+.manual-modal-head h2{font-size:23px;color:#0f172a;letter-spacing:-.035em;margin:0 0 5px}
+.manual-modal-head p:not(.eyebrow){margin:0;color:#64748b;font-size:13px}
+.manual-close{align-self:flex-start;border:0;background:#f1f5f9;color:#475569;width:32px;height:32px;border-radius:8px;font-size:24px;cursor:pointer}
+.manual-form{padding:22px 27px 0}
+.manual-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.manual-wide{grid-column:1/-1}
+.manual-field{display:flex;flex-direction:column;gap:7px;color:#334155;font-size:12px;font-weight:700}
+.manual-field input,.manual-field select,.manual-field textarea{width:100%;box-sizing:border-box;border:1px solid #dbe2eb;border-radius:9px;padding:11px;background:#fff;color:#0f172a;font:inherit;font-size:13px;font-weight:450;outline:none}
+.manual-field input:focus,.manual-field select:focus,.manual-field textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 3px #dbeafe}
+.manual-field input:disabled{background:#f8fafc;color:#94a3b8}
+.manual-slot-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.manual-slot{padding:10px 4px;border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:8px;cursor:pointer;font:inherit;font-size:13px;font-weight:600}
+.manual-slot.chosen{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
+.manual-hint{border:1px dashed #cbd5e1;background:#f8fafc;color:#64748b;padding:16px;border-radius:9px;font-size:13px;font-weight:450}
+.manual-separator{height:1px;background:#e5e7eb;margin:22px 0}
+.manual-toggle{display:flex;align-items:flex-start;gap:10px;padding:12px;background:#f8fafc;border-radius:9px;cursor:pointer}
+.manual-toggle input{margin-top:3px;accent-color:#2563eb}
+.manual-toggle span{display:flex;flex-direction:column;gap:4px}
+.manual-toggle strong{color:#334155;font-size:12px}
+.manual-toggle small{color:#64748b;font-size:11px;line-height:1.5}
+.manual-alert{border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;padding:12px;border-radius:9px;font-size:12px;margin-bottom:16px}
+.manual-modal-footer{display:flex;justify-content:flex-end;gap:9px;position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;margin:22px -27px 0;padding:16px 27px}
+.manual-secondary{border:1px solid #cbd5e1;background:#fff;border-radius:9px;padding:11px 17px;font:inherit;font-size:13px;font-weight:650;color:#475569;cursor:pointer}
+@media(max-width:700px){.manual-header-actions{width:100%;flex-wrap:wrap}.manual-header-actions>button{flex:1}.manual-modal-head{padding:20px}.manual-form{padding:18px 20px 0}.manual-modal-footer{margin:20px -20px 0;padding:15px 20px}.manual-slot-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:480px){.manual-grid{grid-template-columns:1fr}.manual-slot-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>

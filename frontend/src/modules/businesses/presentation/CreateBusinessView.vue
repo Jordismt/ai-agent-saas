@@ -1,5 +1,7 @@
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router";
+const router = useRouter();
 import { BusinessService } from "../infrastructure/BusinessService";
 import { CreateBusiness } from "../application/CreateBusiness";
 
@@ -27,14 +29,16 @@ const handleSubmit = async () => {
   loading.value = true;
 
   try {
-    await createBusiness.execute({
+    const business = await createBusiness.execute({
       name: name.value.trim(),
       description: description.value.trim() || null,
       phone: phone.value.trim() || null,
       address: address.value.trim() || null,
     });
 
-    success.value = "Negocio creado correctamente.";
+    if (!business?.id) throw new Error("No se recibió el identificador del negocio.");
+    await router.push({name:"business-billing",params:{id:business.id}});
+    success.value = "Negocio creado. Completa tu suscripción.";
 
     name.value = "";
     description.value = "";

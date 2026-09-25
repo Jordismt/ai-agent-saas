@@ -27,4 +27,22 @@ export class BookingService {
       body: JSON.stringify(data),
     });
   }
+  async createManual(businessId, data) {
+    return apiFetch(`/businesses/${businessId}/bookings/manual`, {
+      method: "POST", body: JSON.stringify(data),
+    });
+  }
+
+  async updateManual(bookingId, data) {
+    return apiFetch(`/bookings/${bookingId}/manual`, {
+      method: "PATCH", body: JSON.stringify(data),
+    });
+  }
+
+  async cancelManual(bookingId, reason = null) {
+    return apiFetch(`/bookings/${bookingId}/manual/cancel`, {
+      method: "PATCH", body: JSON.stringify({ reason }),
+    });
+  }
+
 }

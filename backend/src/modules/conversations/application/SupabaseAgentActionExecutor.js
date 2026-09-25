@@ -1,3 +1,4 @@
+import { requireActiveBusiness } from "../../../shared/billing/requireActiveBusiness.js";
 import { AgentActionExecutor } from "./AgentActionExecutor.js";
 
 import { CreateLead } from "../../leads/application/CreateLead.js";
@@ -69,6 +70,7 @@ export class SupabaseAgentActionExecutor extends AgentActionExecutor {
   }
 
   async execute({ action, businessId, conversationId, data = {} }) {
+    await requireActiveBusiness(businessId);
     switch (action) {
       case AGENT_ACTIONS.NONE:
         return {

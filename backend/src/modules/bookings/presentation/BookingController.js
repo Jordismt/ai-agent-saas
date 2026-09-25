@@ -13,6 +13,9 @@ import { updateBookingStatusSchema } from "../application/updateBookingStatusSch
 import { ResendEmailService } from "../../notifications/infrastructure/ResendEmailService.js";
 import { SendBookingConfirmation } from "../../notifications/application/SendBookingConfirmation.js";
 
+import { z } from "zod";
+import { AdminUpdateBooking } from "../application/AdminUpdateBooking.js";
+import { adminCreateBookingSchema, adminUpdateBookingSchema } from "../application/adminBookingSchemas.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 
 export class BookingController {
@@ -53,6 +56,11 @@ export class BookingController {
       sendBookingConfirmation,
     });
 
+    this.adminUpdateBooking = new AdminUpdateBooking({
+      bookingRepository, businessRepository, businessServiceRepository,
+      employeeRepository, getAvailableSlots: this.getAvailableSlots,
+    });
+
     this.getBusinessBookings = new GetBusinessBookings(bookingRepository);
 
     this.updateBookingStatus = new UpdateBookingStatus(bookingRepository);
@@ -73,6 +81,36 @@ export class BookingController {
     } catch (error) {
       next(error);
     }
+  }
+
+  async adminCreate(req, res, next) {
+    try {
+      await this.getOwnedBusinessOrThrow.execute(req.params.businessId, req.user.id);
+      const data = adminCreateBookingSchema.parse({ ...req.body, businessId: req.params.businessId });
+      const booking = await this.createBooking.execute({ ...data, allowWithoutEmail: true });
+      return res.status(201).json(booking);
+    } catch (error) { next(error); }
+  }
+
+  async adminUpdate(req, res, next) {
+    try {
+      const booking = await this.bookingRepository.findById(req.params.id);
+      if (!booking) throw new AppError("Booking not found", 404);
+      await this.getOwnedBusinessOrThrow.execute(booking.business_id, req.user.id);
+      const data = adminUpdateBookingSchema.parse(req.body);
+      return res.json(await this.adminUpdateBooking.execute(booking, data));
+    } catch (error) { next(error); }
+  }
+
+  async adminCancel(req, res, next) {
+    try {
+      const booking = await this.bookingRepository.findById(req.params.id);
+      if (!booking) throw new AppError("Booking not found", 404);
+      await this.getOwnedBusinessOrThrow.execute(booking.business_id, req.user.id);
+      if (booking.status === "cancelled") throw new AppError("Booking already cancelled", 409);
+      const { reason } = z.object({ reason: z.string().trim().max(500).nullable().optional() }).parse(req.body || {});
+      return res.json(await this.bookingRepository.cancelById(booking.id, reason));
+    } catch (error) { next(error); }
   }
 
   async getByBusinessId(req, res, next) {

@@ -31,6 +31,8 @@ export class BookingRepository {
     throw new Error("Method not implemented");
   }
 
+  async adminUpdate(_id, _fields) { throw new Error("Method not implemented"); }
+
   async updateStatus(_id, _status) {
     throw new Error("Method not implemented");
   }

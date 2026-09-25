@@ -7,6 +7,7 @@ import { supabase } from "../../../infrastructure/supabase/supabaseClient.js";
 const props = defineProps({
   businessId: { type: String, required: true },
   businessName: { type: String, default: "Asistente virtual" },
+  theme: { type: Object, default: () => ({}) },
 });
 
 const emit = defineEmits(["close"]);
@@ -207,7 +208,7 @@ onBeforeUnmount(() => {
 <template>
   <Teleport to="body">
     <Transition name="chat-fade">
-      <div v-if="isOpen" class="widget-layer">
+      <div v-if="isOpen" class="widget-layer" :style="props.theme">
         <button
           type="button"
           class="widget-backdrop"
@@ -326,7 +327,7 @@ onBeforeUnmount(() => {
   inset: 0;
   z-index: 1000;
   pointer-events: none;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--site-font, Inter, ui-sans-serif, system-ui, sans-serif);
 }
 
 .widget-backdrop {
@@ -475,4 +476,21 @@ onBeforeUnmount(() => {
   .footer-meta > span:first-child { display: none; }
   .footer-meta { justify-content: flex-end; }
 }
+/* El tema de la web también se aplica al agente */
+.chat-header,.chat-footer{background:var(--site-bg,#fff)}.chat-widget{font-family:inherit;border-radius:var(--site-radius,22px)}.business-avatar,.assistant-avatar,.message-user .message-bubble{background:var(--site-secondary,#0f172a)}.send-button{background:var(--site-primary,#2563eb);border-radius:var(--site-button-radius,9px)}.send-button:hover:not(:disabled){filter:brightness(.9);background:var(--site-primary,#2563eb)}.ai-badge{color:var(--site-primary,#2563eb)}
+
+/* V7 / premium conversation surface */
+.chat-widget{border-radius:24px;border:1px solid #e5e9ee;box-shadow:0 40px 100px #0f172a33,0 12px 30px #0f172a12}
+.chat-header{min-height:83px;padding:18px 19px;background:linear-gradient(120deg,var(--site-secondary,#111827),color-mix(in srgb,var(--site-secondary,#111827) 85%,#fff))}
+.business-avatar{background:#ffffff1c;border:1px solid #ffffff30;color:#fff;border-radius:14px}
+.business-name-row h2{color:#fff;font-size:15px}.availability{color:#ffffffb0}.ai-badge{background:#ffffff25;color:#fff!important}
+.close-button{background:#ffffff17;border-color:#ffffff29;color:#fff}.close-button:hover{background:#ffffff2d;color:#fff}
+.chat-messages{background:radial-gradient(ellipse at 90% 0%,color-mix(in srgb,var(--site-primary,#2563eb) 6%,transparent),transparent 45%),#fbfcfe;padding:24px 20px}
+.message-bubble{padding:12px 15px;font-size:13px;line-height:1.65}.message-assistant .message-bubble{border-radius:17px 17px 17px 4px;box-shadow:0 3px 15px #0f172a08}.message-user .message-bubble{border-radius:17px 17px 4px 17px}
+.assistant-avatar{background:var(--site-secondary,#111827);border-radius:10px}.message{animation:chat-in .25s ease both}
+.chat-footer{padding:15px;border-top:1px solid #eef1f5;background:#fff}.composer{border-radius:15px;padding:8px}.send-button{border-radius:11px}
+@keyframes chat-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:640px){.chat-widget{border-radius:0}.chat-header{padding-top:max(17px,env(safe-area-inset-top))}}
+@media(prefers-reduced-motion:reduce){.message{animation:none}}
+
 </style>

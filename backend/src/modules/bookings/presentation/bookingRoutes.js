@@ -1,3 +1,4 @@
+import { bookingLimiter } from "../../../shared/middleware/rateLimits.js";
 import { Router } from "express";
 
 import { BookingController } from "./BookingController.js";
@@ -46,7 +47,7 @@ function createController(req) {
   });
 }
 
-router.post("/businesses/:businessId/bookings", authMiddleware, (req, res, next) =>
+router.post("/businesses/:businessId/bookings", authMiddleware, bookingLimiter, (req, res, next) =>
   createController(req).create(req, res, next),
 );
 
@@ -54,8 +55,18 @@ router.get("/businesses/:businessId/bookings/availability", authMiddleware, (req
   createController(req).getAvailability(req, res, next),
 );
 
-router.get("/businesses/:businessId/bookings", authMiddleware, (req, res, next) =>
+router.get("/businesses/:businessId/bookings", authMiddleware, bookingLimiter, (req, res, next) =>
   createController(req).getByBusinessId(req, res, next),
+);
+
+router.post("/businesses/:businessId/bookings/manual", authMiddleware, (req, res, next) =>
+  createController(req).adminCreate(req, res, next),
+);
+router.patch("/bookings/:id/manual", authMiddleware, (req, res, next) =>
+  createController(req).adminUpdate(req, res, next),
+);
+router.patch("/bookings/:id/manual/cancel", authMiddleware, (req, res, next) =>
+  createController(req).adminCancel(req, res, next),
 );
 
 router.patch("/bookings/:id/status", authMiddleware, (req, res, next) =>

@@ -1,4 +1,5 @@
 import express from "express";
+import billingRoutes, { stripeWebhook } from "./modules/billing/presentation/billingRoutes.js";
 import cors from "cors";
 import helmet from "helmet";
 
@@ -17,6 +18,7 @@ import businessPublicPageRoutes from "./modules/publicPages/presentation/busines
 import managedBookingRoutes from "./modules/bookings/presentation/managedBookingRoutes.js";
 import bookingReminderRoutes from "./modules/bookings/presentation/bookingReminderRoutes.js";
 
+import { apiLimiter, bookingLimiter } from "./shared/middleware/rateLimits.js";
 import { authMiddleware } from "./shared/middleware/authMiddleware.js";
 import { errorHandler } from "./shared/middleware/errorHandler.js";
 
@@ -24,7 +26,9 @@ const app = express();
 
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.post("/billing/webhook", express.raw({type:"application/json"}), stripeWebhook);
+app.use(express.json({ limit: "32kb" }));
+app.use(apiLimiter);
 
 app.get("/health", (req, res) => {
   res.json({
@@ -55,6 +59,7 @@ app.get("/me", authMiddleware, (req, res) => {
   });
 });
 
+app.use("/billing", billingRoutes);
 app.use("/businesses", businessRoutes);
 app.use("/conversations", conversationRoutes);
 
@@ -69,6 +74,7 @@ app.use("/business-hours", businessHoursRoutes);
 app.use("/", businessAgentConfigRoutes);
 
 app.use(businessPublicPageRoutes);
+app.use("/public/bookings/manage", bookingLimiter);
 app.use(managedBookingRoutes);
 
 /*

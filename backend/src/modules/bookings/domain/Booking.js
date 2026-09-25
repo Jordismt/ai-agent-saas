@@ -44,6 +44,7 @@ export class Booking {
     notes = null,
     createdAt = null,
     updatedAt = null,
+    allowWithoutEmail = false,
   }) {
     if (!businessId) {
       throw new AppError("Booking businessId is required", 400);
@@ -67,7 +68,7 @@ export class Booking {
       throw new AppError("Booking customerName is required", 400);
     }
 
-    if (!normalizedCustomerEmail) {
+    if (!allowWithoutEmail && !normalizedCustomerEmail) {
       throw new AppError("Booking customerEmail is required", 400);
     }
     if (!normalizedServiceName) {

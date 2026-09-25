@@ -1,3 +1,4 @@
+import { requireActiveBusiness } from "../../../shared/billing/requireActiveBusiness.js";
 import { DateTime } from "luxon";
 
 import { Booking, BOOKING_STATUSES } from "../domain/Booking.js";
@@ -40,6 +41,7 @@ export class CreateBooking {
     date,
     time,
     notes = null,
+    allowWithoutEmail = false,
   }) {
     if (!businessId) {
       throw new AppError("Booking businessId is required", 400);
@@ -61,9 +63,11 @@ export class CreateBooking {
       throw new AppError("Booking customerName is required", 400);
     }
 
-    if (!customerEmail?.trim()) {
+    if (!allowWithoutEmail && !customerEmail?.trim()) {
       throw new AppError("Booking customerEmail is required", 400);
     }
+
+    await requireActiveBusiness(businessId);
 
     const business = await this.businessRepository.findById(businessId);
 
@@ -227,7 +231,7 @@ export class CreateBooking {
       leadId,
       customerName: customerName.trim(),
       customerPhone: customerPhone?.trim() || null,
-      customerEmail: customerEmail.trim().toLowerCase(),
+      customerEmail: customerEmail?.trim().toLowerCase() || null,
       serviceName: service.name,
       durationMinutes: service.duration_minutes,
       price: service.price,
@@ -235,6 +239,7 @@ export class CreateBooking {
       endsAt: selectedSlot.endsAt,
       status: BOOKING_STATUSES.CONFIRMED,
       notes,
+      allowWithoutEmail,
     });
 
     /*
@@ -264,7 +269,7 @@ export class CreateBooking {
      * NO hacemos fallar toda la operación porque provocaríamos
      * que el cliente creyera que la reserva no existe.
      */
-    if (this.sendBookingConfirmation) {
+    if (this.sendBookingConfirmation && createdBooking.customer_email) {
       try {
         await this.sendBookingConfirmation.execute({
           booking: createdBooking,

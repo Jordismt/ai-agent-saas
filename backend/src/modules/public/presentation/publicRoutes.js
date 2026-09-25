@@ -1,3 +1,5 @@
+import { requireActiveBusiness } from "../../../shared/billing/requireActiveBusiness.js";
+import { publicConversationLimiter, publicAiMinuteLimiter, publicAiHourLimiter, publicAiConcurrency } from "../../../shared/middleware/rateLimits.js";
 import { Router } from "express";
 import { z } from "zod";
 
@@ -101,13 +103,14 @@ router.get("/businesses/:businessId/config", async (req, res, next) => {
       });
     }
 
+    await requireActiveBusiness(req.params.businessId);
     return res.json(config);
   } catch (error) {
     next(error);
   }
 });
 
-router.post("/businesses/:businessId/conversations", async (req, res, next) => {
+router.post("/businesses/:businessId/conversations", publicConversationLimiter, async (req, res, next) => {
   try {
     const data = createPublicConversationSchema.parse({
       businessId: req.params.businessId,
@@ -123,6 +126,8 @@ router.post("/businesses/:businessId/conversations", async (req, res, next) => {
         error: "Business not found",
       });
     }
+
+    await requireActiveBusiness(data.businessId);
 
     const conversation = await createPublicConversation.execute({
       businessId: data.businessId,
@@ -165,7 +170,7 @@ router.get("/conversations/:conversationId/messages", async (req, res, next) => 
   }
 });
 
-router.post("/conversations/:conversationId/messages", async (req, res, next) => {
+router.post("/conversations/:conversationId/messages", publicAiMinuteLimiter, publicAiHourLimiter, publicAiConcurrency, async (req, res, next) => {
   try {
     const data = createPublicMessageSchema.parse(req.body);
 
@@ -181,6 +186,8 @@ router.post("/conversations/:conversationId/messages", async (req, res, next) =>
       req.params.conversationId,
       data.publicToken,
     );
+
+    await requireActiveBusiness(conversation.business_id);
 
     if (conversation.status === "closed") {
       return res.status(409).json({

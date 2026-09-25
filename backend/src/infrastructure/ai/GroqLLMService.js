@@ -33,6 +33,7 @@ export class GroqLLMService extends AIService {
       model: this.model,
       messages: groqMessages,
       temperature: 0.1,
+      max_completion_tokens: Number(process.env.GROQ_MAX_COMPLETION_TOKENS || 800),
 
       /*
        * IMPORTANT:
@@ -80,6 +81,7 @@ export class GroqLLMService extends AIService {
       model: this.model,
       messages: groqMessages,
       temperature: 0.1,
+      max_completion_tokens: Number(process.env.GROQ_MAX_COMPLETION_TOKENS || 800),
       tool_choice: "none",
     });
 

@@ -22,6 +22,18 @@ import PublicPageSettingsView from "../modules/publicPages/presentation/PublicPa
 import PublicBusinessView from "../modules/publicPages/presentation/PublicBusinessView.vue";
 
 import { authGuard } from "./authGuard.js";
+import { BillingService } from "../modules/billing/infrastructure/BillingService.js";
+import BusinessBillingView from "../modules/billing/presentation/BusinessBillingView.vue";
+const billingService = new BillingService();
+async function paidBusinessGuard(to) {
+  try {
+    const { billing } = await billingService.getStatus(to.params.id);
+    if (["active", "trialing"].includes(billing?.status)) return true;
+    return { name: "business-billing", params: { id: to.params.id } };
+  } catch {
+    return { name: "business-billing", params: { id: to.params.id } };
+  }
+}
 
 const routes = [
   {
@@ -88,58 +100,68 @@ const routes = [
         component: CreateBusinessView,
       },
 
+      { path: "businesses/:id/billing", name: "business-billing", component: BusinessBillingView },
       {
         path: "businesses/:id",
         name: "business-detail",
         component: BusinessDetailView,
+        beforeEnter: paidBusinessGuard,
       },
 
       {
         path: "businesses/:id/agent-config",
         name: "business-agent-config",
         component: BusinessAgentConfigView,
+        beforeEnter: paidBusinessGuard,
       },
 
       {
         path: "businesses/:id/conversations",
         name: "business-conversations",
         component: ConversationListView,
+        beforeEnter: paidBusinessGuard,
       },
 
       {
         path: "businesses/:id/conversations/:conversationId",
         name: "conversation-detail",
         component: ConversationDetailView,
+        beforeEnter: paidBusinessGuard,
       },
 
       {
         path: "businesses/:id/leads",
         name: "business-leads",
         component: LeadListView,
+        beforeEnter: paidBusinessGuard,
       },
 
       {
         path: "businesses/:id/bookings",
         name: "business-bookings",
         component: BookingListView,
+        beforeEnter: paidBusinessGuard,
       },
 
       {
         path: "businesses/:id/employees",
         name: "business-employees",
         component: EmployeeListView,
+        beforeEnter: paidBusinessGuard,
       },
 
       {
         path: "businesses/:id/employees/:employeeId",
         name: "employee-detail",
         component: EmployeeDetailView,
+        beforeEnter: paidBusinessGuard,
       },
 
       {
         path: "businesses/:id/public-page",
         name: "business-public-page",
         component: PublicPageSettingsView,
+        beforeEnter: paidBusinessGuard,
       },
     ],
   },
