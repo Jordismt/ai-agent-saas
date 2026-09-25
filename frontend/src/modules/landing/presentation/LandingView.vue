@@ -69,12 +69,48 @@ const features = [
   },
 ];
 const steps = [
-  { n: "01", title: "Creamos tu espacio", subtitle: "Tu negocio en Resbix", text: "Accede a tu panel y añade el nombre, descripción, ubicación, datos de contacto y horarios de tu negocio. Toda esa información será la base de lo que responderá tu agente.", tags: ["Información del negocio", "Horarios", "Datos de contacto"] },
-  { n: "02", title: "Configuras servicios y equipo", subtitle: "Disponibilidad organizada", text: "Da de alta tus servicios con duración y precio, incorpora a tus empleados y asigna qué servicios realiza cada uno. Define sus horarios para que la disponibilidad se ajuste a tu negocio.", tags: ["Servicios y precios", "Empleados", "Horarios de trabajo"] },
-  { n: "03", title: "Personalizas tu agente de IA", subtitle: "Habla como tu marca", text: "Elige su saludo, tono de comunicación e instrucciones. El agente utiliza la información configurada para responder preguntas y ayudar a tus clientes sin que tengas que repetir siempre lo mismo.", tags: ["Saludo", "Tono", "Instrucciones"] },
-  { n: "04", title: "Compartes tu web pública", subtitle: "Tu escaparate digital", text: "Tus clientes encuentran tu negocio, consultan sus servicios y pueden iniciar una conversación con el agente. La reserva directa desde la web estará disponible cuando se habilite esa función.", tags: ["Web pública", "Agente integrado", "Información accesible"] },
-  { n: "05", title: "Resbix atiende y organiza", subtitle: "Del mensaje a la gestión", text: "El agente responde a las consultas, ayuda a gestionar las reservas disponibles y recoge los datos de los clientes interesados. Tú puedes crear, editar y cancelar citas manualmente desde el panel.", tags: ["Conversaciones", "Reservas", "Leads"] },
-  { n: "06", title: "Tú supervisas todo", subtitle: "Siempre tienes el control", text: "Entra al dashboard para consultar reservas, contactos y conversaciones. Cuando una consulta necesita tu atención, puedes intervenir y continuar la conversación personalmente.", tags: ["Panel centralizado", "Control humano", "Seguimiento"] },
+  {
+    n: "01",
+    title: "Creamos tu espacio",
+    subtitle: "Tu negocio en Resbix",
+    text: "Accede a tu panel y añade el nombre, descripción, ubicación, datos de contacto y horarios de tu negocio. Toda esa información será la base de lo que responderá tu agente.",
+    tags: ["Información del negocio", "Horarios", "Datos de contacto"],
+  },
+  {
+    n: "02",
+    title: "Configuras servicios y equipo",
+    subtitle: "Disponibilidad organizada",
+    text: "Da de alta tus servicios con duración y precio, incorpora a tus empleados y asigna qué servicios realiza cada uno. Define sus horarios para que la disponibilidad se ajuste a tu negocio.",
+    tags: ["Servicios y precios", "Empleados", "Horarios de trabajo"],
+  },
+  {
+    n: "03",
+    title: "Personalizas tu agente de IA",
+    subtitle: "Habla como tu marca",
+    text: "Elige su saludo, tono de comunicación e instrucciones. El agente utiliza la información configurada para responder preguntas y ayudar a tus clientes sin que tengas que repetir siempre lo mismo.",
+    tags: ["Saludo", "Tono", "Instrucciones"],
+  },
+  {
+    n: "04",
+    title: "Compartes tu web pública",
+    subtitle: "Tu escaparate digital",
+    text: "Tus clientes encuentran tu negocio, consultan sus servicios y pueden iniciar una conversación con el agente. La reserva directa desde la web estará disponible cuando se habilite esa función.",
+    tags: ["Web pública", "Agente integrado", "Información accesible"],
+  },
+  {
+    n: "05",
+    title: "Resbix atiende y organiza",
+    subtitle: "Del mensaje a la gestión",
+    text: "El agente responde a las consultas, ayuda a gestionar las reservas disponibles y recoge los datos de los clientes interesados. Tú puedes crear, editar y cancelar citas manualmente desde el panel.",
+    tags: ["Conversaciones", "Reservas", "Leads"],
+  },
+  {
+    n: "06",
+    title: "Tú supervisas todo",
+    subtitle: "Siempre tienes el control",
+    text: "Entra al dashboard para consultar reservas, contactos y conversaciones. Cuando una consulta necesita tu atención, puedes intervenir y continuar la conversación personalmente.",
+    tags: ["Panel centralizado", "Control humano", "Seguimiento"],
+  },
 ];
 const sectors = [
   "Peluquerías y barberías",
@@ -104,8 +140,9 @@ const closeMenu = () => {
           <span>Resbix<span class="brand-period">.</span></span>
         </RouterLink>
         <nav class="nav-links" aria-label="Navegación principal">
-          <a href="#producto">Producto</a><a href="#demo">Ver demo</a><a href="#funcionamiento">Cómo funciona</a
-          ><a href="#sectores">Para quién</a><a href="#precios">Precios</a>
+          <a href="#producto">Producto</a><a href="#demo">Ver demo</a
+          ><a href="#funcionamiento">Cómo funciona</a><a href="#sectores">Para quién</a
+          ><a href="#precios">Precios</a>
         </nav>
         <div class="nav-actions">
           <RouterLink to="/login" class="nav-login">Iniciar sesión</RouterLink
@@ -123,8 +160,10 @@ const closeMenu = () => {
         </button>
       </div>
       <nav v-if="menuOpen" class="mobile-nav" aria-label="Navegación móvil">
-        <a href="#producto" @click="closeMenu">Producto</a><a href="#demo" @click="closeMenu">Ver demo</a>
-        ><a href="#funcionamiento" @click="closeMenu">Cómo funciona</a
+        <a href="#producto" @click="closeMenu">Producto</a><a href="#demo" @click="closeMenu">Ver demo</a> ><a
+          href="#funcionamiento"
+          @click="closeMenu"
+          >Cómo funciona</a
         ><a href="#sectores" @click="closeMenu">Para quién</a><a href="#precios" @click="closeMenu">Precios</a
         ><RouterLink to="/login" @click="closeMenu">Iniciar sesión</RouterLink
         ><RouterLink to="/register" class="mobile-cta" @click="closeMenu">Empezar ahora ↗</RouterLink>
@@ -290,31 +329,248 @@ const closeMenu = () => {
       <section id="demo" class="section showcase-section">
         <div class="container">
           <div class="showcase-heading">
-            <div><span class="kicker">02 / CONOCE RESBIX POR DENTRO</span><h2>No te lo imagines.<br /><span>Mira cómo se utiliza.</span></h2></div>
-            <p>Explora una representación interactiva del panel de gestión y de la página que verán tus clientes. Los nombres y las citas son ejemplos ilustrativos.</p>
+            <div>
+              <span class="kicker">02 / CONOCE RESBIX POR DENTRO</span>
+              <h2>No te lo imagines.<br /><span>Mira cómo se utiliza.</span></h2>
+            </div>
+            <p>
+              Explora una representación interactiva del panel de gestión y de la página que verán tus
+              clientes. Los nombres y las citas son ejemplos ilustrativos.
+            </p>
           </div>
           <div class="preview-switch" role="tablist" aria-label="Vistas del producto">
-            <button type="button" role="tab" :aria-selected="previewTab === 'dashboard'" :class="{ selected: previewTab === 'dashboard' }" @click="previewTab = 'dashboard'">▦ &nbsp; Panel de tu negocio</button>
-            <button type="button" role="tab" :aria-selected="previewTab === 'website'" :class="{ selected: previewTab === 'website' }" @click="previewTab = 'website'">↗ &nbsp; Tu web + agente IA</button>
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="previewTab === 'dashboard'"
+              :class="{ selected: previewTab === 'dashboard' }"
+              @click="previewTab = 'dashboard'">
+              ▦ &nbsp; Panel de tu negocio
+            </button>
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="previewTab === 'website'"
+              :class="{ selected: previewTab === 'website' }"
+              @click="previewTab = 'website'">
+              ↗ &nbsp; Tu web + agente IA
+            </button>
           </div>
           <div v-if="previewTab === 'dashboard'" class="preview-layout">
             <div class="product-frame dashboard-frame">
-              <div class="browser-bar"><span class="browser-dots"><i></i><i></i><i></i></span><span class="browser-url">app.resbix · Panel de ejemplo</span><span>↗</span></div>
+              <div class="browser-bar">
+                <span class="browser-dots"><i></i><i></i><i></i></span
+                ><span class="browser-url">app.resbix · Panel de ejemplo</span><span>↗</span>
+              </div>
               <div class="app-shell">
-                <aside class="app-sidebar"><div class="app-brand"><span>✳</span> resbix.</div><div class="app-business">✂ &nbsp; Estudio Aura <small>Mi negocio</small></div><button v-for="item in ['Resumen','Reservas','Conversaciones','Leads','Servicios','Empleados']" :key="item" type="button" :class="{ current: (dashboardTab === 'reservas' && item === 'Reservas') || (dashboardTab === 'leads' && item === 'Leads') || (dashboardTab === 'conversaciones' && item === 'Conversaciones') }" @click="dashboardTab = item === 'Leads' ? 'leads' : item === 'Conversaciones' ? 'conversaciones' : 'reservas'">{{ item === 'Reservas' ? '▦' : item === 'Leads' ? '↗' : item === 'Conversaciones' ? '☏' : '◈' }} &nbsp; {{ item }}</button><div class="sidebar-foot">✳ &nbsp; Agente configurado</div></aside>
+                <aside class="app-sidebar">
+                  <div class="app-brand"><span>✳</span> resbix.</div>
+                  <div class="app-business">✂ &nbsp; Estudio Aura <small>Mi negocio</small></div>
+                  <button
+                    v-for="item in [
+                      'Resumen',
+                      'Reservas',
+                      'Conversaciones',
+                      'Leads',
+                      'Servicios',
+                      'Empleados',
+                    ]"
+                    :key="item"
+                    type="button"
+                    :class="{
+                      current:
+                        (dashboardTab === 'reservas' && item === 'Reservas') ||
+                        (dashboardTab === 'leads' && item === 'Leads') ||
+                        (dashboardTab === 'conversaciones' && item === 'Conversaciones'),
+                    }"
+                    @click="
+                      dashboardTab =
+                        item === 'Leads' ? 'leads' : item === 'Conversaciones' ? 'conversaciones' : 'reservas'
+                    ">
+                    {{
+                      item === "Reservas"
+                        ? "▦"
+                        : item === "Leads"
+                          ? "↗"
+                          : item === "Conversaciones"
+                            ? "☏"
+                            : "◈"
+                    }}
+                    &nbsp; {{ item }}
+                  </button>
+                  <div class="sidebar-foot">✳ &nbsp; Agente configurado</div>
+                </aside>
                 <div class="app-main">
-                  <div class="app-top"><span>Tu espacio de trabajo <small>Ejemplo de interfaz</small></span><span class="app-avatar">EA</span></div>
-                  <template v-if="dashboardTab === 'reservas'"><div class="app-page-title"><div><small>GESTIÓN DE CITAS</small><h3>Reservas</h3></div><span class="fake-new">+ Nueva reserva</span></div><div class="app-stat-grid"><div><small>Reservas de hoy</small><b>8</b><span>Calendario organizado</span></div><div><small>Próximas citas</small><b>24</b><span>Consulta rápida</span></div><div><small>Servicios activos</small><b>6</b><span>Tu catálogo</span></div></div><div class="app-table"><div class="app-table-title">Próximas reservas <span>Hoy · Ejemplo</span></div><div class="app-table-head"><span>CLIENTE</span><span>SERVICIO</span><span>HORA</span><span>ESTADO</span></div><div v-for="r in [{n:'Lucía Martínez',i:'LM',s:'Corte y peinado',h:'10:00',c:'Confirmada'},{n:'Carlos Gómez',i:'CG',s:'Corte de pelo',h:'11:30',c:'Confirmada'},{n:'Ana Ruiz',i:'AR',s:'Tratamiento',h:'12:45',c:'Pendiente'}]" :key="r.n" class="app-table-row"><span><i>{{ r.i }}</i>{{ r.n }}</span><span>{{ r.s }}</span><span>{{ r.h }}</span><span class="app-status" :class="{ pending: r.c === 'Pendiente' }">{{ r.c }}</span></div></div></template>
-                  <template v-else-if="dashboardTab === 'leads'"><div class="app-page-title"><div><small>OPORTUNIDADES</small><h3>Contactos interesados</h3></div></div><div class="app-table"><div class="app-table-title">Leads captados <span>Datos de demostración</span></div><div v-for="lead in [{n:'Marina López',s:'Consulta sobre tratamiento',d:'Hoy'},{n:'Pablo Torres',s:'Solicita información de precios',d:'Ayer'},{n:'Clara Pérez',s:'Interesada en una cita',d:'Ayer'}]" :key="lead.n" class="app-lead"><span class="lead-icon">↗</span><div><b>{{ lead.n }}</b><small>{{ lead.s }}</small></div><span>{{ lead.d }}</span></div></div></template>
-                  <template v-else><div class="app-page-title"><div><small>ATENCIÓN AL CLIENTE</small><h3>Conversaciones</h3></div></div><div class="app-chat-demo"><div class="chat-demo-head">Marina López <span>✳ Agente IA</span></div><p class="chat-demo-in">Hola, ¿tenéis hueco mañana por la tarde?</p><p class="chat-demo-out">¡Hola! Claro, vamos a consultar los horarios disponibles. ¿Qué servicio necesitas?</p><div class="chat-demo-note">↔ Puedes intervenir y responder personalmente.</div></div></template>
+                  <div class="app-top">
+                    <span>Tu espacio de trabajo <small>Ejemplo de interfaz</small></span
+                    ><span class="app-avatar">EA</span>
+                  </div>
+                  <template v-if="dashboardTab === 'reservas'"
+                    ><div class="app-page-title">
+                      <div>
+                        <small>GESTIÓN DE CITAS</small>
+                        <h3>Reservas</h3>
+                      </div>
+                      <span class="fake-new">+ Nueva reserva</span>
+                    </div>
+                    <div class="app-stat-grid">
+                      <div><small>Reservas de hoy</small><b>8</b><span>Calendario organizado</span></div>
+                      <div><small>Próximas citas</small><b>24</b><span>Consulta rápida</span></div>
+                      <div><small>Servicios activos</small><b>6</b><span>Tu catálogo</span></div>
+                    </div>
+                    <div class="app-table">
+                      <div class="app-table-title">Próximas reservas <span>Hoy · Ejemplo</span></div>
+                      <div class="app-table-head">
+                        <span>CLIENTE</span><span>SERVICIO</span><span>HORA</span><span>ESTADO</span>
+                      </div>
+                      <div
+                        v-for="r in [
+                          { n: 'Lucía Martínez', i: 'LM', s: 'Corte y peinado', h: '10:00', c: 'Confirmada' },
+                          { n: 'Carlos Gómez', i: 'CG', s: 'Corte de pelo', h: '11:30', c: 'Confirmada' },
+                          { n: 'Ana Ruiz', i: 'AR', s: 'Tratamiento', h: '12:45', c: 'Pendiente' },
+                        ]"
+                        :key="r.n"
+                        class="app-table-row">
+                        <span
+                          ><i>{{ r.i }}</i
+                          >{{ r.n }}</span
+                        ><span>{{ r.s }}</span
+                        ><span>{{ r.h }}</span
+                        ><span class="app-status" :class="{ pending: r.c === 'Pendiente' }">{{ r.c }}</span>
+                      </div>
+                    </div></template
+                  >
+                  <template v-else-if="dashboardTab === 'leads'"
+                    ><div class="app-page-title">
+                      <div>
+                        <small>OPORTUNIDADES</small>
+                        <h3>Contactos interesados</h3>
+                      </div>
+                    </div>
+                    <div class="app-table">
+                      <div class="app-table-title">Leads captados <span>Datos de demostración</span></div>
+                      <div
+                        v-for="lead in [
+                          { n: 'Marina López', s: 'Consulta sobre tratamiento', d: 'Hoy' },
+                          { n: 'Pablo Torres', s: 'Solicita información de precios', d: 'Ayer' },
+                          { n: 'Clara Pérez', s: 'Interesada en una cita', d: 'Ayer' },
+                        ]"
+                        :key="lead.n"
+                        class="app-lead">
+                        <span class="lead-icon">↗</span>
+                        <div>
+                          <b>{{ lead.n }}</b
+                          ><small>{{ lead.s }}</small>
+                        </div>
+                        <span>{{ lead.d }}</span>
+                      </div>
+                    </div></template
+                  >
+                  <template v-else
+                    ><div class="app-page-title">
+                      <div>
+                        <small>ATENCIÓN AL CLIENTE</small>
+                        <h3>Conversaciones</h3>
+                      </div>
+                    </div>
+                    <div class="app-chat-demo">
+                      <div class="chat-demo-head">Marina López <span>✳ Agente IA</span></div>
+                      <p class="chat-demo-in">Hola, ¿tenéis hueco mañana por la tarde?</p>
+                      <p class="chat-demo-out">
+                        ¡Hola! Claro, vamos a consultar los horarios disponibles. ¿Qué servicio necesitas?
+                      </p>
+                      <div class="chat-demo-note">↔ Puedes intervenir y responder personalmente.</div>
+                    </div></template
+                  >
                 </div>
               </div>
             </div>
-            <div class="preview-description"><span class="preview-pill">EL DASHBOARD</span><h3>Todo tu negocio, en una sola pantalla.</h3><p>Consulta reservas, organiza tus servicios y empleados, revisa los leads y toma el control de las conversaciones cuando lo necesites.</p><div class="preview-mini-tabs"><button type="button" :class="{ active: dashboardTab === 'reservas' }" @click="dashboardTab = 'reservas'">01 &nbsp; Reservas</button><button type="button" :class="{ active: dashboardTab === 'leads' }" @click="dashboardTab = 'leads'">02 &nbsp; Leads</button><button type="button" :class="{ active: dashboardTab === 'conversaciones' }" @click="dashboardTab = 'conversaciones'">03 &nbsp; Conversaciones</button></div><p class="preview-footnote">Demostración visual con datos ficticios. No es una sesión real.</p></div>
+            <div class="preview-description">
+              <span class="preview-pill">EL DASHBOARD</span>
+              <h3>Todo tu negocio, en una sola pantalla.</h3>
+              <p>
+                Consulta reservas, organiza tus servicios y empleados, revisa los leads y toma el control de
+                las conversaciones cuando lo necesites.
+              </p>
+              <div class="preview-mini-tabs">
+                <button
+                  type="button"
+                  :class="{ active: dashboardTab === 'reservas' }"
+                  @click="dashboardTab = 'reservas'">
+                  01 &nbsp; Reservas</button
+                ><button
+                  type="button"
+                  :class="{ active: dashboardTab === 'leads' }"
+                  @click="dashboardTab = 'leads'">
+                  02 &nbsp; Leads</button
+                ><button
+                  type="button"
+                  :class="{ active: dashboardTab === 'conversaciones' }"
+                  @click="dashboardTab = 'conversaciones'">
+                  03 &nbsp; Conversaciones
+                </button>
+              </div>
+              <p class="preview-footnote">Demostración visual con datos ficticios. No es una sesión real.</p>
+            </div>
           </div>
           <div v-else class="preview-layout website-layout">
-            <div class="product-frame website-frame"><div class="browser-bar"><span class="browser-dots"><i></i><i></i><i></i></span><span class="browser-url">tu-negocio · Web de ejemplo</span><span>↗</span></div><div class="sample-site"><div class="site-nav"><strong>ESTUDIO <em>AURA</em></strong><span>Inicio &nbsp; Servicios &nbsp; Contacto</span><b>Reservar cita ↗</b></div><div class="site-hero"><span>BIENVENIDOS A ESTUDIO AURA</span><h3>Tu momento.<br /><em>Tu estilo.</em></h3><p>Un espacio pensado para cuidarte. Descubre nuestros servicios y encuentra tu próxima cita.</p><span class="site-button">Descubrir servicios ↗</span></div><div class="site-services"><span>NUESTROS SERVICIOS</span><div><b>Corte y peinado</b><b>Tratamientos</b><b>Coloración</b></div></div><div class="site-chat"><div class="site-chat-head"><span>✳</span><div><b>Asistente de Estudio Aura</b><small>Te ayudamos con tu próxima visita</small></div><span>−</span></div><div class="site-chat-body"><p>¡Hola! 👋 Soy el asistente de Estudio Aura. ¿En qué puedo ayudarte?</p><p>¿Cuánto cuesta un corte?</p><p>¡Claro! El corte tiene un precio desde 20 €. ¿Quieres que consultemos disponibilidad?</p></div><div class="site-chat-input">Escribe tu mensaje... <span>↑</span></div></div></div></div>
-            <div class="preview-description"><span class="preview-pill">LA WEB PÚBLICA</span><h3>Tu escaparate digital, con un agente que atiende.</h3><p>Una página para presentar tus servicios y facilitar el contacto. El agente conoce los datos que has configurado y puede responder a las consultas de tus visitantes.</p><div class="preview-benefits"><span>✓ Tu marca y tus servicios</span><span>✓ Agente integrado</span><span>✓ Disponible desde móvil</span></div><p class="preview-footnote">Diseño ilustrativo. La apariencia final de la web pública puede variar. La reserva directa desde la web depende de su habilitación.</p></div>
+            <div class="product-frame website-frame">
+              <div class="browser-bar">
+                <span class="browser-dots"><i></i><i></i><i></i></span
+                ><span class="browser-url">tu-negocio · Web de ejemplo</span><span>↗</span>
+              </div>
+              <div class="sample-site">
+                <div class="site-nav">
+                  <strong>ESTUDIO <em>AURA</em></strong
+                  ><span>Inicio &nbsp; Servicios &nbsp; Contacto</span><b>Reservar cita ↗</b>
+                </div>
+                <div class="site-hero">
+                  <span>BIENVENIDOS A ESTUDIO AURA</span>
+                  <h3>Tu momento.<br /><em>Tu estilo.</em></h3>
+                  <p>
+                    Un espacio pensado para cuidarte. Descubre nuestros servicios y encuentra tu próxima cita.
+                  </p>
+                  <span class="site-button">Descubrir servicios ↗</span>
+                </div>
+                <div class="site-services">
+                  <span>NUESTROS SERVICIOS</span>
+                  <div><b>Corte y peinado</b><b>Tratamientos</b><b>Coloración</b></div>
+                </div>
+                <div class="site-chat">
+                  <div class="site-chat-head">
+                    <span>✳</span>
+                    <div>
+                      <b>Asistente de Estudio Aura</b><small>Te ayudamos con tu próxima visita</small>
+                    </div>
+                    <span>−</span>
+                  </div>
+                  <div class="site-chat-body">
+                    <p>¡Hola! 👋 Soy el asistente de Estudio Aura. ¿En qué puedo ayudarte?</p>
+                    <p>¿Cuánto cuesta un corte?</p>
+                    <p>
+                      ¡Claro! El corte tiene un precio desde 20 €. ¿Quieres que consultemos disponibilidad?
+                    </p>
+                  </div>
+                  <div class="site-chat-input">Escribe tu mensaje... <span>↑</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="preview-description">
+              <span class="preview-pill">LA WEB PÚBLICA</span>
+              <h3>Tu escaparate digital, con un agente que atiende.</h3>
+              <p>
+                Una página para presentar tus servicios y facilitar el contacto. El agente conoce los datos
+                que has configurado y puede responder a las consultas de tus visitantes.
+              </p>
+              <div class="preview-benefits">
+                <span>✓ Tu marca y tus servicios</span><span>✓ Agente integrado</span
+                ><span>✓ Disponible desde móvil</span>
+              </div>
+              <p class="preview-footnote">
+                Diseño ilustrativo. La apariencia final de la web pública puede variar. La reserva directa
+                desde la web depende de su habilitación.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -326,9 +582,22 @@ const closeMenu = () => {
               <span class="kicker">03 / CÓMO FUNCIONA</span>
               <h2>De cero a tener tu negocio <span>conectado.</span></h2>
             </div>
-            <p>Así es el recorrido, paso a paso: desde configurar tu cuenta hasta atender consultas y gestionar tus reservas.</p>
+            <p>
+              Así es el recorrido, paso a paso: desde configurar tu cuenta hasta atender consultas y gestionar
+              tus reservas.
+            </p>
           </div>
-          <div class="steps detailed-steps"><article v-for="step in steps" :key="step.n"><div class="step-number">{{ step.n }}<span>↗</span></div><span class="step-subtitle">{{ step.subtitle }}</span><h3>{{ step.title }}</h3><p>{{ step.text }}</p><div class="step-tags"><span v-for="tag in step.tags" :key="tag">✓ {{ tag }}</span></div></article></div>
+          <div class="steps detailed-steps">
+            <article v-for="step in steps" :key="step.n">
+              <div class="step-number">{{ step.n }}<span>↗</span></div>
+              <span class="step-subtitle">{{ step.subtitle }}</span>
+              <h3>{{ step.title }}</h3>
+              <p>{{ step.text }}</p>
+              <div class="step-tags">
+                <span v-for="tag in step.tags" :key="tag">✓ {{ tag }}</span>
+              </div>
+            </article>
+          </div>
           <div class="steps-cta">
             <p>Tu agente, tu información, tus reglas.</p>
             <RouterLink to="/register">Crear mi cuenta <span>↗</span></RouterLink>
@@ -404,26 +673,35 @@ const closeMenu = () => {
           </div>
           <div class="pricing-card">
             <div class="pricing-card-top">
-              <span>✦ OFERTA DE LANZAMIENTO</span><span>PRIMEROS 20 CLIENTES</span>
+              <span>✦ OFERTA DE LANZAMIENTO</span>
+              <span>PRIMEROS 20 CLIENTES</span>
             </div>
+
             <div class="pricing-card-body">
-              <span class="pricing-label">Resbix · Plataforma completa</span>
-              <div class="price-old">Precio habitual <s>100 €/mes</s></div>
-              <div class="price-main">50<span>€</span><small>/ mes</small></div>
-              <div class="price-save">AHORRAS 600 € DURANTE TU PRIMER AÑO</div>
+              <span class="pricing-label"> Resbix · Plataforma completa </span>
+
+              <div class="price-old">Precio habitual <s>110 €/mes</s></div>
+
+              <div class="price-main">55<span>€</span><small>/ mes</small></div>
+
+              <div class="price-save">AHORRAS 660 € DURANTE TU PRIMER AÑO</div>
+
               <p class="price-intro">
                 Todo lo que necesitas para atender, captar y organizar clientes desde un mismo sitio.
               </p>
+
               <div class="included-heading">TODO ESTO ESTÁ INCLUIDO</div>
+
               <ul class="included-list">
                 <li class="included-highlight">
                   <span>✓</span>
                   <div>
-                    <strong>Página web pública para tu negocio</strong
-                    ><small>Tu escaparate digital, conectado con Resbix</small>
+                    <strong> Página web pública para tu negocio </strong>
+                    <small> Tu escaparate digital, conectado con Resbix </small>
                   </div>
                   <b>INCLUIDA</b>
                 </li>
+
                 <li><span>✓</span> Agente IA personalizado con tu información</li>
                 <li><span>✓</span> Atención automática a consultas, 24/7</li>
                 <li><span>✓</span> Sistema de reservas y disponibilidad</li>
@@ -435,15 +713,32 @@ const closeMenu = () => {
                 <li><span>✓</span> Emails de confirmación y recordatorio de reservas*</li>
                 <li><span>✓</span> Panel de control para gestionarlo todo</li>
               </ul>
-              <RouterLink to="/register" class="button button-primary pricing-cta"
-                >Quiero aprovechar la oferta <span>↗</span></RouterLink
-              >
+
+              <!-- CÓDIGO PROMOCIONAL -->
+              <div class="promo-code-box">
+                <span class="promo-code-label"> 🎁 CÓDIGO DE LANZAMIENTO </span>
+
+                <div class="promo-code-value">FOUNDERS50</div>
+
+                <p>
+                  Introduce este código en la página de pago de Stripe para conseguir el
+                  <strong>50 % de descuento durante 12 meses.</strong>
+                </p>
+              </div>
+
+              <RouterLink to="/register" class="button button-primary pricing-cta">
+                Quiero aprovechar la oferta <span>↗</span>
+              </RouterLink>
+
               <div class="pricing-under-cta">Un solo plan · Sin elegir entre funciones esenciales</div>
-              <small class="pricing-terms"
-                >50 €/mes durante los primeros 12 meses para los primeros 20 clientes. Después, 100 €/mes.
-                Promoción sujeta a disponibilidad real. *Los emails requieren que el cliente facilite su
-                dirección. Consulta las condiciones antes de contratar.</small
-              >
+
+              <small class="pricing-terms">
+                Oferta para los primeros 20 clientes que apliquen correctamente el código promocional. Precio
+                promocional: 55 €/mes durante los primeros 12 meses. Después, 110 €/mes. El descuento debe
+                aplicarse en Stripe antes de confirmar la suscripción. Promoción sujeta a disponibilidad real.
+                *Los emails requieren que el cliente facilite su dirección. Consulta las condiciones antes de
+                contratar.
+              </small>
             </div>
           </div>
         </div>
@@ -500,8 +795,9 @@ const closeMenu = () => {
         </div>
         <div class="footer-links">
           <div>
-            <b>Explorar</b><a href="#producto">Producto</a><a href="#demo">Ver demo</a><a href="#funcionamiento">Cómo funciona</a
-            ><a href="#sectores">Para quién</a><a href="#precios">Precios</a>
+            <b>Explorar</b><a href="#producto">Producto</a><a href="#demo">Ver demo</a
+            ><a href="#funcionamiento">Cómo funciona</a><a href="#sectores">Para quién</a
+            ><a href="#precios">Precios</a>
           </div>
           <div>
             <b>Tu cuenta</b><RouterLink to="/login">Iniciar sesión</RouterLink
@@ -1994,31 +2290,803 @@ const closeMenu = () => {
 }
 
 /* V4: demostración de producto y recorrido detallado */
-.showcase-section{background:linear-gradient(180deg,#f7f7ff,#fff)}
-.showcase-heading{display:flex;justify-content:space-between;align-items:end;gap:50px;margin-bottom:38px}
-.showcase-heading h2{font:800 clamp(36px,4vw,57px)/1.13 Manrope,sans-serif;letter-spacing:-2.8px;margin:16px 0 0}
-.showcase-heading h2 span{color:#7565ea}.showcase-heading>p{max-width:380px;line-height:1.8;color:#7a8295;font-size:15px}
-.preview-switch{display:inline-flex;background:#eae8fa;padding:5px;border-radius:13px;gap:4px;margin-bottom:30px}
-.preview-switch button{border:0;border-radius:10px;padding:13px 21px;background:transparent;color:#615c80;font-size:13px;font-weight:800}
-.preview-switch button.selected{background:#fff;color:#4c3fc0;box-shadow:0 3px 14px #312d7518}
-.preview-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,.75fr);gap:44px;align-items:center}
-.product-frame{min-width:0;overflow:hidden;border:1px solid #e1e1f0;background:#fff;border-radius:17px;box-shadow:0 28px 65px #28215818}
-.browser-bar{height:38px;background:#f7f8fc;border-bottom:1px solid #e8e9f1;display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:#9ca2b1;font-size:10px}
-.browser-dots{display:flex;gap:5px}.browser-dots i{width:8px;height:8px;border-radius:50%;background:#d8dce9}.browser-dots i:first-child{background:#ffbcb7}.browser-dots i:nth-child(2){background:#ffe0a1}
-.app-shell{display:flex;min-height:410px;font-size:11px}.app-sidebar{width:165px;flex-shrink:0;background:#1e203c;color:#aeb3d0;padding:17px 10px;display:flex;flex-direction:column;gap:4px}
-.app-brand{color:#fff;font:800 20px Manrope,sans-serif;letter-spacing:-1px;padding:4px 8px 20px}.app-brand span{color:#a79bff}.app-business{border:1px solid #444563;background:#30324f;border-radius:8px;padding:10px 8px;margin-bottom:14px;color:#fff;font-weight:800}.app-business small{display:block;font-size:9px;color:#aab0c7;margin:4px 0 0 24px}
-.app-sidebar button{border:0;background:transparent;color:#b7bad0;text-align:left;padding:10px 9px;border-radius:7px;font-size:10px}.app-sidebar button.current{background:#6354d9;color:white;font-weight:800}.sidebar-foot{margin-top:auto;border-top:1px solid #3a3c58;padding:14px 5px 0;font-size:9px;color:#c7c2ff}
-.app-main{flex:1;min-width:0;background:#fafbff;padding:0 18px 20px}.app-top{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid #e9ebf2;font-weight:800;color:#4a5268}.app-top small{display:block;font-size:9px;color:#a5a9b8;font-weight:500;margin-top:3px}.app-avatar{background:#e8e4ff;color:#5e51b7;padding:8px;border-radius:50%;font-size:9px}
-.app-page-title{display:flex;justify-content:space-between;align-items:center;margin:21px 0}.app-page-title small{color:#8e82cf;font-size:8px;font-weight:900;letter-spacing:1px}.app-page-title h3{font:800 23px Manrope,sans-serif;letter-spacing:-1px;margin:5px 0}.fake-new{background:#6656ed;color:#fff;padding:9px;border-radius:7px;font-weight:800;font-size:9px}
-.app-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:18px}.app-stat-grid>div{border:1px solid #eceef4;border-radius:9px;padding:12px;background:#fff}.app-stat-grid small,.app-stat-grid span{display:block;font-size:9px;color:#959db0}.app-stat-grid b{display:block;font:800 24px Manrope,sans-serif;margin:8px 0 3px}.app-stat-grid span{font-size:8px;color:#32a478}
-.app-table{border:1px solid #e8eaf2;background:#fff;border-radius:10px;overflow:hidden}.app-table-title{padding:15px;font-weight:900;display:flex;justify-content:space-between}.app-table-title span{color:#a3a8b6;font-size:9px;font-weight:500}.app-table-head,.app-table-row{display:grid;grid-template-columns:1.4fr 1fr .55fr .9fr;gap:6px;align-items:center;padding:11px 13px}.app-table-head{background:#f6f7fb;color:#a0a7b8;font-size:8px;font-weight:900}.app-table-row{border-top:1px solid #f0f1f6;color:#5c6275;font-size:9px}.app-table-row>span:first-child{display:flex;align-items:center;gap:5px;font-weight:800}.app-table-row i{font-style:normal;background:#eeeaff;color:#6656d6;padding:7px;border-radius:50%;font-size:8px}.app-status{color:#269b6d;background:#eaf8f0;padding:6px 3px;border-radius:6px;text-align:center;font-size:8px}.app-status.pending{background:#fff4e2;color:#ad7c2c}
-.app-lead{display:flex;align-items:center;gap:12px;border-top:1px solid #f0f1f6;padding:17px}.app-lead>div{flex:1}.app-lead b,.app-lead small{display:block}.app-lead small{color:#999fb1;margin-top:5px}.app-lead>span:last-child{color:#a6aaba}.lead-icon{background:#eaf9f0;color:#2aa574;border-radius:9px;padding:10px}
-.app-chat-demo{border:1px solid #e9eaf1;border-radius:12px;background:#fff;padding:15px;display:flex;flex-direction:column;gap:15px}.chat-demo-head{padding-bottom:12px;border-bottom:1px solid #eee;font-weight:900}.chat-demo-head span{float:right;color:#6c5bdf}.app-chat-demo p{max-width:80%;margin:0;padding:13px;border-radius:11px;line-height:1.6}.chat-demo-in{align-self:flex-end;background:#6656ed;color:white}.chat-demo-out{background:#f0eeff;color:#534a9b}.chat-demo-note{border-top:1px solid #eee;padding:13px 0 0;color:#7567bd}
-.preview-description{padding:10px 0}.preview-pill{display:inline-block;padding:8px 11px;background:#edeaff;color:#6656d6;border-radius:6px;font-size:10px;font-weight:900;letter-spacing:1px}.preview-description h3{font:800 clamp(27px,3vw,38px)/1.2 Manrope,sans-serif;letter-spacing:-1.5px;margin:22px 0}.preview-description>p{color:#7c8498;font-size:14px;line-height:1.85}.preview-mini-tabs{border-top:1px solid #e5e4ef;margin-top:30px;padding-top:15px;display:grid;gap:8px}.preview-mini-tabs button{border:1px solid transparent;background:transparent;text-align:left;padding:13px;color:#858aa0;border-radius:9px;font-size:13px;font-weight:800}.preview-mini-tabs button.active{border-color:#ded9ff;background:#f0edff;color:#6554d5}.preview-description .preview-footnote{font-size:11px;color:#a1a4b3;margin-top:24px}
-.sample-site{position:relative;min-height:440px;background:#fffaf5}.site-nav{height:65px;display:flex;align-items:center;justify-content:space-between;padding:0 25px;background:#fff;gap:10px}.site-nav strong{font-size:16px;letter-spacing:2px;color:#30312f}.site-nav em{color:#ae8466;font-style:normal}.site-nav>span{color:#8e8c86;font-size:9px}.site-nav>b{background:#34322f;color:#fff;padding:10px;border-radius:4px;font-size:9px}.site-hero{padding:40px 28px 54px;background:radial-gradient(circle at 90% 20%,#d7bfa9 0%,transparent 37%),linear-gradient(130deg,#f6e9db,#faf5ed);max-width:100%}.site-hero>span:first-child{font-size:9px;letter-spacing:2px;color:#957b66;font-weight:900}.site-hero h3{font:800 clamp(37px,4.4vw,57px)/1.12 Georgia,serif;letter-spacing:-2px;margin:18px 0;color:#342d2b}.site-hero h3 em{color:#ac8467}.site-hero p{font-size:11px;color:#776d67;max-width:260px;line-height:1.8}.site-button{display:inline-block;background:#332f2c;color:white;padding:12px 16px;border-radius:4px;margin-top:14px;font-size:10px;font-weight:800}.site-services{padding:23px 28px 34px}.site-services>span{font-size:9px;color:#aa8066;letter-spacing:1px}.site-services>div{display:flex;gap:10px;margin-top:15px;flex-wrap:wrap}.site-services b{padding:13px 10px;background:#f6f0eb;color:#65574c;border-radius:5px;font-size:10px}
-.site-chat{position:absolute;right:16px;top:90px;width:245px;background:#fff;border:1px solid #e6e2e0;border-radius:13px;box-shadow:0 20px 45px #49372735;overflow:hidden}.site-chat-head{background:#6554dc;color:#fff;display:flex;align-items:center;gap:8px;padding:11px}.site-chat-head>span:first-child{font-size:20px}.site-chat-head>div{flex:1}.site-chat-head b,.site-chat-head small{display:block}.site-chat-head b{font-size:10px}.site-chat-head small{font-size:8px;color:#e6e0ff;margin-top:3px}.site-chat-body{padding:12px;display:flex;flex-direction:column;gap:8px}.site-chat-body p{background:#f1efff;border-radius:9px 9px 9px 2px;color:#544b8c;font-size:9px;line-height:1.5;padding:9px;margin:0;max-width:90%}.site-chat-body p:nth-child(2){align-self:flex-end;background:#6554dc;color:white;border-radius:9px 9px 2px 9px}.site-chat-input{border-top:1px solid #ececf2;color:#a8aabb;padding:10px;font-size:9px;display:flex;justify-content:space-between}.site-chat-input span{background:#6656ed;color:white;border-radius:5px;padding:3px 7px}.preview-benefits{display:grid;gap:12px;margin-top:24px;color:#4b5365;font-size:13px;font-weight:800}
-.detailed-steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;counter-reset:none}.detailed-steps article{border:1px solid #e8e8f2;background:#fff;border-radius:16px;padding:28px;min-height:295px;transition:box-shadow .2s}.detailed-steps article:hover{box-shadow:0 15px 35px #2b246e0c}.detailed-steps .step-number{font-size:19px}.step-subtitle{display:block;color:#7364d6;font-size:10px;font-weight:900;letter-spacing:1px;text-transform:uppercase;margin-top:20px}.detailed-steps h3{margin:10px 0 12px}.detailed-steps p{max-width:none;margin:0}.step-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:20px}.step-tags span{font-size:10px;color:#5c51b1;background:#f1efff;padding:7px 9px;border-radius:6px;font-weight:700}
-@media(max-width:1000px){.preview-layout{grid-template-columns:1fr}.preview-description{max-width:650px}.preview-mini-tabs{grid-template-columns:repeat(3,1fr)}.preview-mini-tabs button{font-size:11px}}
-@media(max-width:650px){.showcase-heading{display:block}.preview-switch{display:flex;width:100%}.preview-switch button{flex:1;padding:11px 6px;font-size:11px}.app-sidebar{width:92px;padding:10px 5px}.app-brand{font-size:14px;padding:4px 4px 15px}.app-business{font-size:9px;padding:8px 4px}.app-business small{margin-left:0}.app-sidebar button{font-size:8px;padding:9px 4px}.sidebar-foot{font-size:8px}.app-main{padding:0 7px 12px}.app-table-head,.app-table-row{grid-template-columns:1.3fr 1fr .6fr}.app-table-head>span:last-child,.app-table-row>span:last-child{display:none}.app-table-row{font-size:8px;padding:9px 6px}.app-stat-grid{gap:4px}.app-stat-grid>div{padding:8px 5px}.app-stat-grid small{font-size:8px}.app-stat-grid b{font-size:18px}.app-stat-grid span{display:none}.app-page-title h3{font-size:19px}.fake-new{font-size:8px;padding:7px}.site-nav{padding:0 12px}.site-nav>span{display:none}.site-chat{right:8px;top:125px;width:190px}.site-hero{padding:45px 12px}.site-hero h3{font-size:38px}.site-hero p{max-width:130px}.site-services{padding:22px 12px}.site-services>div{max-width:145px}.detailed-steps{grid-template-columns:1fr}.preview-mini-tabs{grid-template-columns:1fr}.showcase-heading h2{letter-spacing:-2px}}
+.showcase-section {
+  background: linear-gradient(180deg, #f7f7ff, #fff);
+}
+.showcase-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 50px;
+  margin-bottom: 38px;
+}
+.showcase-heading h2 {
+  font:
+    800 clamp(36px, 4vw, 57px)/1.13 Manrope,
+    sans-serif;
+  letter-spacing: -2.8px;
+  margin: 16px 0 0;
+}
+.showcase-heading h2 span {
+  color: #7565ea;
+}
+.showcase-heading > p {
+  max-width: 380px;
+  line-height: 1.8;
+  color: #7a8295;
+  font-size: 15px;
+}
+.preview-switch {
+  display: inline-flex;
+  background: #eae8fa;
+  padding: 5px;
+  border-radius: 13px;
+  gap: 4px;
+  margin-bottom: 30px;
+}
+.preview-switch button {
+  border: 0;
+  border-radius: 10px;
+  padding: 13px 21px;
+  background: transparent;
+  color: #615c80;
+  font-size: 13px;
+  font-weight: 800;
+}
+.preview-switch button.selected {
+  background: #fff;
+  color: #4c3fc0;
+  box-shadow: 0 3px 14px #312d7518;
+}
+.preview-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(260px, 0.75fr);
+  gap: 44px;
+  align-items: center;
+}
+.product-frame {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e1e1f0;
+  background: #fff;
+  border-radius: 17px;
+  box-shadow: 0 28px 65px #28215818;
+}
+.browser-bar {
+  height: 38px;
+  background: #f7f8fc;
+  border-bottom: 1px solid #e8e9f1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  color: #9ca2b1;
+  font-size: 10px;
+}
+.browser-dots {
+  display: flex;
+  gap: 5px;
+}
+.browser-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d8dce9;
+}
+.browser-dots i:first-child {
+  background: #ffbcb7;
+}
+.browser-dots i:nth-child(2) {
+  background: #ffe0a1;
+}
+.app-shell {
+  display: flex;
+  min-height: 410px;
+  font-size: 11px;
+}
+.app-sidebar {
+  width: 165px;
+  flex-shrink: 0;
+  background: #1e203c;
+  color: #aeb3d0;
+  padding: 17px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.app-brand {
+  color: #fff;
+  font:
+    800 20px Manrope,
+    sans-serif;
+  letter-spacing: -1px;
+  padding: 4px 8px 20px;
+}
+.app-brand span {
+  color: #a79bff;
+}
+.app-business {
+  border: 1px solid #444563;
+  background: #30324f;
+  border-radius: 8px;
+  padding: 10px 8px;
+  margin-bottom: 14px;
+  color: #fff;
+  font-weight: 800;
+}
+.app-business small {
+  display: block;
+  font-size: 9px;
+  color: #aab0c7;
+  margin: 4px 0 0 24px;
+}
+.app-sidebar button {
+  border: 0;
+  background: transparent;
+  color: #b7bad0;
+  text-align: left;
+  padding: 10px 9px;
+  border-radius: 7px;
+  font-size: 10px;
+}
+.app-sidebar button.current {
+  background: #6354d9;
+  color: white;
+  font-weight: 800;
+}
+.sidebar-foot {
+  margin-top: auto;
+  border-top: 1px solid #3a3c58;
+  padding: 14px 5px 0;
+  font-size: 9px;
+  color: #c7c2ff;
+}
+.app-main {
+  flex: 1;
+  min-width: 0;
+  background: #fafbff;
+  padding: 0 18px 20px;
+}
+.app-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid #e9ebf2;
+  font-weight: 800;
+  color: #4a5268;
+}
+.app-top small {
+  display: block;
+  font-size: 9px;
+  color: #a5a9b8;
+  font-weight: 500;
+  margin-top: 3px;
+}
+.app-avatar {
+  background: #e8e4ff;
+  color: #5e51b7;
+  padding: 8px;
+  border-radius: 50%;
+  font-size: 9px;
+}
+.app-page-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 21px 0;
+}
+.app-page-title small {
+  color: #8e82cf;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+.app-page-title h3 {
+  font:
+    800 23px Manrope,
+    sans-serif;
+  letter-spacing: -1px;
+  margin: 5px 0;
+}
+.fake-new {
+  background: #6656ed;
+  color: #fff;
+  padding: 9px;
+  border-radius: 7px;
+  font-weight: 800;
+  font-size: 9px;
+}
+.app-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 18px;
+}
+.app-stat-grid > div {
+  border: 1px solid #eceef4;
+  border-radius: 9px;
+  padding: 12px;
+  background: #fff;
+}
+.app-stat-grid small,
+.app-stat-grid span {
+  display: block;
+  font-size: 9px;
+  color: #959db0;
+}
+.app-stat-grid b {
+  display: block;
+  font:
+    800 24px Manrope,
+    sans-serif;
+  margin: 8px 0 3px;
+}
+.app-stat-grid span {
+  font-size: 8px;
+  color: #32a478;
+}
+.app-table {
+  border: 1px solid #e8eaf2;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.app-table-title {
+  padding: 15px;
+  font-weight: 900;
+  display: flex;
+  justify-content: space-between;
+}
+.app-table-title span {
+  color: #a3a8b6;
+  font-size: 9px;
+  font-weight: 500;
+}
+.app-table-head,
+.app-table-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 0.55fr 0.9fr;
+  gap: 6px;
+  align-items: center;
+  padding: 11px 13px;
+}
+.app-table-head {
+  background: #f6f7fb;
+  color: #a0a7b8;
+  font-size: 8px;
+  font-weight: 900;
+}
+.app-table-row {
+  border-top: 1px solid #f0f1f6;
+  color: #5c6275;
+  font-size: 9px;
+}
+.app-table-row > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 800;
+}
+.app-table-row i {
+  font-style: normal;
+  background: #eeeaff;
+  color: #6656d6;
+  padding: 7px;
+  border-radius: 50%;
+  font-size: 8px;
+}
+.app-status {
+  color: #269b6d;
+  background: #eaf8f0;
+  padding: 6px 3px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 8px;
+}
+.app-status.pending {
+  background: #fff4e2;
+  color: #ad7c2c;
+}
+.app-lead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #f0f1f6;
+  padding: 17px;
+}
+.app-lead > div {
+  flex: 1;
+}
+.app-lead b,
+.app-lead small {
+  display: block;
+}
+.app-lead small {
+  color: #999fb1;
+  margin-top: 5px;
+}
+.app-lead > span:last-child {
+  color: #a6aaba;
+}
+.lead-icon {
+  background: #eaf9f0;
+  color: #2aa574;
+  border-radius: 9px;
+  padding: 10px;
+}
+.app-chat-demo {
+  border: 1px solid #e9eaf1;
+  border-radius: 12px;
+  background: #fff;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.chat-demo-head {
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
+  font-weight: 900;
+}
+.chat-demo-head span {
+  float: right;
+  color: #6c5bdf;
+}
+.app-chat-demo p {
+  max-width: 80%;
+  margin: 0;
+  padding: 13px;
+  border-radius: 11px;
+  line-height: 1.6;
+}
+.chat-demo-in {
+  align-self: flex-end;
+  background: #6656ed;
+  color: white;
+}
+.chat-demo-out {
+  background: #f0eeff;
+  color: #534a9b;
+}
+.chat-demo-note {
+  border-top: 1px solid #eee;
+  padding: 13px 0 0;
+  color: #7567bd;
+}
+.preview-description {
+  padding: 10px 0;
+}
+.preview-pill {
+  display: inline-block;
+  padding: 8px 11px;
+  background: #edeaff;
+  color: #6656d6;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+.preview-description h3 {
+  font:
+    800 clamp(27px, 3vw, 38px)/1.2 Manrope,
+    sans-serif;
+  letter-spacing: -1.5px;
+  margin: 22px 0;
+}
+.preview-description > p {
+  color: #7c8498;
+  font-size: 14px;
+  line-height: 1.85;
+}
+.preview-mini-tabs {
+  border-top: 1px solid #e5e4ef;
+  margin-top: 30px;
+  padding-top: 15px;
+  display: grid;
+  gap: 8px;
+}
+.preview-mini-tabs button {
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  padding: 13px;
+  color: #858aa0;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 800;
+}
+.preview-mini-tabs button.active {
+  border-color: #ded9ff;
+  background: #f0edff;
+  color: #6554d5;
+}
+.preview-description .preview-footnote {
+  font-size: 11px;
+  color: #a1a4b3;
+  margin-top: 24px;
+}
+.sample-site {
+  position: relative;
+  min-height: 440px;
+  background: #fffaf5;
+}
+.site-nav {
+  height: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 25px;
+  background: #fff;
+  gap: 10px;
+}
+.site-nav strong {
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: #30312f;
+}
+.site-nav em {
+  color: #ae8466;
+  font-style: normal;
+}
+.site-nav > span {
+  color: #8e8c86;
+  font-size: 9px;
+}
+.site-nav > b {
+  background: #34322f;
+  color: #fff;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 9px;
+}
+.site-hero {
+  padding: 40px 28px 54px;
+  background:
+    radial-gradient(circle at 90% 20%, #d7bfa9 0%, transparent 37%), linear-gradient(130deg, #f6e9db, #faf5ed);
+  max-width: 100%;
+}
+.site-hero > span:first-child {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #957b66;
+  font-weight: 900;
+}
+.site-hero h3 {
+  font:
+    800 clamp(37px, 4.4vw, 57px)/1.12 Georgia,
+    serif;
+  letter-spacing: -2px;
+  margin: 18px 0;
+  color: #342d2b;
+}
+.site-hero h3 em {
+  color: #ac8467;
+}
+.site-hero p {
+  font-size: 11px;
+  color: #776d67;
+  max-width: 260px;
+  line-height: 1.8;
+}
+.site-button {
+  display: inline-block;
+  background: #332f2c;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin-top: 14px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.site-services {
+  padding: 23px 28px 34px;
+}
+.site-services > span {
+  font-size: 9px;
+  color: #aa8066;
+  letter-spacing: 1px;
+}
+.site-services > div {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+.site-services b {
+  padding: 13px 10px;
+  background: #f6f0eb;
+  color: #65574c;
+  border-radius: 5px;
+  font-size: 10px;
+}
+.site-chat {
+  position: absolute;
+  right: 16px;
+  top: 90px;
+  width: 245px;
+  background: #fff;
+  border: 1px solid #e6e2e0;
+  border-radius: 13px;
+  box-shadow: 0 20px 45px #49372735;
+  overflow: hidden;
+}
+.site-chat-head {
+  background: #6554dc;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px;
+}
+.site-chat-head > span:first-child {
+  font-size: 20px;
+}
+.site-chat-head > div {
+  flex: 1;
+}
+.site-chat-head b,
+.site-chat-head small {
+  display: block;
+}
+.site-chat-head b {
+  font-size: 10px;
+}
+.site-chat-head small {
+  font-size: 8px;
+  color: #e6e0ff;
+  margin-top: 3px;
+}
+.site-chat-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.site-chat-body p {
+  background: #f1efff;
+  border-radius: 9px 9px 9px 2px;
+  color: #544b8c;
+  font-size: 9px;
+  line-height: 1.5;
+  padding: 9px;
+  margin: 0;
+  max-width: 90%;
+}
+.site-chat-body p:nth-child(2) {
+  align-self: flex-end;
+  background: #6554dc;
+  color: white;
+  border-radius: 9px 9px 2px 9px;
+}
+.site-chat-input {
+  border-top: 1px solid #ececf2;
+  color: #a8aabb;
+  padding: 10px;
+  font-size: 9px;
+  display: flex;
+  justify-content: space-between;
+}
+.site-chat-input span {
+  background: #6656ed;
+  color: white;
+  border-radius: 5px;
+  padding: 3px 7px;
+}
+.preview-benefits {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+  color: #4b5365;
+  font-size: 13px;
+  font-weight: 800;
+}
+.detailed-steps {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  counter-reset: none;
+}
+.detailed-steps article {
+  border: 1px solid #e8e8f2;
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  min-height: 295px;
+  transition: box-shadow 0.2s;
+}
+.detailed-steps article:hover {
+  box-shadow: 0 15px 35px #2b246e0c;
+}
+.detailed-steps .step-number {
+  font-size: 19px;
+}
+.step-subtitle {
+  display: block;
+  color: #7364d6;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 20px;
+}
+.detailed-steps h3 {
+  margin: 10px 0 12px;
+}
+.detailed-steps p {
+  max-width: none;
+  margin: 0;
+}
+.step-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 20px;
+}
+.step-tags span {
+  font-size: 10px;
+  color: #5c51b1;
+  background: #f1efff;
+  padding: 7px 9px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+@media (max-width: 1000px) {
+  .preview-layout {
+    grid-template-columns: 1fr;
+  }
+  .preview-description {
+    max-width: 650px;
+  }
+  .preview-mini-tabs {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .preview-mini-tabs button {
+    font-size: 11px;
+  }
+}
+@media (max-width: 650px) {
+  .showcase-heading {
+    display: block;
+  }
+  .preview-switch {
+    display: flex;
+    width: 100%;
+  }
+  .preview-switch button {
+    flex: 1;
+    padding: 11px 6px;
+    font-size: 11px;
+  }
+  .app-sidebar {
+    width: 92px;
+    padding: 10px 5px;
+  }
+  .app-brand {
+    font-size: 14px;
+    padding: 4px 4px 15px;
+  }
+  .app-business {
+    font-size: 9px;
+    padding: 8px 4px;
+  }
+  .app-business small {
+    margin-left: 0;
+  }
+  .app-sidebar button {
+    font-size: 8px;
+    padding: 9px 4px;
+  }
+  .sidebar-foot {
+    font-size: 8px;
+  }
+  .app-main {
+    padding: 0 7px 12px;
+  }
+  .app-table-head,
+  .app-table-row {
+    grid-template-columns: 1.3fr 1fr 0.6fr;
+  }
+  .app-table-head > span:last-child,
+  .app-table-row > span:last-child {
+    display: none;
+  }
+  .app-table-row {
+    font-size: 8px;
+    padding: 9px 6px;
+  }
+  .app-stat-grid {
+    gap: 4px;
+  }
+  .app-stat-grid > div {
+    padding: 8px 5px;
+  }
+  .app-stat-grid small {
+    font-size: 8px;
+  }
+  .app-stat-grid b {
+    font-size: 18px;
+  }
+  .app-stat-grid span {
+    display: none;
+  }
+  .app-page-title h3 {
+    font-size: 19px;
+  }
+  .fake-new {
+    font-size: 8px;
+    padding: 7px;
+  }
+  .site-nav {
+    padding: 0 12px;
+  }
+  .site-nav > span {
+    display: none;
+  }
+  .site-chat {
+    right: 8px;
+    top: 125px;
+    width: 190px;
+  }
+  .site-hero {
+    padding: 45px 12px;
+  }
+  .site-hero h3 {
+    font-size: 38px;
+  }
+  .site-hero p {
+    max-width: 130px;
+  }
+  .site-services {
+    padding: 22px 12px;
+  }
+  .site-services > div {
+    max-width: 145px;
+  }
+  .detailed-steps {
+    grid-template-columns: 1fr;
+  }
+  .preview-mini-tabs {
+    grid-template-columns: 1fr;
+  }
+  .showcase-heading h2 {
+    letter-spacing: -2px;
+  }
+}
 
+.promo-code-box {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px dashed #6366f1;
+  border-radius: 14px;
+  background: rgba(99, 102, 241, 0.07);
+  text-align: center;
+}
+
+.promo-code-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #818cf8;
+}
+
+.promo-code-value {
+  display: inline-block;
+  margin: 14px 0;
+  padding: 10px 24px;
+  border: 1px solid #6366f1;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.12);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: #a5b4fc;
+  user-select: all;
+}
+
+.promo-code-box p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
 </style>
