@@ -106,25 +106,31 @@ import LegalLayout from "../components/LegalLayout.vue";
       aceptadas en el Checkout.
     </p>
 
-    <p>
-      [VERIFICAR QUE STRIPE APLICA EL DESCUENTO DURANTE 12 MESES Y QUE LA LIMITACIÓN DE 20 CLIENTES ES
-      EFECTIVA].
-    </p>
+    <h2>7. Cancelación de la suscripción</h2>
 
-    <h2>7. Cancelación</h2>
+    <p>El cliente puede cancelar su suscripción desde el panel de administración de Resbix.</p>
 
     <p>
-      Los usuarios podrán gestionar la cancelación de su suscripción mediante las herramientas habilitadas en
-      Resbix o el portal de facturación.
+      Si la cancelación se realiza durante el periodo de prueba gratuita de siete días, el cliente podrá
+      continuar utilizando las funcionalidades contratadas hasta que finalice dicho periodo.
     </p>
 
     <p>
-      La fecha efectiva de cancelación y las consecuencias sobre el acceso dependerán de las condiciones de
-      contratación aplicables.
+      Si la cancelación se realiza durante un periodo de suscripción de pago, el cliente conservará el acceso
+      hasta que finalice el periodo contratado y abonado.
+    </p>
+
+    <p>La cancelación impedirá la renovación automática de la suscripción.</p>
+
+    <p>
+      Una vez finalizado el periodo de acceso, las funcionalidades asociadas a la suscripción dejarán de estar
+      disponibles.
     </p>
 
     <p>
-      [CONFIRMAR EL COMPORTAMIENTO EXACTO DE LA CANCELACIÓN DURANTE LA PRUEBA Y DURANTE LOS PERIODOS PAGADOS].
+      La cancelación no implica necesariamente la eliminación inmediata de los datos almacenados. Su
+      conservación y eliminación se regirán por la Política de privacidad y el acuerdo de tratamiento de
+      datos.
     </p>
 
     <h2>8. Devoluciones y desistimiento</h2>
