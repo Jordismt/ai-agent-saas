@@ -96,14 +96,14 @@ const handleRegister = async () => {
             <span>✦</span>
           </div>
 
-          <span>AgentFlow</span>
+          <span>Resbix</span>
         </RouterLink>
 
         <!-- CONTENT -->
 
         <div class="auth-content">
           <div class="auth-heading">
-            <span class="eyebrow"> Empieza con AgentFlow </span>
+            <span class="eyebrow"> Empieza con Resbix </span>
 
             <h1>Crea tu cuenta</h1>
 
@@ -315,7 +315,7 @@ const handleRegister = async () => {
         <!-- FOOTER -->
 
         <footer class="auth-footer">
-          <span> © {{ new Date().getFullYear() }} AgentFlow </span>
+          <span> © {{ new Date().getFullYear() }} Resbix </span>
 
           <span> Plataforma de agentes IA para negocios </span>
         </footer>
@@ -474,7 +474,7 @@ const handleRegister = async () => {
       <div class="showcase-footer">
         <span class="status-dot"></span>
 
-        <span>AgentFlow</span>
+        <span>Resbix</span>
 
         <span>·</span>
 

@@ -57,7 +57,7 @@ const handleLogin = async () => {
             <span>✦</span>
           </div>
 
-          <span>AgentFlow</span>
+          <span>Resbix</span>
         </RouterLink>
 
         <!-- FORM AREA -->
@@ -205,7 +205,7 @@ const handleLogin = async () => {
         <!-- FOOTER -->
 
         <footer class="auth-footer">
-          <span>© {{ new Date().getFullYear() }} AgentFlow</span>
+          <span>© {{ new Date().getFullYear() }} Resbix</span>
 
           <span> Plataforma de agentes IA para negocios </span>
         </footer>
@@ -363,11 +363,11 @@ const handleLogin = async () => {
       <div class="showcase-footer">
         <span class="footer-status"></span>
 
-        <span>AgentFlow</span>
+        <span>Resbix</span>
 
         <span>·</span>
 
-        <span>Powered by AI</span>
+        <span>Powered by Resbix</span>
       </div>
     </section>
   </main>
