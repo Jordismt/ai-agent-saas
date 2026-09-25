@@ -25,8 +25,14 @@ import { errorHandler } from "./shared/middleware/errorHandler.js";
 const app = express();
 
 app.use(helmet());
-app.use(cors());
-app.post("/billing/webhook", express.raw({type:"application/json"}), stripeWebhook);
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+app.post("/billing/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 app.use(express.json({ limit: "32kb" }));
 app.use(apiLimiter);
 
