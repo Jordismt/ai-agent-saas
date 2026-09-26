@@ -17,6 +17,7 @@ import employeeRoutes from "./modules/employees/presentation/employeeRoutes.js";
 import businessPublicPageRoutes from "./modules/publicPages/presentation/businessPublicPageRoutes.js";
 import managedBookingRoutes from "./modules/bookings/presentation/managedBookingRoutes.js";
 import bookingReminderRoutes from "./modules/bookings/presentation/bookingReminderRoutes.js";
+import accountRoutes from "./modules/account/presentation/accountRoutes.js";
 
 import { apiLimiter, bookingLimiter } from "./shared/middleware/rateLimits.js";
 import { authMiddleware } from "./shared/middleware/authMiddleware.js";
@@ -64,7 +65,7 @@ app.get("/me", authMiddleware, (req, res) => {
     email: req.user.email,
   });
 });
-
+app.use("/account", accountRoutes);
 app.use("/billing", billingRoutes);
 app.use("/businesses", businessRoutes);
 app.use("/conversations", conversationRoutes);

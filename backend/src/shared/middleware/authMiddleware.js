@@ -1,4 +1,4 @@
-import { createSupabaseClient } from "../../infrastructure/database/supabase.js";
+import { createSupabaseClient, createSupabaseServerClient } from "../../infrastructure/database/supabase.js";
 
 export async function authMiddleware(req, res, next) {
   try {
@@ -23,6 +23,25 @@ export async function authMiddleware(req, res, next) {
       return res.status(401).json({
         error: "Invalid authentication token",
       });
+    }
+
+    // Permitir reintentar la eliminación.
+    if (req.originalUrl !== "/account/delete") {
+      const { data: deletion, error: deletionError } = await createSupabaseServerClient()
+        .from("account_deletion_requests")
+        .select("status")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (deletionError) {
+        throw deletionError;
+      }
+
+      if (deletion && deletion.status !== "completed") {
+        return res.status(423).json({
+          error: "Cuenta pendiente de eliminación. " + "Contacta con soporte.",
+        });
+      }
     }
 
     req.user = user;

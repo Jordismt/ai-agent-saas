@@ -20,6 +20,7 @@ import EmployeeDetailView from "../modules/employees/presentation/EmployeeDetail
 import ChatView from "../modules/public/presentation/ChatView.vue";
 import PublicPageSettingsView from "../modules/publicPages/presentation/PublicPageSettingsView.vue";
 import PublicBusinessView from "../modules/publicPages/presentation/PublicBusinessView.vue";
+import AccountSettingsView from "../modules/account/presentation/AccountSettingsView.vue";
 
 import { authGuard } from "./authGuard.js";
 import { BillingService } from "../modules/billing/infrastructure/BillingService.js";
@@ -198,6 +199,11 @@ const routes = [
         name: "business-public-page",
         component: PublicPageSettingsView,
         beforeEnter: paidBusinessGuard,
+      },
+      {
+        path: "settings",
+        name: "account-settings",
+        component: AccountSettingsView,
       },
     ],
   },

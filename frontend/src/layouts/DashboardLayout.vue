@@ -223,6 +223,10 @@ const closeMobileMenu = () => {
       </div>
 
       <div class="sidebar-bottom">
+        <RouterLink to="/settings" class="nav-item" active-class="nav-item-active" @click="closeMobileMenu">
+          <span class="nav-icon">⚙</span>
+          <span>Configuración</span>
+        </RouterLink>
         <div class="sidebar-status">
           <span class="status-dot"></span>
 

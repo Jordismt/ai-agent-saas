@@ -267,6 +267,36 @@ async function sync(admin, businessId, sub, checkoutId) {
     .maybeSingle();
   if (readError) throw readError;
   if (existing?.stripe_subscription_id && existing.stripe_subscription_id !== sub.id) return;
+  // Evitar reactivar negocios eliminados.
+  const { data: business, error: businessError } = await admin
+    .from("businesses")
+    .select("id,owner_id")
+    .eq("id", businessId)
+    .maybeSingle();
+
+  if (businessError) {
+    throw businessError;
+  }
+
+  if (!business) {
+    return;
+  }
+
+  // Comprobar si el propietario está
+  // eliminando su cuenta.
+  const { data: deleting, error: deletingError } = await admin
+    .from("account_deletion_requests")
+    .select("user_id")
+    .eq("user_id", business.owner_id)
+    .maybeSingle();
+
+  if (deletingError) {
+    throw deletingError;
+  }
+
+  if (deleting) {
+    return;
+  }
   const founder = (sub.discounts || []).some(
     (d) => (typeof d.coupon === "object" ? d.coupon?.id : d.coupon) === founderCoupon,
   );
