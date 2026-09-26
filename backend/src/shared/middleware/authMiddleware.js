@@ -25,8 +25,13 @@ export async function authMiddleware(req, res, next) {
       });
     }
 
-    // Permitir reintentar la eliminación.
-    if (req.originalUrl !== "/account/delete") {
+    // Rutas permitidas durante la eliminación.
+    const allowedDuringDeletion = ["/account/delete", "/account/summary"];
+
+    const currentPath = req.originalUrl.split("?")[0];
+
+    // Comprobar si existe una eliminación pendiente.
+    if (!allowedDuringDeletion.includes(currentPath)) {
       const { data: deletion, error: deletionError } = await createSupabaseServerClient()
         .from("account_deletion_requests")
         .select("status")
@@ -37,13 +42,18 @@ export async function authMiddleware(req, res, next) {
         throw deletionError;
       }
 
+      // Bloquear las demás operaciones mientras
+      // la cuenta está pendiente de eliminación.
       if (deletion && deletion.status !== "completed") {
         return res.status(423).json({
-          error: "Cuenta pendiente de eliminación. " + "Contacta con soporte.",
+          error:
+            "Tu cuenta está pendiente de eliminación. " +
+            "Accede a Configuración para reintentar el proceso.",
         });
       }
     }
 
+    // Usuario autenticado.
     req.user = user;
     req.supabase = supabase;
 
