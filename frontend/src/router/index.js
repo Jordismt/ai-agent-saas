@@ -37,6 +37,9 @@ import TerminosView from "../modules/legal/presentation/TerminosView.vue";
 
 import TratamientoDatosView from "../modules/legal/presentation/TratamientoDatosView.vue";
 
+import ForgotPasswordView from "../modules/auth/presentation/ForgotPasswordView.vue";
+import ResetPasswordView from "../modules/auth/presentation/ResetPasswordView.vue";
+
 const billingService = new BillingService();
 async function paidBusinessGuard(to) {
   try {
@@ -223,6 +226,16 @@ const routes = [
   {
     path: "/:pathMatch(.*)*",
     redirect: "/",
+  },
+  {
+    path: "/forgot-password",
+    name: "forgot-password",
+    component: ForgotPasswordView,
+  },
+  {
+    path: "/reset-password",
+    name: "reset-password",
+    component: ResetPasswordView,
   },
 ];
 

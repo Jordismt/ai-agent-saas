@@ -119,6 +119,9 @@ const handleLogin = async () => {
             <div class="form-group">
               <div class="label-row">
                 <label for="password"> Contraseña </label>
+                <div class="forgot-password">
+                  <RouterLink to="/forgot-password"> ¿Has olvidado tu contraseña? </RouterLink>
+                </div>
               </div>
 
               <div class="input-wrapper">
@@ -1510,5 +1513,20 @@ const handleLogin = async () => {
   .auth-footer {
     font-size: 11px;
   }
+}
+.forgot-password {
+  margin-top: 8px;
+  text-align: right;
+}
+
+.forgot-password a {
+  color: #6366f1;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
 }
 </style>

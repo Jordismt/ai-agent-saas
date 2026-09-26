@@ -47,4 +47,20 @@ export class SupabaseAuthService {
 
     return user;
   }
+
+  async requestPasswordReset(email) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) throw new Error(error.message);
+  }
+
+  async updatePassword(password) {
+    const { error } = await supabase.auth.updateUser({
+      password,
+    });
+
+    if (error) throw new Error(error.message);
+  }
 }
