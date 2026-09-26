@@ -21,10 +21,26 @@ export async function apiFetch(endpoint, options = {}) {
     headers,
   });
 
-  const data = await response.json();
+  // Leer la respuesta sin asumir que contiene JSON.
+  const text = await response.text();
 
+  let data = null;
+
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      if (response.ok) {
+        throw new Error("Respuesta inesperada del servidor");
+      }
+
+      throw new Error(`Error del servidor (${response.status})`);
+    }
+  }
+
+  // Gestionar errores HTTP.
   if (!response.ok) {
-    throw new Error(data.error || "Request failed");
+    throw new Error(data?.error || data?.message || `Error HTTP ${response.status}`);
   }
 
   return data;
