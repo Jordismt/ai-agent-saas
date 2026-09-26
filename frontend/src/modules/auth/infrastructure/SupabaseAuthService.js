@@ -50,7 +50,7 @@ export class SupabaseAuthService {
 
   async requestPasswordReset(email) {
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: "https://resbix.com/reset-password",
     });
 
     if (error) throw new Error(error.message);
