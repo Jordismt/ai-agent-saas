@@ -21,22 +21,24 @@ import LegalLayout from "../components/LegalLayout.vue";
     <h2>2. Tecnologías utilizadas</h2>
 
     <p>
-      Resbix utiliza tecnologías necesarias para prestar sus funcionalidades, gestionar la autenticación y
-      proteger la plataforma.
+      Resbix utiliza cookies y tecnologías de almacenamiento necesarias para el funcionamiento de la
+      plataforma, la gestión de sesiones, la autenticación de usuarios y la seguridad del servicio.
     </p>
 
     <p>
-      Dependiendo de la funcionalidad utilizada, también pueden intervenir proveedores externos, como Supabase
-      y Stripe.
+      Para ofrecer sus funcionalidades, Resbix utiliza servicios tecnológicos de terceros, entre ellos
+      Supabase (autenticación y base de datos), Stripe (gestión de pagos y suscripciones), Vercel
+      (alojamiento) y Groq (procesamiento de inteligencia artificial).
     </p>
 
-    <div class="legal-notice">
-      <p>
-        <strong>Información pendiente de verificación:</strong>
-        antes de publicar esta política, se debe completar el inventario de cookies y otras tecnologías
-        utilizadas realmente.
-      </p>
-    </div>
+    <p>
+      La utilización de estos proveedores no implica necesariamente que todos instalen cookies en el
+      dispositivo del usuario.
+    </p>
+
+    <p>
+      Las tecnologías estrictamente necesarias permiten el funcionamiento y la seguridad de la plataforma.
+    </p>
 
     <h2>3. Cookies estrictamente necesarias</h2>
 
