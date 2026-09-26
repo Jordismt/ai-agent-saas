@@ -6,8 +6,7 @@ const activeFaq = ref(null);
 const previewTab = ref("dashboard");
 const dashboardTab = ref("reservas");
 const logoFailed = ref(false);
-// Coloca tu logo en frontend/public/resbix-logo.svg (o cambia esta ruta).
-const logoSrc = "/resbix-logo.png";
+
 const faqs = [
   {
     q: "¿Qué hace exactamente Resbix?",
@@ -136,8 +135,6 @@ const closeMenu = () => {
     <header class="navbar">
       <div class="container nav-inner">
         <RouterLink to="/" class="brand" @click="closeMenu">
-          <img v-if="!logoFailed" :src="logoSrc" alt="" class="brand-logo" @error="logoFailed = true" />
-          <span v-else class="brand-symbol">✳</span>
           <span>Resbix<span class="brand-period">.</span></span>
         </RouterLink>
         <nav class="nav-links" aria-label="Navegación principal">
