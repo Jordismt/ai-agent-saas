@@ -127,7 +127,7 @@ onMounted(loadAccount);
           <div class="section-icon">▦</div>
 
           <div>
-            <h2>Mis negocios</h2>
+            <h2>Mis Negocios</h2>
             <p>Negocios vinculados a tu cuenta.</p>
           </div>
 
