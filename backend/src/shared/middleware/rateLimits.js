@@ -38,11 +38,20 @@ function limiter(prefix, limit, window, key) {
 }
 
 export const apiLimiter = limiter("api", 120, "1 m", ip);
-export const publicConversationLimiter = limiter("new-conversation", 12, "1 m", (req) => `${ip(req)}:${req.params.businessId}`);
+export const publicConversationLimiter = limiter(
+  "new-conversation",
+  12,
+  "1 m",
+  (req) => `${ip(req)}:${req.params.businessId}`,
+);
 // Include IP + conversation so creating a new conversation does not reset the IP's AI allowance.
 export const publicAiMinuteLimiter = limiter("ai-minute", 10, "1 m", ip);
 export const publicAiHourLimiter = limiter("ai-hour", 60, "1 h", ip);
-export const bookingLimiter = limiter("bookings", 5, "10 m", ip);
+// Consultar reservas desde el dashboard
+export const bookingReadLimiter = limiter("bookings-read", 120, "1 m", (req) => req.user?.id || ip(req));
+
+// Crear reservas
+export const bookingLimiter = limiter("bookings-create", 10, "10 m", ip);
 export const billingLimiter = limiter("checkout", 5, "1 h", (req) => req.user?.id || ip(req));
 
 // Distributed per-conversation lock: SET NX PX is atomic across Vercel instances.
@@ -64,11 +73,18 @@ export async function publicAiConcurrency(req, res, next) {
     try {
       await redis.eval(
         'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end',
-        [key], [token]
+        [key],
+        [token],
       );
-    } catch (error) { console.error("AI lock release failed:", error); }
+    } catch (error) {
+      console.error("AI lock release failed:", error);
+    }
   };
-  res.once("finish", () => { void release(); });
-  res.once("close", () => { void release(); });
+  res.once("finish", () => {
+    void release();
+  });
+  res.once("close", () => {
+    void release();
+  });
   next();
 }

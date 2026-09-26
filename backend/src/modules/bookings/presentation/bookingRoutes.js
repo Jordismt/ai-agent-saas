@@ -1,4 +1,4 @@
-import { bookingLimiter } from "../../../shared/middleware/rateLimits.js";
+import { bookingLimiter, bookingReadLimiter, } from "../../../shared/middleware/rateLimits.js";
 import { Router } from "express";
 
 import { BookingController } from "./BookingController.js";
