@@ -782,11 +782,7 @@ const closeMenu = () => {
         <!-- Marca -->
         <div>
           <RouterLink to="/" class="brand">
-            <img v-if="!logoFailed" :src="logoSrc" alt="" class="brand-logo" @error="logoFailed = true" />
-
-            <span v-else class="brand-symbol">✳</span>
-
-            <span> resbix<span class="brand-period">.</span> </span>
+            <span> Resbix<span class="brand-period">.</span> </span>
           </RouterLink>
 
           <p>La atención de tu negocio, preparada para lo que viene.</p>
