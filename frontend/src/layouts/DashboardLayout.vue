@@ -254,7 +254,7 @@ const closeMobileMenu = () => {
       <header class="mobile-topbar">
         <RouterLink to="/dashboard" class="mobile-brand">
           <div class="brand-mark">AI</div>
-          <strong>AgentFlow</strong>
+          <strong>Resbix</strong>
         </RouterLink>
 
         <button
