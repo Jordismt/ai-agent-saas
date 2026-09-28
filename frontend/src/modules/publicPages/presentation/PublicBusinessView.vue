@@ -391,7 +391,6 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="hero-photo-counter"></div>
               <div class="availability-card">
                 <span class="availability-dot"></span>
                 <div>
