@@ -93,7 +93,7 @@ const steps = [
     n: "04",
     title: "Compartes tu web pública",
     subtitle: "Tu escaparate digital",
-    text: "Tus clientes encuentran tu negocio, consultan sus servicios y pueden iniciar una conversación con el agente. La reserva directa desde la web estará disponible cuando se habilite esa función.",
+    text: "Tus clientes encuentran tu negocio, consultan sus servicios y pueden iniciar una conversación con el agente o realizar una reserva manual. ",
     tags: ["Web pública", "Agente integrado", "Información accesible"],
   },
   {
