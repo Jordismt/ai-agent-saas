@@ -1216,22 +1216,7 @@ const closeMenu = () => {
   display: block;
 }
 .mock-header b {
-  font-size: 13px;7 días gratis
-Después, 44,50 € al mes hasta que caduque el cupón
-Resbix
-89,00 €/mes después
-7 días gratis
-Subtotal
-89,00 €
-FOUNDERS50
-
-0,00 €
-Descuento de 50 % en los próximos 12 ciclos de facturación
-Total después del periodo de prueba
-44,50 €
-Total a pagar hoy
-0,00 €
-
+  font-size: 13px;
 }
 .mock-header small {
   font-size: 10px;
