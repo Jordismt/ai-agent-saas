@@ -772,7 +772,7 @@ const closeMenu = () => {
             importa.
           </p>
           <RouterLink to="/register" class="button button-white"
-            >Empezar por 55 €/mes <span>↗</span></RouterLink
+            >Empezar por 44,50 €/mes <span>↗</span></RouterLink
           ><small>Promoción para los primeros 20 clientes durante el primer año.</small>
         </div>
       </section>
