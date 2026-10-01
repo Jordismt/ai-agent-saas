@@ -30,7 +30,7 @@ const faqs = [
   },
   {
     q: "¿Qué ocurre después del primer año de la oferta?",
-    a: "La promoción de los primeros 20 clientes es de 55 €/mes durante los primeros 12 meses. Después se aplica la tarifa habitual de 110 €/mes.",
+    a: "La promoción de los primeros 20 clientes es de 44,50 €/mes durante los primeros 12 meses. Después se aplica la tarifa habitual de 89 €/mes.",
   },
   {
     q: "¿La promoción se aplica automáticamente?",
@@ -129,7 +129,7 @@ const closeMenu = () => {
     <div class="announcement">
       <span class="announcement-dot"></span> OFERTA DE LANZAMIENTO
       <span class="announcement-divider">/</span> Primeros 20 clientes:
-      <b>55 €/mes el primer año | CODIGO: FOUNDERS50</b>
+      <b>44,50 €/mes el primer año | CODIGO: FOUNDERS50</b>
       <a href="#precios">Ver oferta <span>↗</span></a>
     </div>
     <header class="navbar">
@@ -678,11 +678,11 @@ const closeMenu = () => {
             <div class="pricing-card-body">
               <span class="pricing-label"> Resbix · Plataforma completa </span>
 
-              <div class="price-old">Precio habitual <s>110 €/mes</s></div>
+              <div class="price-old">Precio habitual <s>89 €/mes</s></div>
 
-              <div class="price-main">55<span>€</span><small>/ mes</small></div>
+              <div class="price-main">44.50<span>€</span><small>/ mes</small></div>
 
-              <div class="price-save">AHORRAS 660 € DURANTE TU PRIMER AÑO</div>
+              <div class="price-save">AHORRAS +500 € DURANTE TU PRIMER AÑO</div>
 
               <p class="price-intro">
                 Todo lo que necesitas para atender, captar y organizar clientes desde un mismo sitio.
@@ -732,7 +732,7 @@ const closeMenu = () => {
 
               <small class="pricing-terms">
                 Oferta para los primeros 20 clientes que apliquen correctamente el código promocional. Precio
-                promocional: 55 €/mes durante los primeros 12 meses. Después, 110 €/mes. El descuento debe
+                promocional: 44,50 €/mes durante los primeros 12 meses. Después, 89 €/mes. El descuento debe
                 aplicarse en Stripe antes de confirmar la suscripción. Promoción sujeta a disponibilidad real.
                 *Los emails requieren que el cliente facilite su dirección. Consulta las condiciones antes de
                 contratar.
@@ -1216,7 +1216,22 @@ const closeMenu = () => {
   display: block;
 }
 .mock-header b {
-  font-size: 13px;
+  font-size: 13px;7 días gratis
+Después, 44,50 € al mes hasta que caduque el cupón
+Resbix
+89,00 €/mes después
+7 días gratis
+Subtotal
+89,00 €
+FOUNDERS50
+
+0,00 €
+Descuento de 50 % en los próximos 12 ciclos de facturación
+Total después del periodo de prueba
+44,50 €
+Total a pagar hoy
+0,00 €
+
 }
 .mock-header small {
   font-size: 10px;
