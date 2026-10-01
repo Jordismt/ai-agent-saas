@@ -54,7 +54,7 @@ import LegalLayout from "../components/LegalLayout.vue";
 
     <h2>4. Precio y suscripciones</h2>
 
-    <p>El precio habitual anunciado para Resbix es de 110 euros mensuales.</p>
+    <p>El precio habitual anunciado para Resbix es de 89 euros mensuales.</p>
 
     <p>[CONFIRMAR SI LOS PRECIOS PUBLICADOS INCLUYEN IVA Y CÓMO SE MUESTRAN LOS IMPUESTOS EN STRIPE].</p>
 
