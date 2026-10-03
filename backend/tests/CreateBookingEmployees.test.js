@@ -1,4 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+vi.mock("../src/shared/billing/requireActiveBusiness.js", () => ({
+  requireActiveBusiness: vi.fn(async () => ({ status: "active" })),
+}));
 import { CreateBooking } from "../src/modules/bookings/application/CreateBooking.js";
 
 describe("CreateBooking - employees", () => {

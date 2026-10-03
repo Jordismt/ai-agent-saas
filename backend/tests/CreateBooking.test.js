@@ -1,8 +1,17 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+vi.mock("../src/shared/billing/requireActiveBusiness.js", () => ({
+  requireActiveBusiness: vi.fn(async () => ({ status: "active" })),
+}));
 
 import { CreateBooking } from "../src/modules/bookings/application/CreateBooking.js";
 
 describe("CreateBooking", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-23T12:00:00Z"));
+  });
+  afterEach(() => vi.useRealTimers());
   function createDependencies({
     business = {
       id: "business-123",
@@ -146,6 +155,37 @@ describe("CreateBooking", () => {
     );
 
     expect(dependencies.bookingRepository.create).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([undefined, null, "", "   ", " Jordi@Example.com "])(
+    "persists optional email %s and sends confirmation only with email",
+    async (customerEmail) => {
+      const dependencies = createDependencies();
+      dependencies.bookingRepository.create.mockImplementation(async (booking) => ({
+        id: "booking-created",
+        customer_email: booking.customerEmail,
+        customer_phone: booking.customerPhone,
+      }));
+      dependencies.sendBookingConfirmation = { execute: vi.fn() };
+      const booking = await new CreateBooking(dependencies).execute({
+        businessId: "business-123", serviceId: "service-123",
+        customerName: "Jordi", customerPhone: "600000000", customerEmail,
+        date: "2026-09-25", time: "17:00",
+      });
+      expect(booking.customer_email).toBe(customerEmail?.trim() ? "jordi@example.com" : null);
+      expect(booking.customer_phone).toBe("600000000");
+      expect(dependencies.sendBookingConfirmation.execute).toHaveBeenCalledTimes(customerEmail?.trim() ? 1 : 0);
+    },
+  );
+
+  it("rejects an email-only booking without phone", async () => {
+    const dependencies = createDependencies();
+    await expect(new CreateBooking(dependencies).execute({
+      businessId: "business-123", serviceId: "service-123",
+      customerName: "Jordi", customerEmail: "jordi@example.com",
+      date: "2026-09-25", time: "17:00",
+    })).rejects.toMatchObject({ message: "Booking customerPhone is required", statusCode: 400 });
+    expect(dependencies.bookingRepository.create).not.toHaveBeenCalled();
   });
 
   it("should reject a time outside available slots", async () => {
@@ -421,7 +461,7 @@ describe("CreateBooking", () => {
         time: "17:00",
       }),
     ).rejects.toMatchObject({
-      message: "Booking requires a phone or email",
+      message: "Booking customerPhone is required",
       statusCode: 400,
     });
 

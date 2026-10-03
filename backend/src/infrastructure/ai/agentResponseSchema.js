@@ -44,8 +44,11 @@ const createBookingActionSchema = z.object({
     date: dateSchema,
     time: timeSchema,
     customerName: z.string().trim().min(1).max(120),
-    customerPhone: z.string().trim().max(50).nullable().optional(),
-    customerEmail: z.string().trim().email().max(254),
+    customerPhone: z.string().trim().min(1).max(50),
+    customerEmail: z.preprocess(
+      (value) => typeof value === "string" && !value.trim() ? null : value,
+      z.string().trim().email().max(254).nullable().optional(),
+    ),
     notes: z.string().trim().max(1000).nullable().optional(),
   }),
 });

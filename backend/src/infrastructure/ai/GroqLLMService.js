@@ -471,16 +471,18 @@ Requiere:
 - fecha
 - hora
 - nombre
-- email válido
+- teléfono
 
-El email es SIEMPRE obligatorio.
+El teléfono es obligatorio. El email es opcional.
+Si no hay email, usa customerEmail = null y crea la reserva igualmente.
+Si hay email, debe ser válido y se usará para las notificaciones.
 
-El teléfono es opcional.
-
-Si falta email:
+Si falta teléfono:
 - NO selecciones create_booking.
 - selecciona none.
-- pide únicamente el email si ya tienes el resto.
+- pide únicamente el teléfono si ya tienes el resto.
+
+No pidas el email como requisito para reservar.
 
 Conserva y reutiliza el email proporcionado anteriormente.
 
@@ -508,7 +510,7 @@ recientes y ya tienes:
 - fecha
 - hora
 - nombre
-- email
+- teléfono
 
 selecciona create_booking DIRECTAMENTE.
 
@@ -519,7 +521,7 @@ Ejemplo:
 
 Cliente:
 "Resérvame un corte mañana a las 12. Soy Jordi,
-jordi@email.com"
+mi teléfono es 600000000"
 
 Backend:
 12:00 no disponible.
@@ -539,7 +541,8 @@ Debes devolver directamente:
       "date": "FECHA_REAL",
       "time": "13:00",
       "customerName": "Jordi",
-      "customerEmail": "jordi@email.com"
+      "customerPhone": "600000000",
+      "customerEmail": null
     }
   }
 }

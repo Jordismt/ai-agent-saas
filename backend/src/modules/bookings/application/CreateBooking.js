@@ -63,8 +63,8 @@ export class CreateBooking {
       throw new AppError("Booking customerName is required", 400);
     }
 
-    if (!allowWithoutEmail && !customerEmail?.trim()) {
-      throw new AppError("Booking customerEmail is required", 400);
+    if (!customerPhone?.trim()) {
+      throw new AppError("Booking customerPhone is required", 400);
     }
 
     await requireActiveBusiness(businessId);

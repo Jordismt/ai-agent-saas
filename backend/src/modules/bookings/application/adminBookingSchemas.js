@@ -10,7 +10,7 @@ export const adminUpdateBookingSchema = z.object({
   date: z.iso.date(),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   customerName: z.string().trim().min(1).max(120),
-  customerPhone: z.string().trim().max(50).nullable().optional(),
+  customerPhone: z.string().trim().min(1, "Customer phone is required").max(50),
   customerEmail: z.union([z.email(), z.literal(""), z.null()]).optional(),
   notes: z.string().trim().max(1000).nullable().optional(),
 });

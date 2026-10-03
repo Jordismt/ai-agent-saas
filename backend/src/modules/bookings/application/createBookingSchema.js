@@ -13,14 +13,12 @@ export const createBookingSchema = z.object({
 
   customerName: z.string().trim().min(1, "Customer name is required").max(120),
 
-  customerPhone: z.string().trim().max(50).nullable().optional(),
+  customerPhone: z.string().trim().min(1, "Customer phone is required").max(50),
 
-  customerEmail: z
-    .string()
-    .trim()
-    .min(1, "Customer email is required")
-    .email("Customer email must be valid")
-    .max(254),
+  customerEmail: z.preprocess(
+    (value) => typeof value === "string" && !value.trim() ? null : value,
+    z.string().trim().email("Customer email must be valid").max(254).nullable().optional(),
+  ),
 
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must use YYYY-MM-DD format"),
 

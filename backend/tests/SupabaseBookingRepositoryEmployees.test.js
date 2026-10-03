@@ -37,6 +37,7 @@ describe("SupabaseBookingRepository - employees", () => {
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({
       business_id: "business-123",
       employee_id: "employee-laura",
+      customer_email: null,
     }));
   });
 

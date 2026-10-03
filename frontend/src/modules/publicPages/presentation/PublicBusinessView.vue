@@ -120,7 +120,7 @@ async function fetchSlots() {
   }
 }
 async function submitBooking() {
-  if (!selectedTime.value || !customerName.value.trim() || !customerEmail.value.trim()) return;
+  if (!selectedTime.value || !customerName.value.trim() || !customerPhone.value.trim()) return;
   bookingSending.value = true;
   bookingError.value = "";
   try {
@@ -132,7 +132,7 @@ async function submitBooking() {
         date: selectedDate.value,
         time: selectedTime.value,
         customerName: customerName.value.trim(),
-        customerEmail: customerEmail.value.trim(),
+        customerEmail: customerEmail.value.trim() || null,
         customerPhone: customerPhone.value.trim() || null,
       }),
     });
@@ -729,18 +729,18 @@ onMounted(() => {
                       autocomplete="name"
                       placeholder="Tu nombre" /></label
                   ><label class="booking-field"
-                    >Correo electrónico<input
+                    >Correo electrónico (opcional)<input
                       v-model="customerEmail"
                       type="email"
                       maxlength="254"
-                      required
                       autocomplete="email"
                       placeholder="nombre@correo.com" /></label
                   ><label class="booking-field"
-                    >Teléfono (opcional)<input
+                    >Teléfono<input
                       v-model="customerPhone"
                       type="tel"
                       maxlength="50"
+                      required
                       autocomplete="tel"
                       placeholder="Tu teléfono" /></label
                   ><button class="primary-button booking-submit" :disabled="bookingSending">

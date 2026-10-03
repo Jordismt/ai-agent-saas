@@ -1,6 +1,16 @@
 import { describe, it, expect, vi } from "vitest";
 
+vi.mock("../src/shared/billing/requireActiveBusiness.js", () => ({
+  requireActiveBusiness: vi.fn(async () => ({ status: "active" })),
+}));
+
 import { SupabaseAgentActionExecutor } from "../src/modules/conversations/application/SupabaseAgentActionExecutor.js";
+
+vi.mock("../src/modules/notifications/infrastructure/ResendEmailService.js", () => ({
+  ResendEmailService: class {
+    sendBookingConfirmation = vi.fn();
+  },
+}));
 
 function createDependencies({
   existingLeads = [],
@@ -616,6 +626,7 @@ describe("SupabaseAgentActionExecutor", () => {
       expect(bookingInput.customerName).toBe("Jordi");
 
       expect(bookingInput.customerPhone).toBe("600000000");
+      expect(bookingInput.customerEmail).toBeNull();
 
       expect(bookingInput.serviceId).toBe("service-123");
 

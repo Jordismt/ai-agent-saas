@@ -406,11 +406,8 @@ function getSlotEmployees() {
 }
 async function saveManual() {
   modalError.value = "";
-  if (!form.value.serviceId || !form.value.date || !form.value.time || !form.value.customerName.trim()) {
-    modalError.value = "Completa el servicio, fecha, hora y nombre del cliente."; return;
-  }
-  if (sendEmail.value && !form.value.customerEmail.trim()) {
-    modalError.value = "Introduce el correo o desactiva las notificaciones."; return;
+  if (!form.value.serviceId || !form.value.date || !form.value.time || !form.value.customerName.trim() || !form.value.customerPhone.trim()) {
+    modalError.value = "Completa el servicio, fecha, hora, nombre y teléfono del cliente."; return;
   }
   if (employeeServicesLoading.value || employeeServicesError.value) {
     modalError.value = "No se han podido verificar los servicios de los empleados. Actualiza la página e inténtalo de nuevo."; return;
@@ -429,7 +426,7 @@ async function saveManual() {
       serviceId: form.value.serviceId, date: form.value.date, time: form.value.time,
       employeeId: form.value.employeeId || null, customerName: form.value.customerName.trim(),
       customerPhone: form.value.customerPhone.trim() || null,
-      customerEmail: sendEmail.value ? form.value.customerEmail.trim() : null,
+      customerEmail: sendEmail.value ? form.value.customerEmail.trim() || null : null,
       notes: form.value.notes.trim() || null,
     };
     if (isEditing.value) await bookingService.updateManual(selectedBooking.value.id,payload);
@@ -930,7 +927,7 @@ onMounted(loadData);
           <div class="manual-separator"></div>
           <div class="manual-grid">
             <label class="manual-field manual-wide">Nombre del cliente <input v-model="form.customerName" type="text" maxlength="120" placeholder="Nombre y apellidos" required /></label>
-            <label class="manual-field">Teléfono (opcional) <input v-model="form.customerPhone" type="tel" maxlength="50" placeholder="600 000 000" /></label>
+            <label class="manual-field">Teléfono <input v-model="form.customerPhone" type="tel" maxlength="50" required placeholder="600 000 000" /></label>
             <label class="manual-field">Email (opcional) <input v-model="form.customerEmail" type="email" :disabled="!sendEmail" placeholder="cliente@correo.com" /></label>
             <label class="manual-toggle manual-wide"><input v-model="sendEmail" type="checkbox" /><span><strong>Utilizar correo para notificaciones</strong><small>Si introduces un email, el backend puede enviar la confirmación y el recordatorio. Las notificaciones de edición y cancelación manual requieren completar su integración.</small></span></label>
             <label class="manual-field manual-wide">Notas internas <textarea v-model="form.notes" rows="3" maxlength="1000" placeholder="Observaciones de la reserva..."></textarea></label>

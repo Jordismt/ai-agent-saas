@@ -258,17 +258,8 @@ export class SupabaseAgentActionExecutor extends AgentActionExecutor {
 
     const customerEmail = this.normalizeOptionalValue(data.customerEmail);
 
-    /*
-     * El email es obligatorio para las reservas.
-     *
-     * Lo necesitamos para:
-     * - confirmación
-     * - cancelación
-     * - modificación
-     * - recordatorios
-     */
-    if (!customerEmail) {
-      throw new AppError("Customer email is required to create a booking", 400);
+    if (!customerPhone) {
+      throw new AppError("Customer phone is required to create a booking", 400);
     }
 
     const existingLeads = await this.leadRepository.findByConversationId(conversationId);
