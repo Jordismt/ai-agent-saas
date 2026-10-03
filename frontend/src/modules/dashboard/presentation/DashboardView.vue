@@ -145,11 +145,11 @@ onMounted(loadDashboard);
 
       <header class="dashboard-header">
         <div>
-          <p class="eyebrow">Workspace</p>
+          <p class="eyebrow">Mi espacio</p>
 
           <h1>Resumen</h1>
 
-          <p class="subtitle">Una visión general de la actividad de tus negocios y agentes.</p>
+          <p class="subtitle">Consulta tus próximas reservas y los contactos que necesitan atención.</p>
         </div>
 
         <div class="header-actions">
@@ -315,6 +315,12 @@ onMounted(loadDashboard);
             </div>
           </article>
         </section>
+
+        <nav v-if="businesses.length" class="quick-agendas" aria-label="Agendas de tus negocios">
+          <RouterLink v-for="business in businesses" :key="business.id" :to="`/businesses/${business.id}/bookings`" class="quick-agenda-link">
+            <span class="stat-icon blue" aria-hidden="true">◷</span><div><strong>{{ business.name }}</strong><small>{{ business.upcomingBookings }} próximas reservas · Abrir agenda</small></div><span aria-hidden="true">→</span>
+          </RouterLink>
+        </nav>
 
         <!-- ACTIVITY + ATTENTION -->
 

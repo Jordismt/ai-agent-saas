@@ -599,7 +599,7 @@ onMounted(loadBusiness);
 
                 <div class="day-toggle">
                   <label class="switch">
-                    <input v-model="day.isClosed" type="checkbox" @change="handleToggleClosed(day)" />
+                    <input :aria-label="`Cerrar el negocio el ${dayNames[day.dayOfWeek]}`" v-model="day.isClosed" type="checkbox" @change="handleToggleClosed(day)" />
 
                     <span class="switch-slider"></span>
                   </label>

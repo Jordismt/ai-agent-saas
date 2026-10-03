@@ -387,7 +387,7 @@ onMounted(loadData);
                 </div>
 
                 <label class="publish-switch">
-                  <input v-model="form.published" type="checkbox" />
+                  <input aria-label="Publicar página web" v-model="form.published" type="checkbox" />
                   <span class="switch-track">
                     <span class="switch-thumb"></span>
                   </span>
@@ -874,6 +874,7 @@ onMounted(loadData);
 }
 
 .publish-switch {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -884,6 +885,9 @@ onMounted(loadData);
 }
 
 .publish-switch input {
+  width: 1px;
+  height: 1px;
+  min-height: 0;
   position: absolute;
   opacity: 0;
   pointer-events: none;

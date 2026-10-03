@@ -1,10 +1,21 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { BookingService } from "../infrastructure/BookingService.js";
 import { BusinessService } from "../../businesses/infrastructure/BusinessService.js";
 import { EmployeeService } from "../../employees/infrastructure/EmployeeService.js";
+
+import BookingCalendar from "./components/BookingCalendar.vue";
+import { vFocusScope } from "../../../directives/focusScope.js";
+
+const presentation = ref("calendar");
+const filtersOpen = ref(false);
+const actionFeedback = ref("");
+const detailBookingId = ref(null);
+const detailBooking = computed(() => bookings.value.find(booking => booking.id === detailBookingId.value));
+function showBookingDetails(booking) { detailBookingId.value = booking.id; }
+function editFromDetails(booking) { detailBookingId.value = null; openEdit(booking); }
 
 const route = useRoute();
 const router = useRouter();
@@ -30,6 +41,7 @@ const statusFilter = ref("all");
 const dateFilter = ref("upcoming");
 const employeeFilter = ref("all");
 
+const activeFilterCount = computed(() => Number(Boolean(search.value.trim())) + Number(statusFilter.value !== "all") + Number(employeeFilter.value !== "all") + Number(presentation.value === "list" && dateFilter.value !== "all"));
 const businessId = computed(() => route.params.id);
 
 const timezone = computed(() => {
@@ -179,7 +191,7 @@ const filteredBookings = computed(() => {
       booking.employee?.name?.toLowerCase().includes(query) ||
       booking.notes?.toLowerCase().includes(query);
 
-    return matchesStatus && matchesEmployee && matchesSearch && matchesDateFilter(booking);
+    return matchesStatus && matchesEmployee && matchesSearch && (presentation.value === "calendar" || matchesDateFilter(booking));
   });
 });
 
@@ -281,6 +293,7 @@ const setStatusFilter = (status) => {
 };
 
 const showUpcoming = () => {
+  presentation.value = "list";
   statusFilter.value = "all";
   dateFilter.value = "upcoming";
 };
@@ -300,6 +313,7 @@ const handleStatusChange = async (booking, event) => {
 
   updatingBookingId.value = booking.id;
   error.value = "";
+  actionFeedback.value = "";
 
   try {
     const updatedBooking = await bookingService.updateStatus(booking.id, newStatus);
@@ -308,6 +322,7 @@ const handleStatusChange = async (booking, event) => {
 
     if (index !== -1) {
       bookings.value[index] = updatedBooking;
+      actionFeedback.value = "Estado de la reserva actualizado.";
     }
   } catch (err) {
     console.error(err);
@@ -351,6 +366,7 @@ const availableSlots = computed(() => {
   return result;
 });
 function openCreate() {
+  actionFeedback.value = "";
   selectedBooking.value = null;
   modalMode.value = "create";
   modalError.value = "";
@@ -361,6 +377,7 @@ function openCreate() {
 }
 async function openEdit(booking) {
   if (!editable(booking)) return;
+  actionFeedback.value = "";
   selectedBooking.value = booking;
   modalMode.value = "edit";
   modalError.value = "";
@@ -433,6 +450,7 @@ async function saveManual() {
     else await bookingService.createManual(businessId.value,payload);
     modalOpen.value = false;
     await loadData();
+    actionFeedback.value = isEditing.value ? "Reserva actualizada." : "Reserva creada correctamente.";
   } catch(err) {
     modalError.value = err.message || "No se ha podido guardar la reserva.";
   } finally { saving.value = false; }
@@ -441,11 +459,12 @@ async function cancelBooking(booking) {
   if (!window.confirm(`¿Cancelar la reserva de ${booking.customer_name}? Se conservará en el historial.`)) return;
   updatingBookingId.value = booking.id;
   error.value = "";
-  try { await bookingService.cancelManual(booking.id); await loadData(); }
+  try { await bookingService.cancelManual(booking.id); await loadData(); actionFeedback.value = "Reserva cancelada. Se conserva en el historial."; }
   catch(err) { error.value = err.message || "No se ha podido cancelar la reserva."; }
   finally { updatingBookingId.value = null; }
 }
 
+watch(businessId, () => { detailBookingId.value = null; closeModal(); loadData(); });
 onMounted(loadData);
 </script>
 
@@ -516,7 +535,7 @@ onMounted(loadData);
           type="button"
           class="stat-card"
           :class="{
-            selected: dateFilter === 'upcoming' && statusFilter === 'all',
+            selected: presentation === 'list' && dateFilter === 'upcoming' && statusFilter === 'all',
           }"
           @click="showUpcoming">
           <div class="stat-icon upcoming">
@@ -600,7 +619,13 @@ onMounted(loadData);
         <button type="button" @click="loadData">Reintentar</button>
       </div>
 
+      <p v-if="actionFeedback && !detailBooking" class="booking-action-feedback" role="status">{{ actionFeedback }}</p>
+
       <section class="bookings-card">
+        <div class="booking-presentation" role="group" aria-label="Presentación de reservas">
+          <button type="button" :aria-pressed="presentation === 'calendar'" @click="presentation = 'calendar'">Calendario</button>
+          <button type="button" :aria-pressed="presentation === 'list'" @click="presentation = 'list'">Lista</button>
+        </div>
         <div class="bookings-toolbar">
           <div>
             <div class="bookings-title">
@@ -614,7 +639,8 @@ onMounted(loadData);
             <p>Consulta y gestiona las citas registradas para este negocio.</p>
           </div>
 
-          <div class="toolbar-actions">
+          <button type="button" class="booking-filter-toggle" aria-controls="booking-filters" :aria-expanded="filtersOpen" @click="filtersOpen = !filtersOpen">{{ filtersOpen ? 'Cerrar filtros' : 'Filtrar' }}<template v-if="activeFilterCount"> · {{ activeFilterCount }}</template></button>
+          <div id="booking-filters" class="toolbar-actions" :class="{'mobile-filters-closed':!filtersOpen}">
             <div class="search-box">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
@@ -622,10 +648,10 @@ onMounted(loadData);
                 <path d="m20 20-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
               </svg>
 
-              <input v-model="search" type="search" placeholder="Buscar reserva..." />
+              <input v-model="search" aria-label="Buscar reservas" type="search" placeholder="Buscar reserva..." />
             </div>
 
-            <select v-model="employeeFilter" class="filter-select">
+            <select aria-label="Filtrar por empleado" v-model="employeeFilter" class="filter-select">
               <option value="all">Todos los empleados</option>
 
               <option v-for="employee in employees" :key="employee.id" :value="employee.id">
@@ -635,14 +661,14 @@ onMounted(loadData);
               <option value="unassigned">Sin asignar</option>
             </select>
 
-            <select v-model="dateFilter" class="filter-select">
+            <select v-if="presentation === 'list'" aria-label="Filtrar por fecha" v-model="dateFilter" class="filter-select">
               <option value="today">Hoy</option>
               <option value="upcoming">Próximas</option>
               <option value="past">Pasadas</option>
               <option value="all">Todas las fechas</option>
             </select>
 
-            <select v-model="statusFilter" class="filter-select">
+            <select aria-label="Filtrar por estado" v-model="statusFilter" class="filter-select">
               <option value="all">Todos los estados</option>
 
               <option value="pending">Pendientes</option>
@@ -666,6 +692,10 @@ onMounted(loadData);
             <span> Obteniendo la agenda del negocio... </span>
           </div>
         </div>
+
+        <BookingCalendar v-else-if="presentation === 'calendar'" :bookings="filteredBookings"
+          :date-key="getDateParts" :format-time="formatTime" :status-label="getStatusLabel"
+          :today="getTodayKey()" :timezone="timezone" @select="showBookingDetails" @create="openCreate" />
 
         <div v-else-if="bookings.length === 0" class="empty-state">
           <div class="empty-visual">
@@ -712,7 +742,7 @@ onMounted(loadData);
           <button type="button" class="clear-filter" @click="clearFilters">Limpiar filtros</button>
         </div>
 
-        <div v-else class="table-wrapper">
+        <div v-else class="table-wrapper" tabindex="0" aria-label="Lista de reservas">
           <table class="bookings-table">
             <thead>
               <tr>
@@ -729,7 +759,7 @@ onMounted(loadData);
 
             <tbody>
               <tr v-for="booking in filteredBookings" :key="booking.id">
-                <td>
+                <td data-label="Cliente">
                   <div class="customer-profile">
                     <div class="customer-avatar">
                       {{ getInitials(booking.customer_name) }}
@@ -748,7 +778,7 @@ onMounted(loadData);
                   </div>
                 </td>
 
-                <td>
+                <td data-label="Servicio">
                   <div class="service-info">
                     <strong>
                       {{ booking.service_name || "Servicio" }}
@@ -761,7 +791,7 @@ onMounted(loadData);
                   </div>
                 </td>
 
-                <td>
+                <td data-label="Empleado">
                   <div v-if="booking.employee" class="employee-info">
                     <div class="employee-avatar">
                       {{ getInitials(booking.employee.name) }}
@@ -779,7 +809,7 @@ onMounted(loadData);
                   <span v-else class="unassigned-employee"> Sin asignar </span>
                 </td>
 
-                <td>
+                <td data-label="Fecha y hora">
                   <div class="booking-date">
                     <strong>
                       {{ formatDate(booking.starts_at) }}
@@ -793,7 +823,7 @@ onMounted(loadData);
                   </div>
                 </td>
 
-                <td>
+                <td data-label="Contacto">
                   <div class="contact-info">
                     <a v-if="booking.customer_phone" :href="`tel:${booking.customer_phone}`">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -830,13 +860,13 @@ onMounted(loadData);
                   </div>
                 </td>
 
-                <td>
+                <td data-label="Precio">
                   <span class="booking-price">
                     {{ formatPrice(booking.price) }}
                   </span>
                 </td>
 
-                <td>
+                <td data-label="Estado">
                   <div class="status-control">
                     <span class="status-dot" :class="`dot-${booking.status}`"></span>
 
@@ -855,7 +885,7 @@ onMounted(loadData);
                   </div>
                 </td>
 
-                <td>
+                <td data-label="Acciones">
                   <button
                     v-if="booking.conversation_id"
                     type="button"
@@ -872,6 +902,7 @@ onMounted(loadData);
                   </button>
 
                   <span v-else class="no-conversation" title="Sin conversación asociada"> — </span>
+                  <button type="button" class="booking-details-link" @click="showBookingDetails(booking)">Detalles</button>
                   <div v-if="editable(booking)" class="manual-row-actions"><button type="button" @click="openEdit(booking)">Editar</button><button type="button" class="manual-danger-link" :disabled="updatingBookingId === booking.id" @click="cancelBooking(booking)">Cancelar</button></div>
                 </td>
               </tr>
@@ -903,8 +934,33 @@ onMounted(loadData);
     </div>
   </div>
 
+    <div v-if="detailBooking" class="booking-detail-overlay" @click.self="detailBookingId = null">
+      <section v-focus-scope="{active:true, onClose:() => detailBookingId = null}" class="booking-detail-modal" role="dialog" aria-modal="true" aria-labelledby="booking-detail-title">
+        <header class="booking-detail-header"><div><p class="eyebrow">Detalle de la cita</p><h2 id="booking-detail-title">{{ detailBooking.customer_name || 'Sin nombre' }}</h2></div><button type="button" aria-label="Cerrar detalle" @click="detailBookingId = null">×</button></header>
+        <dl class="booking-detail-fields">
+          <div><dt>Fecha</dt><dd>{{ formatDate(detailBooking.starts_at) }}</dd></div>
+          <div><dt>Horario · {{ timezone }}</dt><dd>{{ formatTime(detailBooking.starts_at) }} – {{ formatTime(detailBooking.ends_at) }}</dd></div>
+          <div><dt>Servicio</dt><dd>{{ detailBooking.service_name || 'Servicio' }}<template v-if="detailBooking.duration_minutes"> · {{ detailBooking.duration_minutes }} min</template></dd></div>
+          <div><dt>Profesional</dt><dd>{{ detailBooking.employee?.name || 'Sin asignar' }}</dd></div>
+          <div><dt>Teléfono</dt><dd><a v-if="detailBooking.customer_phone" :href="`tel:${detailBooking.customer_phone}`">{{ detailBooking.customer_phone }}</a><span v-else>Sin teléfono</span></dd></div>
+          <div><dt>Email</dt><dd><a v-if="detailBooking.customer_email" :href="`mailto:${detailBooking.customer_email}`">{{ detailBooking.customer_email }}</a><span v-else>No facilitado</span></dd></div>
+          <div><dt>Precio</dt><dd>{{ formatPrice(detailBooking.price) }}</dd></div>
+          <div><dt>Estado</dt><dd><select :value="detailBooking.status" :disabled="updatingBookingId === detailBooking.id" aria-label="Estado de la reserva" @change="handleStatusChange(detailBooking, $event)"><option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option></select></dd></div>
+          <div class="detail-wide"><dt>Notas</dt><dd>{{ detailBooking.notes || 'Sin notas' }}</dd></div>
+          <div class="detail-wide"><dt>Identificador</dt><dd>{{ detailBooking.id }}</dd></div>
+        </dl>
+        <p v-if="error" class="manual-alert" role="alert">{{ error }}</p>
+        <p v-if="actionFeedback" class="booking-action-feedback" role="status">{{ actionFeedback }}</p>
+        <footer class="booking-detail-actions">
+          <button v-if="detailBooking.conversation_id" type="button" class="manual-secondary" @click="openConversation(detailBooking)">Abrir conversación</button>
+          <button v-if="editable(detailBooking)" type="button" class="manual-danger-link" :disabled="updatingBookingId === detailBooking.id" @click="cancelBooking(detailBooking)">Cancelar reserva</button>
+          <button v-if="editable(detailBooking)" type="button" class="manual-primary" @click="editFromDetails(detailBooking)">Editar reserva</button>
+        </footer>
+      </section>
+    </div>
+
     <div v-if="modalOpen" class="manual-overlay" @click.self="closeModal">
-      <section class="manual-modal" role="dialog" aria-modal="true" aria-labelledby="manual-modal-title">
+      <section v-focus-scope="{active:true, onClose:closeModal}" class="manual-modal" role="dialog" aria-modal="true" aria-labelledby="manual-modal-title">
         <div class="manual-modal-head">
           <div><p class="eyebrow">Agenda · Resbix</p><h2 id="manual-modal-title">{{ isEditing ? 'Editar reserva' : 'Nueva reserva' }}</h2><p>Selecciona una cita disponible y completa los datos del cliente.</p></div>
           <button type="button" class="manual-close" :disabled="saving" aria-label="Cerrar" @click="closeModal">×</button>

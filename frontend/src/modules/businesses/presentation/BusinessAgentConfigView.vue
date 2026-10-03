@@ -213,7 +213,7 @@ onMounted(loadConfig);
             <div class="card-content">
               <div class="tone-grid">
                 <label class="tone-option" :class="{ selected: tone === 'professional' }">
-                  <input v-model="tone" type="radio" value="professional" />
+                  <input name="agent-tone" v-model="tone" type="radio" value="professional" />
 
                   <div class="tone-option-top">
                     <div class="tone-symbol">P</div>
@@ -231,7 +231,7 @@ onMounted(loadConfig);
                 </label>
 
                 <label class="tone-option" :class="{ selected: tone === 'friendly' }">
-                  <input v-model="tone" type="radio" value="friendly" />
+                  <input name="agent-tone" v-model="tone" type="radio" value="friendly" />
 
                   <div class="tone-option-top">
                     <div class="tone-symbol">✦</div>
@@ -249,7 +249,7 @@ onMounted(loadConfig);
                 </label>
 
                 <label class="tone-option" :class="{ selected: tone === 'casual' }">
-                  <input v-model="tone" type="radio" value="casual" />
+                  <input name="agent-tone" v-model="tone" type="radio" value="casual" />
 
                   <div class="tone-option-top">
                     <div class="tone-symbol">:)</div>
@@ -271,7 +271,7 @@ onMounted(loadConfig);
 
           <!-- FEEDBACK -->
 
-          <div v-if="error" class="feedback feedback-error">
+          <div v-if="error" class="feedback feedback-error" role="alert">
             <div class="feedback-symbol">!</div>
 
             <div>
@@ -280,7 +280,7 @@ onMounted(loadConfig);
             </div>
           </div>
 
-          <div v-if="success" class="feedback feedback-success">
+          <div v-if="success" class="feedback feedback-success" role="status">
             <div class="feedback-symbol">✓</div>
 
             <div>

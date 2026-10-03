@@ -4,6 +4,8 @@ import { useRoute, useRouter } from "vue-router";
 
 import { EmployeeService } from "../infrastructure/EmployeeService.js";
 
+import { vFocusScope } from "../../../directives/focusScope.js";
+
 const route = useRoute();
 const router = useRouter();
 const employeeService = new EmployeeService();
@@ -205,11 +207,11 @@ onMounted(loadEmployees);
     </div>
 
     <div v-if="createOpen" class="modal-backdrop" @click.self="closeCreate">
-      <form class="modal-card" @submit.prevent="handleCreate">
+      <form v-focus-scope="{active:true, onClose:closeCreate}" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="employee-create-title" @submit.prevent="handleCreate">
         <div class="modal-header">
           <div>
             <span class="eyebrow">Nuevo miembro</span>
-            <h2>Añadir empleado</h2>
+            <h2 id="employee-create-title">Añadir empleado</h2>
           </div>
           <button type="button" class="close-button" aria-label="Cerrar" @click="closeCreate">×</button>
         </div>
@@ -230,7 +232,7 @@ onMounted(loadEmployees);
 
         <div class="field">
           <label for="employee-phone">Teléfono</label>
-          <input id="employee-phone" v-model="form.phone" maxlength="30" autocomplete="tel" placeholder="600 000 000" />
+          <input id="employee-phone" type="tel" v-model="form.phone" maxlength="30" autocomplete="tel" placeholder="600 000 000" />
         </div>
 
         <p v-if="createError" class="form-error">{{ createError }}</p>

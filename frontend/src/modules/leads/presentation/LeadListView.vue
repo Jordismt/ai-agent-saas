@@ -284,10 +284,10 @@ onMounted(loadLeads);
                 <path d="m20 20-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
               </svg>
 
-              <input v-model="search" type="search" placeholder="Buscar lead..." />
+              <input aria-label="Buscar leads" v-model="search" type="search" placeholder="Buscar lead..." />
             </div>
 
-            <select v-model="statusFilter" class="filter-select">
+            <select aria-label="Filtrar leads por estado" v-model="statusFilter" class="filter-select">
               <option value="all">Todos los estados</option>
 
               <option value="new">Nuevos</option>
@@ -372,7 +372,7 @@ onMounted(loadLeads);
 
         <!-- TABLE -->
 
-        <div v-else class="table-wrapper">
+        <div v-else class="table-wrapper" tabindex="0" aria-label="Lista de leads">
           <table class="leads-table">
             <thead>
               <tr>
@@ -388,7 +388,7 @@ onMounted(loadLeads);
               <tr v-for="lead in filteredLeads" :key="lead.id">
                 <!-- LEAD -->
 
-                <td>
+                <td data-label="Lead">
                   <div class="lead-profile">
                     <div class="lead-avatar">
                       {{ getInitials(lead.name) }}
@@ -406,7 +406,7 @@ onMounted(loadLeads);
 
                 <!-- CONTACT -->
 
-                <td>
+                <td data-label="Contacto">
                   <div class="contact-info">
                     <a v-if="lead.email" :href="`mailto:${lead.email}`">
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
@@ -448,7 +448,7 @@ onMounted(loadLeads);
 
                 <!-- NOTES -->
 
-                <td>
+                <td data-label="Notas">
                   <p v-if="lead.notes" class="lead-notes" :title="lead.notes">
                     {{ lead.notes }}
                   </p>
@@ -458,7 +458,7 @@ onMounted(loadLeads);
 
                 <!-- DATE -->
 
-                <td>
+                <td data-label="Fecha">
                   <time class="lead-date">
                     {{ formatDate(lead.created_at) }}
                   </time>
@@ -466,11 +466,12 @@ onMounted(loadLeads);
 
                 <!-- STATUS -->
 
-                <td>
+                <td data-label="Estado">
                   <div class="status-control">
                     <span class="status-dot" :class="`dot-${lead.status}`"></span>
 
                     <select
+                      :aria-label="`Estado de ${lead.name || 'lead'}`"
                       :value="lead.status"
                       :class="`status-${lead.status}`"
                       :disabled="updatingLeadId === lead.id"

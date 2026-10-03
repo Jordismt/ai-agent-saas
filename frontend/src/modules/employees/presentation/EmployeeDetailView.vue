@@ -544,20 +544,20 @@ onMounted(load);
             <div class="profile-grid">
               <div class="field">
                 <label>Nombre *</label>
-                <input v-model="profile.name" maxlength="100" />
+                <input aria-label="Nombre del empleado" v-model="profile.name" maxlength="100" />
               </div>
               <div class="field">
                 <label>Email</label>
-                <input v-model="profile.email" type="email" />
+                <input aria-label="Email del empleado" v-model="profile.email" type="email" />
               </div>
               <div class="field">
                 <label>Teléfono</label>
-                <input v-model="profile.phone" maxlength="30" />
+                <input type="tel" autocomplete="tel" aria-label="Teléfono del empleado" v-model="profile.phone" maxlength="30" />
               </div>
               <div class="status-field">
                 <span>Estado</span>
                 <label class="switch">
-                  <input v-model="profile.active" type="checkbox" />
+                  <input aria-label="Empleado activo" v-model="profile.active" type="checkbox" />
                   <span class="switch-slider"></span>
                 </label>
                 <strong>{{ profile.active ? "Activo" : "Inactivo" }}</strong>
@@ -644,6 +644,7 @@ onMounted(load);
                 <div v-else class="day-toggle">
                   <label class="switch">
                     <input
+                      :aria-label="`Empleado disponible el ${dayNames[day.weekday]}`"
                       v-model="day.isClosed"
                       type="checkbox"
                       :true-value="false"
@@ -659,13 +660,13 @@ onMounted(load);
                 <div v-if="!isBusinessClosed(day.weekday) && !day.isClosed" class="day-hours">
                   <div class="time-group">
                     <input
-                      v-model="day.startTime"
+                      aria-label="Hora de inicio" v-model="day.startTime"
                       type="time"
                       :min="businessPeriods(day.weekday)[0]?.start"
                       :max="businessPeriods(day.weekday).at(-1)?.end" />
                     <span>—</span>
                     <input
-                      v-model="day.endTime"
+                      aria-label="Hora de finalización" v-model="day.endTime"
                       type="time"
                       :min="businessPeriods(day.weekday)[0]?.start"
                       :max="businessPeriods(day.weekday).at(-1)?.end" />
@@ -673,13 +674,13 @@ onMounted(load);
 
                   <div v-if="hasSecondPeriod(day)" class="time-group second">
                     <input
-                      v-model="day.secondStartTime"
+                      aria-label="Inicio del segundo turno" v-model="day.secondStartTime"
                       type="time"
                       :min="businessPeriods(day.weekday)[0]?.start"
                       :max="businessPeriods(day.weekday).at(-1)?.end" />
                     <span>—</span>
                     <input
-                      v-model="day.secondEndTime"
+                      aria-label="Final del segundo turno" v-model="day.secondEndTime"
                       type="time"
                       :min="businessPeriods(day.weekday)[0]?.start"
                       :max="businessPeriods(day.weekday).at(-1)?.end" />
@@ -798,17 +799,17 @@ onMounted(load);
 
               <div class="field">
                 <label>Inicio</label>
-                <input v-model="timeOffForm.startsAt" type="datetime-local" />
+                <input aria-label="Inicio de la ausencia" v-model="timeOffForm.startsAt" type="datetime-local" />
               </div>
 
               <div class="field">
                 <label>Final</label>
-                <input v-model="timeOffForm.endsAt" type="datetime-local" />
+                <input aria-label="Final de la ausencia" v-model="timeOffForm.endsAt" type="datetime-local" />
               </div>
 
               <div class="field">
                 <label>Tipo</label>
-                <select v-model="timeOffForm.type">
+                <select aria-label="Tipo de ausencia" v-model="timeOffForm.type">
                   <option value="vacation">Vacaciones</option>
                   <option value="sick">Baja</option>
                   <option value="personal">Personal</option>
@@ -819,7 +820,7 @@ onMounted(load);
               <div class="field">
                 <label>Notas</label>
                 <textarea
-                  v-model="timeOffForm.notes"
+                  aria-label="Notas de la ausencia" v-model="timeOffForm.notes"
                   maxlength="500"
                   rows="3"
                   placeholder="Opcional"></textarea>

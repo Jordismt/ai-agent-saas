@@ -1,8 +1,11 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, watch, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { SupabaseAuthService } from "../modules/auth/infrastructure/SupabaseAuthService.js";
+
+import "../dashboard-ui.css";
+import { vFocusScope } from "../directives/focusScope.js";
 
 const route = useRoute();
 const router = useRouter();
@@ -28,6 +31,28 @@ const businessRoute = (section) => {
 const logoutLoading = ref(false);
 const logoutError = ref("");
 const mobileMenuOpen = ref(false);
+const compactNavigation = ref(false);
+const menuTrigger = ref(null);
+let navigationMedia;
+function updateNavigation(event) {
+  compactNavigation.value = event.matches;
+  if (!event.matches) mobileMenuOpen.value = false;
+}
+onMounted(() => {
+  navigationMedia = window.matchMedia("(max-width: 1023px)");
+  updateNavigation(navigationMedia);
+  navigationMedia.addEventListener("change", updateNavigation);
+});
+onUnmounted(() => navigationMedia?.removeEventListener("change", updateNavigation));
+watch(() => route.fullPath, () => { mobileMenuOpen.value = false; });
+const sectionTitle = computed(() => ({
+  dashboard:"Resumen de actividad", businesses:"Negocios", "create-business":"Crear negocio",
+  "business-detail":"Negocio y servicios", "business-agent-config":"Agente de IA",
+  "business-conversations":"Conversaciones", "conversation-detail":"Detalle de conversación",
+  "business-leads":"Leads", "business-bookings":"Agenda de reservas", "business-employees":"Equipo",
+  "employee-detail":"Perfil del profesional", "business-public-page":"Web pública",
+  "business-billing":"Suscripción", "account-settings":"Mi cuenta",
+}[route.name] || "Resbix"));
 
 const handleLogout = async () => {
   logoutError.value = "";
@@ -50,7 +75,10 @@ const closeMobileMenu = () => {
 
 <template>
   <div class="app-layout">
-    <aside class="sidebar" :class="{ 'sidebar-open': mobileMenuOpen }">
+    <a class="dashboard-skip-link" href="#dashboard-main">Saltar al contenido</a>
+    <aside id="dashboard-navigation" v-focus-scope="{active:compactNavigation && mobileMenuOpen, onClose:closeMobileMenu}"
+      class="sidebar" :class="{ 'sidebar-open': mobileMenuOpen }" :inert="compactNavigation && !mobileMenuOpen"
+      :role="compactNavigation && mobileMenuOpen ? 'dialog' : undefined" :aria-modal="compactNavigation && mobileMenuOpen ? true : undefined" aria-label="Navegación principal">
       <div class="sidebar-top">
         <div class="sidebar-mobile-header">
           <RouterLink to="/dashboard" class="brand" @click="closeMobileMenu">
@@ -67,8 +95,8 @@ const closeMobileMenu = () => {
           </button>
         </div>
 
-        <nav class="sidebar-nav">
-          <span class="nav-section-title">Workspace</span>
+        <nav class="sidebar-nav" aria-label="Secciones del panel">
+          <span class="nav-section-title">Mi espacio</span>
 
           <RouterLink
             to="/dashboard"
@@ -82,12 +110,14 @@ const closeMobileMenu = () => {
           <RouterLink
             to="/businesses"
             class="nav-item"
-            active-class="nav-item-active"
+            exact-active-class="nav-item-active"
             @click="closeMobileMenu">
             <span class="nav-icon">▦</span>
             <span>Negocios</span>
           </RouterLink>
 
+          <RouterLink v-if="hasActiveBusiness" :to="`/businesses/${activeBusinessId}`" class="nav-item" exact-active-class="nav-item-active" @click="closeMobileMenu"><span class="nav-icon" aria-hidden="true">▤</span><span>Negocio y servicios</span></RouterLink>
+          <RouterLink v-if="hasActiveBusiness" :to="businessRoute('agent-config')" class="nav-item" active-class="nav-item-active" @click="closeMobileMenu"><span class="nav-icon" aria-hidden="true">✦</span><span>Agente de IA</span></RouterLink>
           <span class="nav-section-title nav-section-spaced"> Gestión </span>
 
           <RouterLink
@@ -223,6 +253,7 @@ const closeMobileMenu = () => {
       </div>
 
       <div class="sidebar-bottom">
+        <RouterLink v-if="hasActiveBusiness" :to="businessRoute('billing')" class="nav-item" active-class="nav-item-active" @click="closeMobileMenu"><span class="nav-icon" aria-hidden="true">◇</span><span>Suscripción</span></RouterLink>
         <RouterLink to="/settings" class="nav-item" active-class="nav-item-active" @click="closeMobileMenu">
           <span class="nav-icon">⚙</span>
           <span>Configuración</span>
@@ -250,16 +281,20 @@ const closeMobileMenu = () => {
 
     <div v-if="mobileMenuOpen" class="sidebar-overlay" @click="mobileMenuOpen = false"></div>
 
-    <div class="app-content">
+    <div class="app-content" :inert="compactNavigation && mobileMenuOpen">
       <header class="mobile-topbar">
         <RouterLink to="/dashboard" class="mobile-brand">
-          <div class="brand-mark">AI</div>
+          <div class="brand-mark">R</div>
           <strong>Resbix</strong>
         </RouterLink>
 
+        <span class="topbar-section">{{ sectionTitle }}</span>
         <button
+          ref="menuTrigger"
           type="button"
           class="mobile-menu-button"
+          aria-controls="dashboard-navigation"
+          :aria-expanded="mobileMenuOpen"
           aria-label="Abrir menú"
           @click="mobileMenuOpen = true">
           <span></span>
@@ -268,7 +303,7 @@ const closeMobileMenu = () => {
         </button>
       </header>
 
-      <main class="app-main">
+      <main id="dashboard-main" class="app-main" tabindex="-1">
         <RouterView />
       </main>
     </div>
@@ -285,6 +320,8 @@ const closeMobileMenu = () => {
 
 .sidebar {
   position: fixed;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   inset: 0 auto 0 0;
   z-index: 50;
 
@@ -292,7 +329,8 @@ const closeMobileMenu = () => {
 
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 24px;
 
   padding: 20px 14px;
 
@@ -301,7 +339,8 @@ const closeMobileMenu = () => {
 }
 
 .sidebar-top {
-  min-height: 0;
+  flex: 0 0 auto;
+  min-height: auto;
 }
 
 .sidebar-mobile-header {
@@ -453,6 +492,8 @@ const closeMobileMenu = () => {
 /* SIDEBAR FOOTER */
 
 .sidebar-bottom {
+  flex: 0 0 auto;
+  margin-top: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -582,19 +623,20 @@ const closeMobileMenu = () => {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1023px) {
   .sidebar {
     width: min(290px, 86vw);
 
     transform: translateX(-100%);
 
-    box-shadow: 20px 0 50px rgba(15, 23, 42, 0.12);
+    box-shadow: none;
 
     transition: transform 0.22s ease;
   }
 
   .sidebar.sidebar-open {
     transform: translateX(0);
+    box-shadow: 20px 0 50px rgba(15, 23, 42, 0.12);
   }
 
   .app-content {
@@ -632,6 +674,9 @@ const closeMobileMenu = () => {
   }
 
   .mobile-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
     height: 64px;
 
     display: flex;
@@ -665,8 +710,8 @@ const closeMobileMenu = () => {
   }
 
   .mobile-menu-button {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
 
     display: flex;
     flex-direction: column;
@@ -778,7 +823,7 @@ const closeMobileMenu = () => {
    MOBILE
 ========================= */
 
-@media (max-width: 760px) {
+@media (max-width: 1023px) {
   .brand-text strong {
     font-size: 16px;
   }
@@ -830,4 +875,14 @@ const closeMobileMenu = () => {
 
   white-space: nowrap;
 }
+
+.topbar-section { color:var(--text-secondary); font-size:13px; margin-left:auto; margin-right:16px; }
+.dashboard-skip-link { position:fixed; top:8px; left:8px; z-index:100; padding:12px; background:white; color:var(--primary); border:2px solid var(--primary); border-radius:8px; transform:translateY(-150%); }
+.dashboard-skip-link:focus { transform:none; }
+@media(max-width:430px) { .topbar-section { display:none; } .mobile-topbar { padding:0 16px; } .mobile-close { min-width:44px; min-height:44px; } }
+@media(prefers-reduced-motion:reduce) { .sidebar { transition:none; } }
+
+.nav-item-disabled { display:grid; grid-template-columns:20px minmax(0,1fr); row-gap:2px; padding-block:8px; opacity:1; color:var(--text-secondary); }
+.nav-item-disabled small { grid-column:2; margin-left:0; white-space:normal; font-size:10px; }
+.sidebar { overflow-x:hidden; }
 </style>

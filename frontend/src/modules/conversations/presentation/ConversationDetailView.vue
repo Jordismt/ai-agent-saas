@@ -473,6 +473,7 @@ onMounted(async () => {
 
               <form class="message-form" @submit.prevent="handleSendMessage">
                 <textarea
+                  aria-label="Respuesta al cliente"
                   v-model="newMessage"
                   rows="3"
                   :disabled="sendingMessage || isClosed"
