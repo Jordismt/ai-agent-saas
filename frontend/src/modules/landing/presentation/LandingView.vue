@@ -1,42 +1,13 @@
 <script setup>
 import { ref } from "vue";
+import BookingDemo from "./components/BookingDemo.vue";
+import { faqs } from "../seo/content.js";
 
 const menuOpen = ref(false);
-const activeFaq = ref(null);
+const menuToggle = ref(null);
 const previewTab = ref("dashboard");
 const dashboardTab = ref("reservas");
-const logoFailed = ref(false);
 
-const faqs = [
-  {
-    q: "¿Qué hace exactamente Resbix?",
-    a: "Resbix combina un agente de IA con herramientas para gestionar consultas, oportunidades comerciales y reservas desde un mismo panel.",
-  },
-  {
-    q: "¿Necesito conocimientos técnicos?",
-    a: "No. Configuras los datos de tu negocio, servicios, horarios e instrucciones desde tu panel.",
-  },
-  {
-    q: "¿Puedo atender personalmente una conversación?",
-    a: "Sí. Puedes tomar el control de una conversación cuando sea necesaria atención humana.",
-  },
-  {
-    q: "¿Incluye una página web para mi negocio?",
-    a: "Sí. El plan incluye una página pública para presentar tu negocio, mostrar información y facilitar el contacto y las reservas según las funciones habilitadas.",
-  },
-  {
-    q: "¿Puedo gestionar mis reservas manualmente?",
-    a: "Sí. Puedes consultar y gestionar las reservas desde el panel, además de las que gestione el agente.",
-  },
-  {
-    q: "¿Qué ocurre después del primer año de la oferta?",
-    a: "La promoción de los primeros 20 clientes es de 44,50 €/mes durante los primeros 12 meses. Después se aplica la tarifa habitual de 89 €/mes.",
-  },
-  {
-    q: "¿La promoción se aplica automáticamente?",
-    a: "La promoción está limitada a los primeros 20 clientes. La disponibilidad y las condiciones definitivas deben confirmarse antes de contratar.",
-  },
-];
 const features = [
   {
     icon: "✳",
@@ -126,6 +97,7 @@ const closeMenu = () => {
 
 <template>
   <div class="landing">
+    <a class="skip-link" href="#contenido">Ir al contenido</a>
     <div class="announcement">
       <span class="announcement-dot"></span> OFERTA DE LANZAMIENTO
       <span class="announcement-divider">/</span> Primeros 20 clientes:
@@ -149,16 +121,19 @@ const closeMenu = () => {
           >
         </div>
         <button
+          ref="menuToggle"
           class="menu-toggle"
           type="button"
           :aria-expanded="menuOpen"
-          aria-label="Abrir navegación"
+          :aria-label="menuOpen ? 'Cerrar navegación' : 'Abrir navegación'"
+          aria-controls="mobile-navigation"
+          @keydown.esc="closeMenu"
           @click="menuOpen = !menuOpen">
           {{ menuOpen ? "✕" : "☰" }}
         </button>
       </div>
-      <nav v-if="menuOpen" class="mobile-nav" aria-label="Navegación móvil">
-        <a href="#producto" @click="closeMenu">Producto</a><a href="#demo" @click="closeMenu">Ver demo</a> ><a
+      <nav v-if="menuOpen" id="mobile-navigation" class="mobile-nav" aria-label="Navegación móvil" @keydown.esc.prevent="closeMenu(); menuToggle?.focus()">
+        <a href="#producto" @click="closeMenu">Producto</a><a href="#demo" @click="closeMenu">Ver demo</a><a
           href="#funcionamiento"
           @click="closeMenu"
           >Cómo funciona</a
@@ -168,22 +143,22 @@ const closeMenu = () => {
       </nav>
     </header>
 
-    <main>
+    <main id="contenido">
       <section class="hero">
         <div class="hero-orb orb-one"></div>
         <div class="hero-orb orb-two"></div>
         <div class="container hero-grid">
           <div class="hero-copy">
-            <div class="eyebrow"><span class="pulse"></span> TU NEGOCIO, SIEMPRE EN MARCHA</div>
-            <h1>Tu próximo cliente no debería <em>esperar.</em></h1>
+            <div class="eyebrow"><span class="pulse"></span> IA PARA NEGOCIOS DE SERVICIOS</div>
+            <h1>Tu agente IA para atender consultas y <em>organizar reservas.</em></h1>
             <p class="hero-lead">
-              Conoce al agente de IA que atiende consultas, ayuda con las reservas y convierte conversaciones
-              en oportunidades. Todo conectado a tu negocio, desde un solo panel.
+              Resbix ayuda a centros de estética, peluquerías y negocios de servicios a responder preguntas,
+              captar contactos y gestionar citas. Tu web pública, tu agente y tu agenda, en un mismo lugar.
             </p>
             <div class="hero-buttons">
               <RouterLink to="/register" class="button button-primary"
-                >Quiero mi agente <span>↗</span></RouterLink
-              ><a href="#demo" class="button button-outline">Ver Resbix por dentro <span>↓</span></a>
+                >Crear mi cuenta <span>↗</span></RouterLink
+              ><a href="#demo" class="button button-outline">Probar la demo <span>↓</span></a>
             </div>
             <div class="hero-checks">
               <span>✓ Configuración sencilla</span><span>✓ Control humano</span
@@ -197,44 +172,16 @@ const closeMenu = () => {
               ><span class="offer-arrow">↗</span></a
             >
           </div>
-          <div class="hero-art" aria-label="Vista ilustrativa de las funcionalidades de Resbix">
-            <div class="art-grid"></div>
-            <div class="art-glow"></div>
-            <div class="floating-tag tag-top">
-              <span class="tag-icon">✳</span
-              ><span>Tu agente está preparado <small>Atención automatizada</small></span
-              ><span class="tag-live"></span>
-            </div>
-            <div class="mock-window">
-              <div class="mock-top">
-                <span class="mock-dots"><i></i><i></i><i></i></span><span>Vista de ejemplo · Resbix</span
-                ><span>↗</span>
+          <div class="hero-art hero-product" aria-label="Ejemplo ilustrativo: una consulta se convierte en una reserva">
+            <div class="hero-product-frame">
+              <div class="hero-frame-bar"><span><i></i><i></i><i></i></span><small>Centro Aura · Ejemplo de Resbix</small></div>
+              <div class="hero-product-body">
+                <div class="hero-agent"><span>✳</span><div><b>Una consulta. Una próxima cita.</b><small>Tu agente conoce los servicios de tu negocio.</small></div></div>
+                <div class="hero-product-chat"><p class="hero-question">Hola, ¿puedo reservar una limpieza facial para el viernes?</p><p class="hero-answer">¡Claro! Te ayudo a encontrar un horario y preparar tu reserva.</p></div>
+                <div class="hero-connection"><span></span><b>De la conversación a tu agenda ↓</b><span></span></div>
+                <div class="hero-booking"><span class="hero-booking-time">17:30<small>VIERNES</small></span><div><b>Laura García</b><p>Limpieza facial · Elena</p><small>✓ Reserva confirmada</small></div><span class="hero-booking-icon" aria-hidden="true">▦</span></div>
+                <a href="#demo" class="hero-demo-link">Haz el recorrido en la demo <span>↗</span></a>
               </div>
-              <div class="mock-body">
-                <div class="mock-header">
-                  <span class="mock-logo">✳</span
-                  ><span
-                    ><b>Tu asistente virtual</b><small><i></i> Disponible para ayudarte</small></span
-                  ><span class="mock-ellipsis">···</span>
-                </div>
-                <div class="mock-messages">
-                  <span class="mock-day">HOY</span>
-                  <div class="bubble assistant">¡Hola! 👋 ¿En qué puedo ayudarte hoy?</div>
-                  <div class="bubble visitor">Hola, ¿tenéis hueco para un corte mañana?</div>
-                  <div class="bubble assistant">
-                    ¡Claro! Puedo ayudarte a consultar la disponibilidad. ¿Prefieres por la mañana o por la
-                    tarde?
-                  </div>
-                  <div class="bubble visitor">Por la tarde, gracias.</div>
-                  <div class="typing"><i></i><i></i><i></i></div>
-                </div>
-                <div class="mock-input">Escribe tu mensaje... <span>↑</span></div>
-              </div>
-            </div>
-            <div class="floating-tag tag-bottom">
-              <span class="tag-icon green">↗</span
-              ><span>Una nueva oportunidad <small>Contacto recogido por tu agente</small></span
-              ><span class="tag-check">✓</span>
             </div>
           </div>
         </div>
@@ -253,12 +200,27 @@ const closeMenu = () => {
         </div>
       </section>
 
+      <section class="problem-section" aria-labelledby="problem-title">
+        <div class="container problem-layout">
+          <div><span class="kicker">MENOS GESTIÓN MANUAL</span><h2 id="problem-title">Tus clientes preguntan.<br />Tú tienes un negocio que atender.</h2></div>
+          <div class="problem-points"><p><b>Consultas que se repiten</b><span>Precios, servicios y horarios: tu agente responde con la información que configuras.</span></p><p><b>Citas entre mensajes e interrupciones</b><span>Conecta la conversación con la disponibilidad y reúne las reservas en tu agenda.</span></p><p><b>Contactos difíciles de seguir</b><span>Revisa leads y conversaciones desde un mismo panel y toma el control cuando haga falta.</span></p></div>
+        </div>
+      </section>
+      <section id="demo" class="section guided-demo-section" aria-labelledby="guided-demo-title">
+        <div class="container">
+          <div class="showcase-heading"><div><span class="kicker">PRUÉBALO EN UN MINUTO</span><h2 id="guided-demo-title">De una consulta<br /><span>a una reserva en tu agenda.</span></h2></div><p>Una clienta quiere una limpieza facial. El agente le ofrece horarios, recoge sus datos y confirma la cita. Explora este ejemplo de cómo Resbix conecta la atención al cliente con la gestión de reservas.</p></div>
+          <div class="journey-labels" aria-label="Recorrido de una reserva"><span>01 · Cliente</span><span aria-hidden="true">→</span><span>02 · Agente IA</span><span aria-hidden="true">→</span><span>03 · Reserva</span><span aria-hidden="true">→</span><span>04 · Tu agenda</span></div>
+          <BookingDemo />
+          <div class="demo-next"><p>Ahora imagina este recorrido con tus servicios y tu equipo.</p><a href="#funcionamiento">Descubre cómo configurarlo <span>↓</span></a></div>
+        </div>
+      </section>
+
       <section id="producto" class="section product-section">
         <div class="container">
           <div class="section-intro">
             <div>
               <span class="kicker">01 / EL PRODUCTO</span>
-              <h2>No necesitas otro chatbot.<br /><span>Necesitas que pasen cosas.</span></h2>
+              <h2>Atención al cliente y reservas.<br /><span>Todo conectado a tu negocio.</span></h2>
             </div>
             <p>
               Resbix no se limita a responder preguntas. Conecta la atención al cliente con las herramientas
@@ -324,31 +286,31 @@ const closeMenu = () => {
       </section>
 
       <!-- Demostración visual: datos ilustrativos, sin acceso a cuentas reales -->
-      <section id="demo" class="section showcase-section">
+      <section id="vista-producto" class="section showcase-section">
         <div class="container">
           <div class="showcase-heading">
             <div>
               <span class="kicker">02 / CONOCE RESBIX POR DENTRO</span>
-              <h2>No te lo imagines.<br /><span>Mira cómo se utiliza.</span></h2>
+              <h2>Un panel para ti.<br /><span>Una web para tus clientes.</span></h2>
             </div>
             <p>
               Explora una representación interactiva del panel de gestión y de la página que verán tus
               clientes. Los nombres y las citas son ejemplos ilustrativos.
             </p>
           </div>
-          <div class="preview-switch" role="tablist" aria-label="Vistas del producto">
+          <div class="preview-switch" aria-label="Vistas del producto">
             <button
               type="button"
-              role="tab"
-              :aria-selected="previewTab === 'dashboard'"
+
+              :aria-pressed="previewTab === 'dashboard'"
               :class="{ selected: previewTab === 'dashboard' }"
               @click="previewTab = 'dashboard'">
               ▦ &nbsp; Panel de tu negocio
             </button>
             <button
               type="button"
-              role="tab"
-              :aria-selected="previewTab === 'website'"
+
+              :aria-pressed="previewTab === 'website'"
               :class="{ selected: previewTab === 'website' }"
               @click="previewTab = 'website'">
               ↗ &nbsp; Tu web + agente IA
@@ -358,7 +320,7 @@ const closeMenu = () => {
             <div class="product-frame dashboard-frame">
               <div class="browser-bar">
                 <span class="browser-dots"><i></i><i></i><i></i></span
-                ><span class="browser-url">app.resbix · Panel de ejemplo</span><span>↗</span>
+                ><span class="browser-url">Resbix · Panel de ejemplo</span><span>↗</span>
               </div>
               <div class="app-shell">
                 <aside class="app-sidebar">
@@ -366,12 +328,9 @@ const closeMenu = () => {
                   <div class="app-business">✂ &nbsp; Estudio Aura <small>Mi negocio</small></div>
                   <button
                     v-for="item in [
-                      'Resumen',
                       'Reservas',
                       'Conversaciones',
                       'Leads',
-                      'Servicios',
-                      'Empleados',
                     ]"
                     :key="item"
                     type="button"
@@ -701,7 +660,7 @@ const closeMenu = () => {
                 </li>
 
                 <li><span>✓</span> Agente IA personalizado con tu información</li>
-                <li><span>✓</span> Atención automática a consultas, 24/7</li>
+                <li><span>✓</span> Atención automática a consultas con tu información</li>
                 <li><span>✓</span> Sistema de reservas y disponibilidad</li>
                 <li><span>✓</span> Gestión manual de citas desde el panel</li>
                 <li><span>✓</span> Gestión de servicios, horarios y empleados</li>
@@ -728,6 +687,7 @@ const closeMenu = () => {
                 Quiero aprovechar la oferta <span>↗</span>
               </RouterLink>
 
+              <div class="pricing-under-cta">7 días de prueba · Tarjeta obligatoria · Sin cobro inicial</div>
               <div class="pricing-under-cta">Un solo plan · Sin elegir entre funciones esenciales</div>
 
               <small class="pricing-terms">
@@ -745,20 +705,14 @@ const closeMenu = () => {
         <div class="container faq-layout">
           <div>
             <span class="kicker">PREGUNTAS FRECUENTES</span>
-            <h2>Todo claro <span>desde el principio.</span></h2>
+            <h2>Preguntas sobre Resbix, <span>reservas y configuración.</span></h2>
             <p>Lo que probablemente quieras saber antes de empezar.</p>
           </div>
           <div class="faq-list">
-            <article v-for="(faq, index) in faqs" :key="faq.q" :class="{ expanded: activeFaq === index }">
-              <button
-                type="button"
-                :aria-expanded="activeFaq === index"
-                @click="activeFaq = activeFaq === index ? null : index">
-                <span>{{ faq.q }}</span
-                ><span>{{ activeFaq === index ? "−" : "+" }}</span>
-              </button>
-              <p v-if="activeFaq === index">{{ faq.a }}</p>
-            </article>
+            <details v-for="faq in faqs" :key="faq.q" class="faq-item">
+              <summary>{{ faq.q }}<span aria-hidden="true">+</span></summary>
+              <p>{{ faq.a }}</p>
+            </details>
           </div>
         </div>
       </section>
@@ -838,15 +792,17 @@ const closeMenu = () => {
 </template>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+
 .landing {
   --ink: #11192b;
   --muted: #697287;
   --line: #e7eaf0;
   --accent: #6656ed;
+  font-size: 14px;
+  line-height: 1.5;
   color: var(--ink);
   background: #fff;
-  font-family: "DM Sans", sans-serif;
+  font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   overflow: hidden;
 }
 .landing * {
@@ -3305,4 +3261,68 @@ const closeMenu = () => {
     white-space: nowrap;
   }
 }
+
+/* Landing-only refinement: preserve Resbix's existing violet identity. */
+.landing { --muted: #596277; }
+.skip-link { position: fixed; z-index: 100; top: 12px; left: 12px; padding: 14px 20px; background: #202139; color: #fff; border-radius: 8px; transform: translateY(-160%); }
+.skip-link:focus { transform: none; }
+.landing :is(a,button,summary):focus-visible { outline: 3px solid #9275e3; outline-offset: 4px; }
+.landing section[id] { scroll-margin-top: 100px; }
+.hero h1 { font-size: clamp(40px, 4.6vw, 66px); line-height: 1.09; letter-spacing: -2.8px; max-width: 650px; }
+.hero-lead { color: #596277; line-height: 1.8; }
+.hero-art { transform: none; }
+.hero-orb,.art-glow { opacity: .5; }
+.problem-section { padding: 70px 0; background: #fff; }
+.problem-layout { display:grid;grid-template-columns:1fr 1fr;gap:65px;align-items:center; }
+.problem-layout h2 { font-size:clamp(28px,3vw,39px);line-height:1.2;letter-spacing:-1.5px;margin-top:16px; }
+.problem-points { display:grid;gap:20px; }
+.problem-points p { margin:0;padding-left:18px;border-left:2px solid #d6cdf7; }
+.problem-points b { display:block;font-size:15px; }
+.problem-points span { display:block;color:#60677c;font-size:14px;line-height:1.75;margin-top:6px; }
+.guided-demo-section { background:linear-gradient(180deg,#f6f4ff,#fbfaff);border-block:1px solid #ebe6f7; }
+.guided-demo-section .showcase-heading > p { color:#61667a; }
+.journey-labels { display:flex;justify-content:center;gap:18px;align-items:center;flex-wrap:wrap;color:#695e8d;font-size:12px;margin:0 0 24px;font-weight:700; }
+.journey-labels > span:nth-child(even) { color:#a695d3; }
+.demo-next { display:flex;justify-content:space-between;gap:20px;align-items:center;margin-top:26px;color:#655f79;font-size:14px;line-height:1.6; }
+.demo-next a { color:#5e44b4;font-weight:700;min-height:44px;display:flex;align-items:center;gap:12px; }
+.showcase-section { background:#fff; }
+.preview-mini-tabs button { min-height:44px; }
+.faq-item { border-bottom:1px solid #e6e2ef;padding:5px 0; }
+.faq-item summary { list-style:none;display:flex;justify-content:space-between;gap:20px;cursor:pointer;padding:22px 0;font-size:15px;font-weight:700;min-height:54px; }
+.faq-item summary::-webkit-details-marker { display:none; }
+.faq-item summary span { color:#7057bb; }
+.faq-item[open] summary span { transform:rotate(45deg); }
+.faq-item p { font-size:14px;line-height:1.85;color:#606478;margin:0 0 22px;max-width:620px; }
+.promo-code-label { color:#6351c0; }
+.promo-code-value { color:#5845b4; }
+.pricing-card-top { flex-wrap:wrap;gap:10px; }
+.price-main { font-variant-numeric:tabular-nums; }
+.footer-links { min-width:0; }
+.footer-links a { color:#62697a;min-height:32px;display:flex;align-items:center; }
+.preview-description > p,.showcase-heading > p,.section-intro > p { color:#62697d; }
+@media (max-width:1100px) and (min-width:801px) { .nav-links { gap:12px; }.nav-links a { font-size:12px; }.nav-register { font-size:12px;padding:12px; }.nav-login { font-size:12px; }.nav-inner { gap:14px; } }
+@media (max-width:800px) { .problem-layout { grid-template-columns:1fr;gap:30px; }.hero h1 { font-size:clamp(38px,7.6vw,59px); }.section { padding:64px 0; }.demo-next { flex-direction:column;align-items:flex-start;gap:8px; }.problem-section { padding:52px 0; } }
+@media (max-width:500px) { .container { width:calc(100% - 32px); }.hero h1 { font-size:clamp(36px,9.2vw,46px);letter-spacing:-1.8px; }.journey-labels { gap:8px;font-size:10px; }.pricing-card-body { padding:22px 18px; }.price-main { font-size:64px; }.footer-main { display:grid;grid-template-columns:1fr;gap:30px; }.footer-links { gap:24px; }.floating-tag { max-width:100%; }.showcase-heading h2 { font-size:34px;letter-spacing:-1.4px; }.app-sidebar { display:none; }.app-main { padding:0 14px 20px; }.app-table-row { font-size:10px; }.sample-site { min-height:0; }.site-chat { position:relative;top:auto;right:auto;width:calc(100% - 24px);margin:0 12px 16px; }.site-hero p { max-width:100%; }.site-services > div { max-width:100%; }.site-hero { padding:28px 18px; }.site-services { padding:22px 18px; }.feature-wide { min-height:480px; }.hero-bottom { margin-top:30px; } }
+@media (prefers-reduced-motion:reduce) { .landing *,.landing *::before,.landing *::after { animation:none!important;transition:none!important;scroll-behavior:auto!important; } }
+
+
+.hero-product { min-width:0;height:auto;min-height:490px;padding:24px 0 24px 20px; }
+.hero-product-frame { width:100%;max-width:490px;border:1px solid #ded8ef;border-radius:20px;background:#fff;box-shadow:0 25px 70px #49327114;overflow:hidden; }
+.hero-frame-bar { display:flex;justify-content:space-between;gap:15px;align-items:center;background:#faf9fe;border-bottom:1px solid #eee9f7;padding:15px 20px; }
+.hero-frame-bar>span { display:flex;gap:5px; }.hero-frame-bar i { width:7px;height:7px;border-radius:50%;background:#d9d1eb; }.hero-frame-bar small { color:#6c6380;font-size:10px; }
+.hero-product-body { padding:28px; }
+.hero-agent { display:flex;gap:12px;align-items:center; }.hero-agent>span { width:44px;height:44px;border-radius:13px;background:#6656ed;color:#fff;display:grid;place-items:center;font-size:25px;flex-shrink:0; }.hero-agent b { font-size:14px; }.hero-agent small { display:block;color:#736980;font-size:11px;line-height:1.6;margin-top:4px; }
+.hero-product-chat { display:flex;flex-direction:column;gap:14px;margin:26px 0; }.hero-product-chat p { margin:0;max-width:90%;font-size:14px;line-height:1.7;padding:15px 18px;border-radius:12px; }.hero-question { background:#6656ed;color:#fff;align-self:flex-end; }.hero-answer { background:#f3f0fb;color:#514166;border:1px solid #e8e0f3; }
+.hero-connection { display:flex;align-items:center;gap:12px;margin-bottom:22px; }.hero-connection b { color:#706084;font-size:10px;font-weight:500; }.hero-connection span { height:1px;background:#e7deef;flex:1; }
+.hero-booking { display:flex;align-items:center;gap:16px;background:#f3faf6;border:1px solid #d4e9dd;border-radius:12px;padding:18px; }.hero-booking-time { font-size:22px;font-weight:700;color:#32674f; }.hero-booking-time small { display:block;font-size:8px;letter-spacing:1px;margin-top:6px; }.hero-booking b { font-size:14px; }.hero-booking p { font-size:12px;color:#5c6b62;margin:4px 0 7px; }.hero-booking>div>small { color:#216544;font-size:10px; }.hero-booking-icon { margin-left:auto;font-size:27px;color:#81a68f; }
+.hero-demo-link { display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:#624cb0;margin-top:22px;min-height:44px; }
+@media(max-width:800px) { .hero-product { padding:0;min-height:0;height:auto;margin:8px 0 0; }.hero-product-frame { max-width:none; }.hero-art.hero-product { height:auto; }.hero-product-body { padding:22px; } }
+@media(max-width:380px) { .hero-product-body { padding:18px; }.hero-product-chat p { padding:12px 14px;font-size:13px; }.hero-booking { padding:14px;gap:12px; }.hero-agent b { font-size:12px; }.hero-booking-icon { display:none; } }
+
+.landing :where(h1,h2,h3,h4,p) { margin:0; }
+.hero-bottom,.sector-ribbon p,.feature-index,.feature-chat-row span,.feature-detail > span,.feature-detail small,.price-old,.price-main small,.pricing-terms,.faq-layout > div:first-child > p,.footer-bottom { color:#626779; }
+.feature p,.steps p,.value-stack small,.preview-description .preview-footnote { color:#626779; }
+.feature-detail i,.price-save { color:#23714f; }
+.landing nav a,.landing .footer-links a { min-height:44px;display:flex;align-items:center; }
+@media(max-width:500px) { .pricing-terms { font-size:11px;text-align:left;line-height:1.8; }.feature { padding:24px; }.feature-detail { padding:12px; }.feature-detail > div { gap:8px;font-size:11px; }.feature-detail i { font-size:9px; }.hero-art.hero-product { margin-inline:0; } }
 </style>
