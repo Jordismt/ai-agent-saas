@@ -1,0 +1,34 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { solutionPages, solutionSchema } from '../src/modules/landing/seo/solutionPages.js';
+import { landingSeo } from '../src/modules/landing/seo/content.js';
+const read = file => readFileSync(new URL(file, import.meta.url), 'utf8');
+for (const page of solutionPages) test(`${page.path}: prerender, metadata, schema and links`, () => {
+  const html = read(`../dist${page.path}/index.html`);
+  assert.equal((html.match(/<h1(?:\s|>)/g) || []).length, 1);
+  for(const text of [page.h1, page.problem, page.demo.question, ...page.faq.flat()]) assert.ok(html.includes(text));
+  assert.ok(html.includes(`<title>${page.title}</title>`));
+  assert.ok(html.includes(`rel="canonical" href="https://resbix.com${page.path}"`));
+  assert.ok(html.includes('content="index, follow, max-image-preview:large"'));
+  for (const [key, value] of [['og:title', page.title], ['og:description', page.description], ['og:url', `https://resbix.com${page.path}`], ['twitter:title', page.title], ['twitter:description', page.description], ['twitter:card', 'summary_large_image']]) assert.ok(html.includes(`="${key}" content="${value}"`));
+  for (const href of ['/register', '/#precios', '/', '#demo', ...page.related.map(x=>x[0])]) assert.ok(html.includes(`href="${href}"`));
+  const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]));
+  for (const [,id] of html.matchAll(/href="#([^"]+)"/g)) assert.ok(ids.has(id));
+  assert.deepEqual(JSON.parse(html.match(/<script id="landing-schema" type="application\/ld\+json">(.*?)<\/script>/s)[1]), solutionSchema(page));
+  assert.ok(!/aggregateRating|reviewCount/.test(html));
+  assert.equal((html.match(/<link rel="stylesheet"/g)||[]).length, 2);
+  assert.ok(!/main-.*\.(js|css)/.test(html));
+  const config = JSON.parse(read('../vercel.json'));
+  assert.equal(config.rewrites.find(rule=>rule.source===page.path).destination, `${page.path}/index.html`);
+  assert.ok(!config.headers.some(rule=>rule.source===page.path));
+  assert.ok(read('../dist/sitemap.xml').includes(`<loc>https://resbix.com${page.path}</loc>`));
+});
+test('unique intentions, isolated demos and public-only sitemap', () => {
+  for(const key of ['title','description']) assert.equal(new Set([landingSeo[key], ...solutionPages.map(p=>p[key])]).size,4);
+  assert.equal(new Set(solutionPages.map(p=>p.h1)).size,3);
+  assert.equal(new Set(solutionPages.flatMap(p=>p.faq.map(f=>f[0]))).size,16);
+  assert.ok(!/fetch\s*\(|supabase|groq|stripe|localStorage|sessionStorage|apiFetch/i.test(read('../src/modules/landing/presentation/components/SolutionDemo.vue')));
+  assert.ok(!/Disallow/.test(read('../public/robots.txt')));
+  assert.equal([...read('../dist/sitemap.xml').matchAll(/<loc>/g)].length,9);
+});

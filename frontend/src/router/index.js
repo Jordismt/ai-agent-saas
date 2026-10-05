@@ -52,6 +52,10 @@ async function paidBusinessGuard(to) {
 }
 
 const routes = [
+  ...['/software-centros-estetica', '/software-peluquerias', '/agente-ia-negocios'].map(path => ({
+    path,
+    beforeEnter: () => { window.location.assign(path); return false; },
+  })),
   {
     path: "/",
     name: "landing",

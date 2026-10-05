@@ -5,6 +5,18 @@
       "destination": "/index.html"
     },
     {
+      "source": "/software-centros-estetica",
+      "destination": "/software-centros-estetica/index.html"
+    },
+    {
+      "source": "/software-peluquerias",
+      "destination": "/software-peluquerias/index.html"
+    },
+    {
+      "source": "/agente-ia-negocios",
+      "destination": "/agente-ia-negocios/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/app.html"
     }

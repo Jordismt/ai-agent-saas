@@ -1,4 +1,5 @@
 import { build } from "vite";
+import { solutionPages, solutionHead } from "../src/modules/landing/seo/solutionPages.js";
 import { readFile, writeFile, mkdir, rm, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -15,7 +16,7 @@ try {
       rollupOptions: { output: { entryFileNames: "landing.mjs" } },
     },
   });
-  const { render } = await import(
+  const { render, renderSolution } = await import(
     pathToFileURL(resolve(temporary, "landing.mjs")).href
   );
   const shell = await readFile("dist/index.html", "utf8");
@@ -45,6 +46,18 @@ try {
       `<div id="app">${markup}</div>`,
     ),
   );
+  const solutionStyles = assets.filter(name => /^solutionApp-.*\.css$/.test(name));
+  if (solutionStyles.length !== 1) throw new Error('Missing solution landing stylesheet');
+  for (const page of solutionPages) {
+    const markup = await renderSolution(page.path);
+    const head = solutionHead(page);
+    const pageShell = shell.replace(/<!-- LANDING SEO START -->[\s\S]*?<!-- LANDING SEO END -->/, head)
+      .replace('</head>', [assets.find(name => /^landingBase-.*\.css$/.test(name)), ...solutionStyles].map(name => `<link rel="stylesheet" href="/assets/${name}" />`).join('\n') + '\n</head>')
+      .replace('<div id="app"></div>', `<div id="app">${markup}</div>`);
+    await mkdir(`dist${page.path}`, { recursive: true });
+    await writeFile(`dist${page.path}/index.html`, pageShell);
+    console.log(`${page.path} prerendered: ${Buffer.byteLength(markup)} bytes`);
+  }
   // Direct requests to these fixed private/account URLs also receive an initial noindex.
   for (const route of [
     "dashboard",

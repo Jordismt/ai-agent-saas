@@ -752,6 +752,9 @@ const closeMenu = () => {
             <a href="#demo">Ver demo</a>
             <a href="#funcionamiento">Cómo funciona</a>
             <a href="#sectores">Para quién</a>
+            <a href="/software-centros-estetica">Centros de estética</a>
+            <a href="/software-peluquerias">Peluquerías</a>
+            <a href="/agente-ia-negocios">Guía de agente IA</a>
             <a href="#precios">Precios</a>
           </div>
 

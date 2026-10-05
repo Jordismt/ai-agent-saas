@@ -7,6 +7,13 @@ if (window.location.pathname === "/") {
   ]);
   const target = document.getElementById("app");
   createLandingApp(target.hasChildNodes()).mount(target);
+} else if (['/software-centros-estetica', '/software-peluquerias', '/agente-ia-negocios'].includes(window.location.pathname.replace(/\/$/, ''))) {
+  const [{ createSolutionApp }] = await Promise.all([
+    import('./solutionApp.js'),
+    import('./landingBase.css'),
+  ]);
+  const target = document.getElementById('app');
+  createSolutionApp(window.location.pathname.replace(/\/$/, ''), target.hasChildNodes()).mount(target);
 } else {
   await import("../../../main.js");
 }
