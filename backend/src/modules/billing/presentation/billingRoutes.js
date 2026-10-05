@@ -1,11 +1,11 @@
 import { billingLimiter } from "../../../shared/middleware/rateLimits.js";
 import { Router } from "express";
-import Stripe from "stripe";
+import { stripe, reconcileBusinessBilling } from "../../../shared/billing/subscriptionSync.js";
+import { hasSubscriptionAccess, stripeInstant } from "../../../shared/billing/subscriptionPolicy.js";
 import { authMiddleware } from "../../../shared/middleware/authMiddleware.js";
 import { createSupabaseServerClient } from "../../../infrastructure/database/supabase.js";
 
 const router = Router();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder");
 const db = () => createSupabaseServerClient();
 const frontend = () => {
   if (!process.env.FRONTEND_URL) throw new Error("Missing FRONTEND_URL");
@@ -15,7 +15,6 @@ const price = () => {
   if (!process.env.STRIPE_PRICE_ID) throw new Error("Missing STRIPE_PRICE_ID");
   return process.env.STRIPE_PRICE_ID;
 };
-const founderCoupon = process.env.STRIPE_FOUNDER_COUPON_ID;
 const handle = (fn) => async (req, res, next) => {
   try {
     await fn(req, res);
@@ -45,28 +44,22 @@ router.get(
     const admin = db();
     if (!(await ownedBusiness(admin, req.user.id, req.query.businessId)))
       return res.status(404).json({ error: "Negocio no encontrado" });
-    const { data, error } = await admin
-      .from("business_billing")
-      .select(
-        "business_id,status,trial_end,current_period_end,founder,last_payment_failed_at,stripe_subscription_id",
-      )
-      .eq("business_id", req.query.businessId)
-      .maybeSingle();
-    if (error) throw error;
-    if (!data?.stripe_subscription_id) return res.json({ billing: data || null });
-    const subscription = await stripe.subscriptions.retrieve(data.stripe_subscription_id);
-    // Avoid exposing a different business subscription if records are inconsistent.
-    if (subscription.metadata?.business_id !== req.query.businessId)
-      return res.status(409).json({ error: "Suscripción no corresponde al negocio" });
+    const billing = await reconcileBusinessBilling(admin, req.query.businessId);
     res.json({
-      billing: {
-        ...data,
-        cancel_at_period_end: subscription.cancel_at_period_end,
-        cancel_at: subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toISOString() : null,
-        current_period_end: subscription.items?.data?.[0]?.current_period_end
-          ? new Date(subscription.items.data[0].current_period_end * 1000).toISOString()
-          : data.current_period_end,
-      },
+      billing: billing
+        ? {
+            business_id: billing.business_id,
+            stripe_subscription_id: billing.stripe_subscription_id,
+            status: billing.status,
+            trial_end: billing.trial_end,
+            current_period_end: billing.current_period_end,
+            founder: billing.founder,
+            last_payment_failed_at: billing.last_payment_failed_at,
+            cancel_at_period_end: billing.cancel_at_period_end,
+            cancel_at: billing.cancel_at,
+            has_access: hasSubscriptionAccess(billing),
+          }
+        : null,
     });
   }),
 );
@@ -131,13 +124,39 @@ router.post(
       },
       { idempotencyKey: `resbix-checkout-${businessId}-${row?.checkout_session_id || "first"}` },
     );
-    const { error: saveError } = await admin
-      .from("business_billing")
-      .upsert(
-        { business_id: businessId, checkout_session_id: session.id, status: "checkout_pending" },
-        { onConflict: "business_id" },
-      );
+    // A subscription webhook may have won while Checkout was being created/retried.
+    // Never overwrite its state with the pending placeholder.
+    const pending = {
+      business_id: businessId,
+      checkout_session_id: session.id,
+      status: "checkout_pending",
+      updated_at: new Date().toISOString(),
+    };
+    let save;
+    if (row) {
+      save = admin
+        .from("business_billing")
+        .update(pending)
+        .eq("business_id", businessId)
+        .is("stripe_subscription_id", null);
+      save = row.updated_at
+        ? save.eq("updated_at", row.updated_at)
+        : save.is("updated_at", null);
+    } else {
+      save = admin
+        .from("business_billing")
+        .upsert(pending, { onConflict: "business_id", ignoreDuplicates: true });
+    }
+    const { data: saved, error: saveError } = await save
+      .select("business_id")
+      .maybeSingle();
     if (saveError) throw saveError;
+    if (!saved)
+      return res
+        .status(409)
+        .json({
+          error: "La suscripción ha cambiado; vuelve a comprobar su estado",
+        });
     res.json({ url: session.url });
   }),
 );
@@ -206,7 +225,8 @@ router.post(
 
 // Mount before express.json() so Stripe verifies the unmodified body.
 export const stripeWebhook = handle(async (req, res) => {
-  if (!process.env.STRIPE_WEBHOOK_SECRET) return res.status(500).json({ error: "Missing webhook secret" });
+  if (!process.env.STRIPE_WEBHOOK_SECRET)
+    return res.status(500).json({ error: "Missing webhook secret" });
   let event;
   try {
     event = stripe.webhooks.constructEvent(
@@ -218,102 +238,78 @@ export const stripeWebhook = handle(async (req, res) => {
     return res.status(400).send("Invalid Stripe signature");
   }
   const admin = db();
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
-    const businessId = session.metadata?.business_id;
-    if (businessId && session.mode === "subscription" && session.subscription) {
-      const sub = await stripe.subscriptions.retrieve(session.subscription, { expand: ["discounts"] });
-      await sync(admin, businessId, sub, session.id);
+  console.info("billing.webhook.received", {
+    eventId: event.id,
+    type: event.type,
+  });
+  try {
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      const businessId = session.metadata?.business_id;
+      if (
+        businessId &&
+        session.mode === "subscription" &&
+        session.subscription
+      ) {
+        await reconcileBusinessBilling(admin, businessId, {
+          subscriptionId:
+            typeof session.subscription === "string"
+              ? session.subscription
+              : session.subscription.id,
+          checkoutId: session.id,
+          event,
+        });
+      }
     }
-  }
-  if (
-    [
-      "customer.subscription.created",
-      "customer.subscription.updated",
-      "customer.subscription.deleted",
-    ].includes(event.type)
-  ) {
-    const incoming = event.data.object;
-    const businessId = incoming.metadata?.business_id;
-    if (businessId) {
-      const sub =
-        incoming.status === "canceled"
-          ? incoming
-          : await stripe.subscriptions.retrieve(incoming.id, { expand: ["discounts"] });
-      await sync(admin, businessId, sub);
+    if (
+      [
+        "customer.subscription.created",
+        "customer.subscription.updated",
+        "customer.subscription.deleted",
+      ].includes(event.type)
+    ) {
+      const incoming = event.data.object;
+      if (incoming.metadata?.business_id) {
+        await reconcileBusinessBilling(admin, incoming.metadata.business_id, {
+          subscriptionId: incoming.id,
+          event,
+        });
+      }
     }
-  }
-  if (event.type === "invoice.payment_failed") {
-    const invoice = event.data.object;
-    const subscriptionId =
-      typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id;
-    if (subscriptionId) {
-      const { error } = await admin
-        .from("business_billing")
-        .update({ last_payment_failed_at: new Date().toISOString() })
-        .eq("stripe_subscription_id", subscriptionId);
-      if (error) throw error;
+    if (event.type === "invoice.payment_failed") {
+      const invoice = event.data.object;
+      const subscription =
+        invoice.parent?.subscription_details?.subscription ??
+        invoice.subscription;
+      const subscriptionId =
+        typeof subscription === "string" ? subscription : subscription?.id;
+      if (subscriptionId) {
+        const { data, error } = await admin
+          .from("business_billing")
+          .select("business_id")
+          .eq("stripe_subscription_id", subscriptionId)
+          .maybeSingle();
+        if (error) throw error;
+        if (data)
+          await reconcileBusinessBilling(admin, data.business_id, {
+            subscriptionId,
+            event,
+            failedAt: stripeInstant(event.created),
+          });
+      }
     }
+    console.info("billing.webhook.processed", {
+      eventId: event.id,
+      type: event.type,
+    });
+    res.json({ received: true });
+  } catch (error) {
+    console.error("billing.webhook.failed", {
+      eventId: event.id,
+      type: event.type,
+      code: error.code || error.statusCode || "processing_error",
+    });
+    throw error;
   }
-  res.json({ received: true });
 });
-
-async function sync(admin, businessId, sub, checkoutId) {
-  // Never let a delayed webhook replace a different subscription for the same business.
-  const { data: existing, error: readError } = await admin
-    .from("business_billing")
-    .select("stripe_subscription_id")
-    .eq("business_id", businessId)
-    .maybeSingle();
-  if (readError) throw readError;
-  if (existing?.stripe_subscription_id && existing.stripe_subscription_id !== sub.id) return;
-  // Evitar reactivar negocios eliminados.
-  const { data: business, error: businessError } = await admin
-    .from("businesses")
-    .select("id,owner_id")
-    .eq("id", businessId)
-    .maybeSingle();
-
-  if (businessError) {
-    throw businessError;
-  }
-
-  if (!business) {
-    return;
-  }
-
-  // Comprobar si el propietario está
-  // eliminando su cuenta.
-  const { data: deleting, error: deletingError } = await admin
-    .from("account_deletion_requests")
-    .select("user_id")
-    .eq("user_id", business.owner_id)
-    .maybeSingle();
-
-  if (deletingError) {
-    throw deletingError;
-  }
-
-  if (deleting) {
-    return;
-  }
-  const founder = (sub.discounts || []).some(
-    (d) => (typeof d.coupon === "object" ? d.coupon?.id : d.coupon) === founderCoupon,
-  );
-  const payload = {
-    business_id: businessId,
-    stripe_subscription_id: sub.id,
-    status: sub.status,
-    trial_used: true,
-    founder,
-    trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
-    current_period_end: sub.items?.data?.[0]?.current_period_end
-      ? new Date(sub.items.data[0].current_period_end * 1000).toISOString()
-      : null,
-    updated_at: new Date().toISOString(),
-  };
-  if (checkoutId) payload.checkout_session_id = checkoutId;
-  const { error } = await admin.from("business_billing").upsert(payload, { onConflict: "business_id" });
-  if (error) throw error;
-}
 export default router;

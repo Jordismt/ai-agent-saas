@@ -44,7 +44,7 @@ const billingService = new BillingService();
 async function paidBusinessGuard(to) {
   try {
     const { billing } = await billingService.getStatus(to.params.id);
-    if (["active", "trialing"].includes(billing?.status)) return true;
+    if (billing?.has_access === true) return true;
     return { name: "business-billing", params: { id: to.params.id } };
   } catch {
     return { name: "business-billing", params: { id: to.params.id } };

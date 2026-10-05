@@ -21,7 +21,7 @@ const loadBusinesses = async () => {
   try {
     businesses.value = await getBusinesses.execute();
     const states = await Promise.all(businesses.value.map(async business => {
-      try { const {billing}=await billingService.getStatus(business.id); return [business.id,["active","trialing"].includes(billing?.status)]; }
+      try { const {billing}=await billingService.getStatus(business.id); return [business.id,billing?.has_access === true]; }
       catch { return [business.id,false]; }
     }));
     activeIds.value = new Set(states.filter(([,active])=>active).map(([id])=>id));

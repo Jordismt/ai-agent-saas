@@ -10,7 +10,7 @@ const id = computed(() => route.params.id),
   loading = ref(true),
   error = ref("");
 const showCancel = ref(false);
-const active = computed(() => ["trialing", "active"].includes(billing.value?.status));
+const active = computed(() => billing.value?.has_access === true);
 async function refresh() {
   loading.value = true;
   error.value = "";
@@ -49,7 +49,7 @@ async function changeRenewal(cancel) {
   }
 }
 const dateLabel = (v) =>
-  v ? new Intl.DateTimeFormat("es-ES", { dateStyle: "long" }).format(new Date(v)) : "Pendiente de confirmar";
+  v ? new Intl.DateTimeFormat("es-ES", { dateStyle: "long", timeStyle: "short" }).format(new Date(v)) : "Pendiente de confirmar";
 onMounted(refresh);
 </script>
 <template>
@@ -79,12 +79,12 @@ onMounted(refresh);
             <h2>Gestionar suscripción</h2>
             <p v-if="billing?.cancel_at_period_end">
               La renovación está cancelada. Acceso hasta:
-              <strong>{{ dateLabel(billing?.cancel_at || billing?.current_period_end) }}</strong
+              <strong>{{ dateLabel(billing?.cancel_at || (billing?.status === "trialing" ? billing?.trial_end : billing?.current_period_end)) }}</strong
               >.
             </p>
             <p v-else>
-              Próxima renovación o fin de prueba:
-              <strong>{{ dateLabel(billing?.current_period_end || billing?.trial_end) }}</strong
+              {{ billing?.status === "trialing" ? "Fin de prueba:" : "Próxima renovación:" }}
+              <strong>{{ dateLabel(billing?.status === "trialing" ? billing?.trial_end : billing?.current_period_end) }}</strong
               >.
             </p>
             <button
