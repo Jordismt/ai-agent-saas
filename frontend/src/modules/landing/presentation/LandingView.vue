@@ -101,7 +101,7 @@ const closeMenu = () => {
     <div class="announcement">
       <span class="announcement-dot"></span> OFERTA DE LANZAMIENTO
       <span class="announcement-divider">/</span> Primeros 20 clientes:
-      <b>44,50 €/mes el primer año | CODIGO: FOUNDERS50</b>
+      <b>aprox. 40 €/mes los primeros 3 meses | CODIGO: FOUNDERS50</b>
       <a href="#precios">Ver oferta <span>↗</span></a>
     </div>
     <header class="navbar">
@@ -167,7 +167,7 @@ const closeMenu = () => {
             <a class="hero-offer" href="#precios"
               ><span class="offer-gift">✦</span
               ><span
-                ><b>50% de descuento durante 12 meses</b
+                ><b>50% de descuento durante 3 meses</b
                 ><small>Oferta de lanzamiento para los primeros 20 clientes</small></span
               ><span class="offer-arrow">↗</span></a
             >
@@ -637,11 +637,11 @@ const closeMenu = () => {
             <div class="pricing-card-body">
               <span class="pricing-label"> Resbix · Plataforma completa </span>
 
-              <div class="price-old">Precio habitual <s>89 €/mes</s></div>
+              <div class="price-old">Precio habitual <s>79,99 €/mes</s></div>
 
-              <div class="price-main">44.50<span>€</span><small>/ mes</small></div>
+              <div class="price-main">40<span>€</span><small>/ mes aprox.</small></div>
 
-              <div class="price-save">AHORRAS +500 € DURANTE TU PRIMER AÑO</div>
+              <div class="price-save">50 % DE DESCUENTO DURANTE LOS PRIMEROS 3 MESES</div>
 
               <p class="price-intro">
                 Todo lo que necesitas para atender, captar y organizar clientes desde un mismo sitio.
@@ -679,7 +679,7 @@ const closeMenu = () => {
 
                 <p>
                   Introduce este código en la página de pago de Stripe para conseguir el
-                  <strong>50 % de descuento durante 12 meses.</strong>
+                  <strong>50 % de descuento durante 3 meses.</strong>
                 </p>
               </div>
 
@@ -687,12 +687,12 @@ const closeMenu = () => {
                 Quiero aprovechar la oferta <span>↗</span>
               </RouterLink>
 
-              <div class="pricing-under-cta">7 días de prueba · Tarjeta obligatoria · Sin cobro inicial</div>
+              <div class="pricing-under-cta">7 días de prueba · Tarjeta obligatoria · Sin cobro inicial · Sin permanencia</div>
               <div class="pricing-under-cta">Un solo plan · Sin elegir entre funciones esenciales</div>
 
               <small class="pricing-terms">
                 Oferta para los primeros 20 clientes que apliquen correctamente el código promocional. Precio
-                promocional: 44,50 €/mes durante los primeros 12 meses. Después, 89 €/mes. El descuento debe
+                promocional: aprox. 40 €/mes durante los primeros 3 meses. Después, 79,99 €/mes. El descuento debe
                 aplicarse en Stripe antes de confirmar la suscripción. Promoción sujeta a disponibilidad real.
                 *Los emails requieren que el cliente facilite su dirección. Consulta las condiciones antes de
                 contratar.
@@ -726,8 +726,8 @@ const closeMenu = () => {
             importa.
           </p>
           <RouterLink to="/register" class="button button-white"
-            >Empezar por 44,50 €/mes <span>↗</span></RouterLink
-          ><small>Promoción para los primeros 20 clientes durante el primer año.</small>
+            >Empezar por aprox. 40 €/mes <span>↗</span></RouterLink
+          ><small>Promoción para los primeros 20 clientes durante los primeros 3 meses.</small>
         </div>
       </section>
     </main>

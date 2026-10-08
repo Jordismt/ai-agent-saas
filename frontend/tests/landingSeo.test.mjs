@@ -38,7 +38,7 @@ test("built landing has indexable product content and matching metadata", () => 
   assert.equal(
     schema["@graph"].find((item) => item["@type"] === "SoftwareApplication")
       .offers.price,
-    "89.00",
+    "79.99",
   );
   assert.ok(!html.includes("aggregateRating"));
 });

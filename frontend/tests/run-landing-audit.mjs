@@ -103,7 +103,7 @@ assert(seo.canonical === "https://resbix.com/", "Canonical query duplication");
 assert(!seo.brokenAnchors.length, "Broken anchors");
 assert(
   seo.schema["@graph"].find((e) => e["@type"] === "SoftwareApplication").offers
-    .price === "89.00",
+    .price === "79.99",
   "Incorrect schema price",
 );
 const responsive = [];

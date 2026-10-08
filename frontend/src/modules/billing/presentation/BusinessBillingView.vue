@@ -61,11 +61,12 @@ onMounted(refresh);
       <p class="intro">
         Tus datos están guardados. Para activar el agente IA, las reservas y la web, completa tu suscripción.
       </p>
-      <div class="price">89 €<small>/mes</small></div>
-      <p class="trial">7 días gratis · Tarjeta obligatoria · Sin cobro inicial</p>
+      <div class="price">79,99 €<small>/mes</small></div>
+      <p class="trial">7 días gratis · Tarjeta obligatoria · Sin cobro inicial · Sin permanencia</p>
       <div class="founder">
-        ¿Tienes el código <strong>FUNDADORES50</strong>? Introdúcelo en Stripe Checkout para obtener el 50 %
-        durante 12 meses, si quedan canjes disponibles.
+        ¿Tienes el código <strong>FOUNDERS50</strong>? Introdúcelo en Stripe Checkout para obtener el 50 %
+        durante los primeros 3 meses: aproximadamente 40 €/mes. Después, 79,99 €/mes.
+        Promoción limitada a los primeros 20 clientes, si quedan canjes disponibles.
       </div>
       <p v-if="error" role="alert" class="error">{{ error }}</p>
       <p v-if="loading">Comprobando suscripción…</p>

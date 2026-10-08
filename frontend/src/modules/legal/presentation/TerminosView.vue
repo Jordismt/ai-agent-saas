@@ -54,7 +54,7 @@ import LegalLayout from "../components/LegalLayout.vue";
 
     <h2>4. Precio y suscripciones</h2>
 
-    <p>El precio habitual anunciado para Resbix es de 89 euros mensuales.</p>
+    <p>El precio habitual anunciado para Resbix es de 79,99 euros mensuales.</p>
 
     <p>[CONFIRMAR SI LOS PRECIOS PUBLICADOS INCLUYEN IVA Y CÓMO SE MUESTRAN LOS IMPUESTOS EN STRIPE].</p>
 
@@ -92,8 +92,8 @@ import LegalLayout from "../components/LegalLayout.vue";
     <p>Resbix anuncia una oferta para los primeros 20 clientes que cumplan sus condiciones.</p>
 
     <p>
-      La promoción consiste en un descuento del 50 % sobre el precio habitual anunciado, equivalente a 55
-      euros mensuales durante los primeros 12 meses.
+      La promoción consiste en un descuento del 50 % sobre el precio habitual anunciado, equivalente a aproximadamente 40
+      euros mensuales durante los primeros 3 meses, con el código FOUNDERS50.
     </p>
 
     <p>
@@ -102,13 +102,13 @@ import LegalLayout from "../components/LegalLayout.vue";
     </p>
 
     <p>
-      Una vez finalizada la promoción, se aplicará el precio correspondiente conforme a las condiciones
-      aceptadas en el Checkout.
+      Una vez finalizada la promoción, la suscripción se renovará automáticamente por 79,99 euros mensuales,
+      conforme a las condiciones aceptadas en el Checkout.
     </p>
 
     <h2>7. Cancelación de la suscripción</h2>
 
-    <p>El cliente puede cancelar su suscripción desde el panel de administración de Resbix.</p>
+    <p>La suscripción no tiene permanencia. El cliente puede cancelarla desde el panel de administración de Resbix.</p>
 
     <p>
       Si la cancelación se realiza durante el periodo de prueba gratuita de siete días, el cliente podrá

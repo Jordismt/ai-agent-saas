@@ -28,8 +28,8 @@ export const faqs = [
     a: "No. La demo de Centro Aura es una simulación con datos ficticios. Puedes probar el recorrido sin registrarte y sin enviar datos a un negocio real.",
   },
   {
-    q: "¿Qué ocurre después del primer año de la oferta?",
-    a: "La promoción de los primeros 20 clientes es de 44,50 €/mes durante los primeros 12 meses. Después se aplica la tarifa habitual de 89 €/mes.",
+    q: "¿Qué ocurre después de los primeros 3 meses de la oferta?",
+    a: "La promoción de los primeros 20 clientes es de aprox. 40 €/mes durante los primeros 3 meses. Después se aplica la tarifa habitual de 79,99 €/mes.",
   },
   {
     q: "¿La promoción se aplica automáticamente?",
@@ -73,11 +73,11 @@ export const structuredData = {
       inLanguage: "es",
       offers: {
         "@type": "Offer",
-        price: "89.00",
+        price: "79.99",
         priceCurrency: "EUR",
         url: `${landingSeo.url}#precios`,
         description:
-          "Tarifa habitual mensual. Promoción limitada a los primeros 20 clientes: 44,50 €/mes durante 12 meses con FOUNDERS50, sujeta a disponibilidad.",
+          "Tarifa habitual mensual. Promoción limitada a los primeros 20 clientes: aprox. 40 €/mes durante 3 meses con FOUNDERS50, sujeta a disponibilidad.",
       },
     },
   ],
